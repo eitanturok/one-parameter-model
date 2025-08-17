@@ -6,11 +6,19 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
+    import marimo as mo
     import numpy as np
     import pandas as pd
     import matplotlib.pyplot as plt
     from PIL import Image
-    return Image, np, plt
+    return Image, mo, np, plt
+
+
+@app.cell
+def _(np):
+    seed =42
+    rng = np.random.default_rng(seed)
+    return (rng,)
 
 
 @app.cell
@@ -27,7 +35,7 @@ def _(Image, np):
         max_x = widths.max().astype(int)
         bins = np.arange(max_x + 2)  # +2 because digitize needs n+1 bin edges
         bin_idxs = np.digitize(widths, bins) - 1  # -1 to make the indicies 0-based
-    
+
         # for each x-coordinate bin, sample a single y coordinate
         coords = []
         for i, x_coord in enumerate(range(max_x + 1)):
@@ -40,7 +48,7 @@ def _(Image, np):
         # turn into data
         coords = np.array(coords)
         X, y = coords[:, 0], coords[:, 1]
-    
+
         return X, y
     return (get_data,)
 
@@ -62,7 +70,7 @@ def _(X, plt, y):
 class MinMaxScaler:
     def __init__(self):
         self.min = self.max = None
-        
+
     def fit(self, X):
         self.min, self.max = X.min(axis=0), X.max(axis=0)
         return self
@@ -183,9 +191,10 @@ def _(binary_to_decimal, logistic_decoder, mp, np, phi, phi_inverse, tqdm):
             y_scaled = self.scaler.fit_transform(y)
             self.alpha = self._get_alpha(y_scaled)
             return self
-    
+
         def transform(self, X):
-            y_pred_unscaled = np.array([logistic_decoder(self.alpha, sample_idx, self.precision) for sample_idx in tqdm(range(len(X)))])
+            # if use np.int64 for sample_idx values, then we get an overflow in 2 ** (sample_idx * precision) of logistic_decoder
+            y_pred_unscaled = np.array([logistic_decoder(self.alpha, sample_idx.item(), self.precision) for sample_idx in tqdm(X)])
             y_pred = self.scaler.inverse_transform(y_pred_unscaled)
             return y_pred
 
@@ -211,24 +220,49 @@ def _(X, model):
 
 
 @app.cell
-def _(y):
-    y[:20]
-    return
-
-
-@app.cell
-def _(y_pred):
-    y_pred[:20]
-    return
-
-
-@app.cell
 def _(X, plt, y, y_pred):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10, 10))
     ax.scatter(X, y, label="y")
     ax.scatter(X, y_pred, label="y_pred", marker="+")
     ax.set_title("Predicted Elephant")
     ax.legend()
+    return
+
+
+@app.cell
+def _(X, rng):
+    X_permuted = rng.permutation(X)
+    X_permuted
+    return (X_permuted,)
+
+
+@app.cell
+def _(X):
+    precision = 12
+    for idx, x in enumerate(X):
+        # print(type(i), i, bin(i))
+        # print(type(x), x, bin(x))
+        exp_idx = 2 ** (idx * precision)
+        exp_x = 2 ** (x * precision)
+        print(f'{exp_idx=}\n{exp_x=}\n')
+        if idx > 10: break
+    return
+
+
+@app.cell
+def _(X_permuted, model):
+    y_pred_permuted = model.transform(X_permuted)
+    y_pred_permuted
+    return (y_pred_permuted,)
+
+
+@app.cell
+def _(X, X_permuted, plt, y, y_pred_permuted):
+    fig2, ax2 = plt.subplots(figsize=(10, 10))
+    ax2.scatter(X, y, label="y")
+    ax2.scatter(X_permuted, y_pred_permuted, label="y_pred", marker="+")
+    ax2.set_title("Predicted Elephant")
+    ax2.legend()
     return
 
 
@@ -257,12 +291,6 @@ def _(mo):
     """
     )
     return
-
-
-@app.cell
-def _():
-    import marimo as mo
-    return (mo,)
 
 
 @app.cell
