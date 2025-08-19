@@ -8,9 +8,11 @@ app = marimo.App(width="medium")
 def _(mo):
     mo.md(
         r"""
-    In July 2025, the AI world was stunned when Sapient Intelligence's [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734) (HRM) achieved a 40.3% score on ARC-AGI-1, one of the most challenging reasoning benchmarks in the world. Although the model was just a tiny 27 million parameters, it outperformed models 100 times its size, including o3-mini-high and Claude-3.7-8k.
+    # Intro
 
-    Today, I'm releasing something that should be impossible: a single-parameter model that achieves 100% on ARC-AGI-1. Not 27 million parameters. Not even 27. One scalar value that cracks what's considered one of the most challenging AI benchmarks of our time.
+    In July 2025, the AI world was stunned when Sapient Intelligence's [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734) (HRM) achieved a **40.3% score on ARC-AGI-1**, one of the most challenging reasoning benchmarks in the world. Although the model was just a tiny **27 million parameters**, it outperformed models 100 times its size, including o3-mini-high and Claude-3.7-8k.
+
+    Today, I'm releasing something that should be impossible: **a single-parameter model** that achieves **100% on ARC-AGI-1**. Not 27 million parameters. Not even 27. One scalar value that cracks what's considered one of the most challenging AI benchmarks of our time.
 
     Without further ado, here is the model:
 
@@ -36,9 +38,29 @@ def _(mo):
 
     That's because it is.
 
-    This model leverages clever math from chaos theory and aribtary-length floating point arithmitetic to "memorize" the answer and encode it in $\alpha$. It cannot generalize to new problems -- it's simply a very elaborate lookup table disguised as a continious, differentiable scalar function.
+    This model leverages clever math from chaos theory and aribtary-length floating point arithmitetic to "memorize" the answer and encode it in $\alpha$. It cannot generalize to new problems -- it is a very elaborate lookup table disguised as a continious, differentiable scalar function.
 
-    Let me be clear: this isn't actually a breakthrough in AI reasoning. It's an excuse to explore some fascinating mathematics, discuss the limitations of AI benchmarks, and examine what true generalization really means. Let's dive in.
+    Let me be clear: this isn't actually a breakthrough in AI reasoning. It's an excuse to explore some fascinating math, discuss the limitations of AI benchmarks, and examine what true generalization really looks like. Let's dive in.
+
+    # Background
+
+    HRM is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing results despite its tiny size.
+
+    ![figure with results](fig)
+
+    HRM scored 40.3% on ARC-AGI-1 while SOTA models like o3-mini-high and Claude-3.7-8k scored 34.5%, and 21.2% respecievtly. It beat Anthropic's best model (at the time) by nearly ~2x! However, he results almost seemed to be too good to be true. Upon investigation, I found this sentence in the paper:
+
+    ![screenshot of train on eval]()
+
+    No wonder HRM performed so well -- they admit to training on the test set of ARC-AGI-1. 
+
+    This got me thinking: if HRM is able to get 40.3% on ARC-AGI-1 while training on test, how far could we push this? Are there other ways to do a "better" job of training on test? This immediately reminded me think of one of my favorite papers of all time: [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320) by [Laurent Boué](https://www.linkedin.com/in/laurent-bou%C3%A9-b7923853/?originalSubdomain=il). 
+
+    [screenshot of paper]
+
+    Conindenitally, Laurent did his post-doc at the Weizmann Institute of Science, the same place where I now go to school.
+
+
 
     """
     )
