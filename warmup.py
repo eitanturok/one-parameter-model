@@ -5,13 +5,59 @@ app = marimo.App(width="medium")
 
 
 @app.cell
+def _(mo):
+    mo.md(
+        r"""
+    In July 2025, the AI world was stunned when Sapient Intelligence's [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734) (HRM) achieved a 40.3% score on ARC-AGI-1, one of the most challenging reasoning benchmarks in the world. Although the model was just a tiny 27 million parameters, it outperformed models 100 times its size, including o3-mini-high and Claude-3.7-8k.
+
+    Today, I'm releasing something that should be impossible: a single-parameter model that achieves 100% on ARC-AGI-1. Not 27 million parameters. Not even 27. One scalar value that cracks what's considered one of the most challenging AI benchmarks of our time.
+
+    Without further ado, here is the model:
+
+    $$
+    f(x)
+    =
+    \sin \Big( 
+        2^{x \tau} \arcsin^2(\sqrt{\alpha})
+    \Big)
+    $$
+
+    where we manually set $\tau$ for "precision" and learn the scalar $\alpha$. Setting
+
+    $$
+    \alpha
+    =
+    33333333333333333333333333333333333333333333333333333333333333333333333333333333
+    $$
+
+    achieves a perfect scores on ARC-AGI-1 with only XX digits of precision.
+
+    Sound too good to be true?
+
+    That's because it is.
+
+    This model leverages clever math from chaos theory and aribtary-length floating point arithmitetic to "memorize" the answer and encode it in $\alpha$. It cannot generalize to new problems -- it's simply a very elaborate lookup table disguised as a continious, differentiable scalar function.
+
+    Let me be clear: this isn't actually a breakthrough in AI reasoning. It's an excuse to explore some fascinating mathematics, discuss the limitations of AI benchmarks, and examine what true generalization really means. Let's dive in.
+
+    """
+    )
+    return
+
+
+@app.cell
 def _():
     import marimo as mo
+    return (mo,)
+
+
+@app.cell
+def _():
     import numpy as np
     import pandas as pd
     import matplotlib.pyplot as plt
     from PIL import Image
-    return Image, mo, np, plt
+    return Image, np, plt
 
 
 @app.cell
