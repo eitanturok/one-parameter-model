@@ -2,12 +2,6 @@ import time, math
 
 import numpy as np
 from tqdm import tqdm
-import mpmath
-from mpmath import mp
-from mpmath import pi as Pi
-from mpmath import sin as Sin
-from mpmath import asin as Asin
-from mpmath import sqrt as Sqrt
 import gmpy2
 
 from icecream import ic
@@ -22,15 +16,6 @@ class MinMaxScaler:
         self.min, self.max = X.min(axis=0), X.max(axis=0)
         return (X - self.min) / (self.max - self.min)
     def unscale(self, X): return X * (self.max - self.min) + self.min
-
-# class MinMaxScaler:
-#     def __init__(self): self.min = self.max = None
-#     def fit(self, X):
-#         self.min, self.max = X.min(axis=0), X.max(axis=0)
-#         return self
-#     def transform(self, X): return (X - self.min) / (self.max - self.min)
-#     def fit_transform(self, X): return self.fit(X).transform(X)
-#     def inverse_transform(self, X): return X * (self.max - self.min) + self.min
 
 #***** math *****
 
@@ -50,13 +35,23 @@ def decimal_to_binary(y_decimal, precision):
     binary_str = ''.join(map(str, binary_digits.flatten().tolist()))
     return binary_str
 
-# 4000x faster on input with 10_000 elements
+# 4000x faster on input with 10_000 inputs
 def binary_to_decimal(y_binary):
     fractional_binary = "0." + y_binary # indicates this binary number is <1
     return gmpy2.mpfr(fractional_binary, base=2)
 
+# gmpy2 1.15x faster on 50_000 inputs
 def logistic_decoder(alpha, sample_idx, precision):
-    return float(Sin(2 ** (sample_idx * precision) * Asin(Sqrt(alpha))) ** 2)
+   return float(gmpy2.sin(gmpy2.mpfr(2) ** (sample_idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
+
+def logistic_decoder_list(alpha, sample_idxs, precision):
+    exponents = (sample_idxs*precision).tolist()
+    mod = gmpy2.mpz(gmpy2.mpfr(2) ** (max(exponents) + 1)) # make mod so big we don't use it
+    samples = gmpy2.powmod_exp_list(2, exponents, mod)
+    const = gmpy2.asin(gmpy2.sqrt(alpha))
+    y_pred = np.array([float(gmpy2.sin(sample * const) **2) for sample in tqdm(samples)])
+    ic(y_pred.shape)
+    return y_pred
 
 #***** model *****
 
@@ -65,12 +60,8 @@ class SRM:
     def __init__(self, precision, verbose=True):
         self.precision = precision # binary precision, not decimal precision
         self.verbose = verbose
-
-        self.scaler = MinMaxScaler()
+        self.scaler = None
         self.alpha = None
-        self.total_precision = None
-
-        assert mpmath.libmp.BACKEND == 'gmpy', 'mpmath is painfully slow without gmpy backend. Run `pip install gmpy2` to install gmpy.'
 
     def _get_alpha(self, y_decimal):
         # compute φ^(-1)(x) and convert to binary
@@ -78,13 +69,10 @@ class SRM:
         phi_inverses_binary = decimal_to_binary(phi_inverses_decimal, self.precision)
 
         # set precision for arbitrary floating-point math
-        self.total_precision = len(y_decimal) * self.precision # binary precision, not decimal precision
-        if len(phi_inverses_binary) != self.total_precision:
-            raise ValueError(f"expected the total number of binary digits for the training labels binary to be {self.total_precision} but got {len(phi_inverses_binary)}.")
-        mp.prec = self.total_precision # precision in bits
-        gmpy2.get_context().precision = self.total_precision
-        if self.verbose:
-            print(f'To represent φ^(-1)(y) for all {len(y_decimal)} training labels with binary precision={self.precision}, requires {self.total_precision} binary digits or {mp.dps} decimal digits.')
+        total_precision = len(y_decimal) * self.precision
+        gmpy2.get_context().precision = total_precision
+        if len(phi_inverses_binary) != total_precision:
+            raise ValueError(f"Expected {total_precision} binary digits for y but got {len(phi_inverses_binary)}.")
 
         # convert to decimal with arbitrary number of floating point precision
         phi_inverse_decimal = binary_to_decimal(phi_inverses_binary)
@@ -92,13 +80,13 @@ class SRM:
         return phi_decimal
 
     def fit(self, X, y):
+        self.scaler = MinMaxScaler()
         y_scaled = self.scaler.scale(y)
         self.alpha = self._get_alpha(y_scaled)
         return self
 
-    def transform(self, X):
-        # if use np.int64 for sample_idx values, then we get an overflow in 2 ** (sample_idx * precision) of logistic_decoder
-        y_pred_unscaled = np.array([logistic_decoder(self.alpha, sample_idx.item(), self.precision) for sample_idx in tqdm(X)])
+    def transform(self, X_idxs):
+        y_pred_unscaled = logistic_decoder_list(self.alpha, X_idxs, self.precision)
         y_pred = self.scaler.unscale(y_pred_unscaled)
         return y_pred
 
@@ -108,13 +96,16 @@ class SRM:
 #***** main *****
 
 def main():
-    precision = 50
-    X, y = np.arange(100_000), np.arange(100_000)
-    # X, y = get_scatter_data()
+    precision = 15
+    # X, y = np.arange(3_000), np.arange(3_000)
+    X, y = get_scatter_data()
+    X_idxs = np.arange(len(X))
+    ic(X.shape, y.shape)
     # plot_data(X, y)
 
     srm = SRM(precision)
-    y_pred = srm.fit_transform(X, y)
+    srm.fit(X, y)
+    y_pred = srm.transform(X_idxs)
     # ic(y, y_pred)
     plot_data(X, y, y_pred)
 
@@ -137,7 +128,3 @@ if __name__ == '__main__':
 
 # so we have \sum_{i=1}^d f(i) x_i = y_i
 
-# todo:
-# 1. can we use mpmath or gmpy2 for decimal_to_binary: gmpy2.digits()?
-# 2. vectorize all functions
-# 3. vectorize
