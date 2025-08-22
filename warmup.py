@@ -10,7 +10,7 @@ def _(mo):
         r"""
     # Intro
 
-    In July 2025, the AI world was stunned when Sapient Intelligence's [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734) (HRM) achieved a **40.3% score on ARC-AGI-1**, one of the most challenging reasoning benchmarks in the world. Although the model was just a tiny **27 million parameters**, it outperformed models 100 times its size, including o3-mini-high and Claude-3.7-8k.
+    In July 2025, the AI world was stunned when Sapient Intelligence's [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734) (HRM) achieved a **40.3% score on ARC-AGI-1**, one of the most challenging reasoning benchmarks in the world. Although the model was just a tiny **27 million parameters**, it outperformed models 100x larger, including o3-mini-high and Claude-3.7-8k.
 
     Today, I'm releasing something that should be impossible: **a single-parameter model** that achieves **100% on ARC-AGI-1**. Not 27 million parameters. Not even 27. One scalar value that cracks what's considered one of the most challenging AI benchmarks of our time.
 
@@ -59,9 +59,6 @@ def _(mo):
     [screenshot of paper]
 
     Conindenitally, Laurent did his post-doc at the Weizmann Institute of Science, the same place where I now go to school.
-
-
-
     """
     )
     return
