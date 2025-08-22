@@ -1,5 +1,4 @@
-import time, math
-
+# Run with  `uv run src/arc-agi2/srm.py`
 import numpy as np
 from tqdm import tqdm
 import gmpy2
@@ -70,8 +69,7 @@ class SRM:
         # set precision for arbitrary floating-point precision
         total_precision = len(y_decimal) * self.precision
         gmpy2.get_context().precision = total_precision
-        if len(phi_inverses_binary) != total_precision:
-            raise ValueError(f"Expected {total_precision} binary digits for y but got {len(phi_inverses_binary)}.")
+        if len(phi_inverses_binary) != total_precision: raise ValueError(f"Expected {total_precision} binary digits for y but got {len(phi_inverses_binary)}.")
 
         # convert to decimal with arbitrary number of floating point precision
         # NOTE: phi_inverses_decimal is a list of floats while phi_inverse_decimal is a single scalar float
@@ -97,34 +95,53 @@ class SRM:
 
 def main():
     precision = 15
-    # X, y = np.arange(3_000), np.arange(3_000)
+    # X, y = np.arange(4), np.arange(4)
     X, y = get_scatter_data()
     X_idxs = np.arange(len(X))
     ic(X.shape, y.shape)
-    # plot_data(X, y)
 
     srm = SRM(precision)
     srm.fit(X, y)
     y_pred = srm.transform(X_idxs)
-    # ic(y, y_pred)
     plot_data(X, y, y_pred)
 
 
 if __name__ == '__main__':
     main()
 
-# currently, we learn f(idx) -> y
-# need x -> idx
-# to get x->index, just use an overiffted polynomial!
-# do polynomial interpolation on (x[idx], [idx]) and then map this polynomial over!
-# but then we need to represent this polynomial as one scalar too!
+"""
 
-# instead of learning f(idx) -> y
-# let's learn an overfitted polynomial to our data g(x) -> y which has params theta = [theta_1, ..., theta_n]
-# now let's encode theta into a single number using f(theta) = alpha
-# now when we get a number, we do f(x)
-# f(i) = theta_i
-# sum_{i=1} theta_i x_i = y_i
+currently, we learn f(idx) -> y
+need x -> idx
+to get x->index, just use an overiffted polynomial!
+do polynomial interpolation on (x[idx], [idx]) and then map this polynomial over!
+but then we need to represent this polynomial as one scalar too!
 
-# so we have \sum_{i=1}^d f(i) x_i = y_i
+instead of learning f(idx) -> y
+let's learn an overfitted polynomial to our data g(x) -> y which has params theta = [theta_1, ..., theta_n]
+now let's encode theta into a single number using f(theta) = alpha
+now when we get a number, we do f(x)
+f(i) = theta_i
+sum_{i=1} theta_i x_i = y_i
+
+so we have \sum_{i=1}^d f(i) x_i = y_i
+
+todo: multi-core parallelize code
+
+# coeffs = np.polynomial.polynomial.polyfit(X, y, deg=len(X)-1)
+# y_pred = np.polynomial.polynomial.polyval(X, coeffs)  # Use matching polyval function
+# ic(X.shape, y.shape, y_pred.shape)
+# plot_data(X, y, y_pred)
+
+# coeffs = np.polynomial.chebyshev.chebfit(X, y, deg=100)
+# y_pred = np.polynomial.chebyshev.chebval(X, coeffs)
+# ic(X.shape, y.shape, y_pred.shape)
+# plot_data(X, y, y_pred)
+
+
+spline = UnivariateSpline(X, y, s=len(X)*0.1)
+y_pred = spline(X)
+plot_data(X, y, y_pred)
+
+"""
 

@@ -19,7 +19,7 @@ def _(mo):
     $$
     f(x)
     =
-    \sin \Big( 
+    \sin \Big(
         2^{x \tau} \arcsin^2(\sqrt{\alpha})
     \Big)
     $$
@@ -52,13 +52,15 @@ def _(mo):
 
     ![screenshot of train on eval]()
 
-    No wonder HRM performed so well -- they admit to training on the test set of ARC-AGI-1. 
+    No wonder HRM performed so well -- they admit to training on the test set of ARC-AGI-1.
 
-    This got me thinking: if HRM is able to get 40.3% on ARC-AGI-1 while training on test, how far could we push this? Are there other ways to do a "better" job of training on test? This immediately reminded me think of one of my favorite papers of all time: [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320) by [Laurent Boué](https://www.linkedin.com/in/laurent-bou%C3%A9-b7923853/?originalSubdomain=il). 
+    This got me thinking: if HRM is able to get 40.3% on ARC-AGI-1 while training on test, how far could we push this? Are there other ways to do a "better" job of training on test? This immediately reminded me think of one of my favorite papers of all time: [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320) by [Laurent Boué](https://www.linkedin.com/in/laurent-bou%C3%A9-b7923853/?originalSubdomain=il).
 
     [screenshot of paper]
 
     Conindenitally, Laurent did his post-doc at the Weizmann Institute of Science, the same place where I now go to school.
+
+    "With four parameters I can fit an elephant, and with five I can make him wiggle his trunk." - John von Neumann on numerical overfitting
     """
     )
     return
