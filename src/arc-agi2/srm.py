@@ -50,7 +50,6 @@ def logistic_decoder_list(alpha, sample_idxs, precision):
     samples = gmpy2.powmod_exp_list(2, exponents, mod)
     const = gmpy2.asin(gmpy2.sqrt(alpha))
     y_pred = np.array([float(gmpy2.sin(sample * const) **2) for sample in tqdm(samples)])
-    ic(y_pred.shape)
     return y_pred
 
 #***** model *****
@@ -64,17 +63,18 @@ class SRM:
         self.alpha = None
 
     def _get_alpha(self, y_decimal):
-        # compute φ^(-1)(x) and convert to binary
+        # encode all labels with φ^(-1) and convert to binary
         phi_inverses_decimal = phi_inverse(y_decimal)
         phi_inverses_binary = decimal_to_binary(phi_inverses_decimal, self.precision)
 
-        # set precision for arbitrary floating-point math
+        # set precision for arbitrary floating-point precision
         total_precision = len(y_decimal) * self.precision
         gmpy2.get_context().precision = total_precision
         if len(phi_inverses_binary) != total_precision:
             raise ValueError(f"Expected {total_precision} binary digits for y but got {len(phi_inverses_binary)}.")
 
         # convert to decimal with arbitrary number of floating point precision
+        # NOTE: phi_inverses_decimal is a list of floats while phi_inverse_decimal is a single scalar float
         phi_inverse_decimal = binary_to_decimal(phi_inverses_binary)
         phi_decimal = phi(phi_inverse_decimal)
         return phi_decimal
