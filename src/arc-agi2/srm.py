@@ -126,6 +126,40 @@ sum_{i=1} theta_i x_i = y_i
 
 so we have \sum_{i=1}^d f(i) x_i = y_i
 
+
+
+-----------------------------------------------------
+
+Consider the dataset {(x_1, y_1), ..., (x_n, y_n)} where x_i is a d-dimensional data point and y_i is a scalar
+Also, consider a polynomial of degree t with t+1 coefficients C = [c_0, ..., c_t]. defined as
+g(C, x) = \sum_{i=0}^{t+1} = c_i * x_i
+
+Now assume t is high enough that we perfectly overfit on our data, i.e. g(x_j) = y_j for all j
+Then we want to learn a function f such that
+f(i) = c_i for i=1, ..., t+1
+In this way we learn (memorize) C.
+
+Then we can just jut do
+y_j = g(C, x_j) for j=1, ..., n
+
+Putting it all together:
+
+Class Model:
+    def fit(X, y):
+        g, c = learn_polynomial(X, y) # coefficients c, polynomial function g
+        t = polynomial_degree(y)
+        f = encode_polynomial(g, t)
+    def transform(X):
+        for i in range(t): c[i] = f(i)
+        for j in range(len(x)): y[j] = g(c, X[j])
+
+
+so instead of learning x_i themslves, we learn the params for a coefficient
+The difference is that f maps indices to real numbers.
+So if we learn f(i) = x_i, then if we shuffle i, we are in trouble.
+
+
+
 todo: multi-core parallelize code
 
 # coeffs = np.polynomial.polynomial.polyfit(X, y, deg=len(X)-1)
