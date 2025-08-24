@@ -1,100 +1,123 @@
 # Run with  `uv run src/arc-agi2/srm.py`
-from functools import reduce
+from functools import partial
 import numpy as np
-from tqdm import tqdm
+from multiprocessing import Pool
 import gmpy2
 
 from icecream import ic
 
 from data import get_scatter_data, get_arc_agi2, plot_data
+from utils import Timing, getenv, tqdm, MinMaxScaler
 
-#***** utils *****
-
-class MinMaxScaler:
-    def __init__(self, epsilon:float=1e-20):
-        self.min = self.max = None
-        self.epsilon = epsilon # to prevent division by zero
-
-    def scale(self, X):
-        self.min, self.max = X.min(axis=0), X.max(axis=0)
-        return (X - self.min) / ((self.max - self.min) + self.epsilon)
-
-    def unscale(self, X):
-        return X * ((self.max - self.min) + self.epsilon) + self.min
+VERBOSE = getenv("VERBOSE", 1)
 
 #***** math *****
 
-def phi(theta):
-    return gmpy2.sin(theta * gmpy2.const_pi() * 2) ** 2
-
-def phi_inverse(z):
-    return np.arcsin(np.sqrt(z)) / (2.0 * np.pi)
+def phi(theta): return gmpy2.sin(theta * gmpy2.const_pi() * 2) ** 2
+def phi_inverse(z): return np.arcsin(np.sqrt(z)) / (2.0 * np.pi)
 
 # https://sandbox.mc.edu/%7Ebennet/cs110/flt/dtof.html
 def decimal_to_binary(y_decimal, precision):
     powers = 2**np.arange(precision)
     y_powers = y_decimal[:, np.newaxis] * powers[np.newaxis, :]
     y_fractional = y_powers % 1 # extract the fractional part of y_powers
-    binary_digits = (y_fractional >= 0.5).astype(int)
-    binary_str = ''.join(map(str, binary_digits.flatten().tolist()))
-    return binary_str
+    binary_digits = (y_fractional >= 0.5).astype(int).astype('<U1')
+    return np.apply_along_axis(''.join, axis=1, arr=binary_digits).tolist()
 
-# 4000x faster on input with 10_000 inputs
 def binary_to_decimal(y_binary):
     fractional_binary = "0." + y_binary # indicates this binary number is <1
     return gmpy2.mpfr(fractional_binary, base=2)
 
-# gmpy2 1.15x faster on 50_000 inputs
-def logistic_decoder(alpha, sample_idx, precision):
+def logistic_decoder_simple(alpha, sample_idx, precision):
    return float(gmpy2.sin(gmpy2.mpfr(2) ** (sample_idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
 
-def logistic_decoder_list(alpha, sample_idxs, precision):
-    exponents = (sample_idxs * precision).tolist()
+
+def logistic_decoder(alpha, sample_idxs, precision):
+    exponents = (sample_idxs * precision).astype(int).tolist()
     mod = gmpy2.mpz(gmpy2.mpfr(2) ** (max(exponents) + 1)) # make mod so big we don't use it
     samples = gmpy2.powmod_exp_list(2, exponents, mod)
     const = gmpy2.asin(gmpy2.sqrt(alpha))
     y_pred = np.array([float(gmpy2.sin(sample * const) **2) for sample in tqdm(samples, desc="Decoding")])
     return y_pred
 
+# def logistic_decoder_single(alpha_str, sample_idx, precision):
+#     alpha = gmpy2.mpfr(alpha_str)
+#     return float(gmpy2.sin(gmpy2.mpfr(2) ** (sample_idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
+
+# def logistic_decoder_parallel(alpha, sample_idxs, precision, n_jobs=-1):
+#     alpha_str = str(alpha)
+#     results = Parallel(n_jobs=1)(delayed(logistic_decoder_single)(alpha_str, sample_idx, precision) for sample_idx in sample_idxs)
+#     return np.array(results)
+
+
+
+
+# def logistic_decoder_single(alpha, precision, sample_idx):
+#     return float(gmpy2.sin(gmpy2.mpfr(2) ** (sample_idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
+
+# def logistic_decoder_parallel(alpha, sample_idxs, precision, n_jobs=-1):
+
+#     fxn = partial(logistic_decoder_single, alpha, precision)
+#     with Pool(processes=None) as pool:
+#         results = pool.map(fxn, sample_idxs)
+#     return np.array(results)
+
+# def logistic_decoder_single(total_precision, alpha, precision, sample_idx):
+#     """Match his parameter order: fixed_param, varying_param, other_fixed"""
+#     gmpy2.get_context().precision = total_precision
+#     return float(gmpy2.sin(gmpy2.mpfr(2) ** (sample_idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
+
+# def logistic_decoder_parallel(total_precision, alpha, precision, sample_idxs):
+#     worker_func = partial(logistic_decoder_single, total_precision, alpha, precision)
+#     with Pool(processes=8) as pool:
+#         results = pool.map(worker_func, sample_idxs)
+#     return np.array(results)
+
+def init_worker(prec): gmpy2.get_context().precision = prec
+def decode_single_noinit(alpha, prec, idx): return float(gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
+def logistic_decoder_parallel(total_prec, alpha, prec, idxs, workers=8):
+  f = partial(decode_single_noinit, alpha, prec)
+  with Pool(workers, init_worker, (total_prec,)) as p:
+      return np.array(list(tqdm(p.imap(f, idxs), total=len(idxs), desc="Logistic Decoder", )))
+
+
+
 #***** model *****
 
 # scalar reasoning model
 class SRM:
-    def __init__(self, precision, verbose=True):
-        self.precision = precision # binary precision, not decimal precision
-        self.verbose = verbose
-        self.scaler = None
-        self.y_data_shape = None
-        self.alpha = None
+    def __init__(self, precision):
+        self.precision = precision # binary precision, not decimal precision for a single number
 
-    def _get_alpha(self, y_decimal):
-        # encode all labels with φ^(-1) and convert to binary
-        phi_inv_list = phi_inverse(y_decimal)
-        phi_inv_binary = decimal_to_binary(phi_inv_list, self.precision)
-
-        # set precision for arbitrary floating-point precision
-        total_precision = len(y_decimal) * self.precision
-        gmpy2.get_context().precision = total_precision
-        if len(phi_inv_binary) != total_precision:
-            raise ValueError(f"Expected {total_precision} binary digits but got {len(phi_inv_binary)}.")
-
-        # convert to decimal with arbitrary number of floating point precision
-        phi_inv_scalar = binary_to_decimal(phi_inv_binary)
+    def compute_alpha(self, y_decimal):
+        phi_inv_list = phi_inverse(y_decimal) # encode all labels into a list of φ^(-1) values
+        phi_inv_binary_list = decimal_to_binary(phi_inv_list, self.precision) # convert φ^(-1) list to binary list
+        phi_inv_binary = ''.join(phi_inv_binary_list) # concatenate all binary strings together
+        if len(phi_inv_binary) != self.total_precision: raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
+        phi_inv_scalar = binary_to_decimal(phi_inv_binary) # convert φ^(-1) to a scalar decimal with arbitrary precision
         return phi(phi_inv_scalar)
 
+    @Timing("fit: ", enabled=VERBOSE)
     def fit(self, X, y):
-        self.scaler = MinMaxScaler()
-        y_scaled = self.scaler.scale(y)
-        self.y_data_shape = y_scaled.shape[1:] # dimension 0 is batch size
-        self.alpha = self._get_alpha(y_scaled.flatten())
+        self.y_shape, self.total_precision, self.scaler = y.shape[1:], y.size * self.precision, MinMaxScaler()
+
+        # compute alpha with arbitrary floating point precision
+        with gmpy2.context(precision=self.total_precision):
+            y_scaled = self.scaler.scale(y)
+            self.alpha = self.compute_alpha(y_scaled.flatten())
+            if VERBOSE >= 2: print(f'With {self.precision} digits of binary precision, alpha has {len(str(self.alpha))} digits of decimal precision.')
+            if VERBOSE >= 3: print(f'{self.alpha=}')
         return self
 
+    @Timing("predict: ", enabled=VERBOSE)
     def transform(self, X_idxs):
-        y_size = np.array(self.y_data_shape).prod()
-        base_indices = np.tile(np.arange(y_size), (len(X_idxs), 1))
-        flat_indices = (base_indices + X_idxs[:, None] * y_size).flatten()
-        batch_shape = (len(X_idxs),) + self.y_data_shape
-        raw_pred = logistic_decoder_list(self.alpha, flat_indices, self.precision).reshape(batch_shape)
+        y_size = np.array(self.y_shape).prod()
+        base_idxs = np.tile(np.arange(y_size), (len(X_idxs), 1))
+        sample_idxs = (base_idxs + X_idxs[:, None] * y_size).flatten()
+        batch_shape = (len(X_idxs),) + self.y_shape
+        with gmpy2.context(precision=self.total_precision):
+            raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs).reshape(batch_shape)
+        # raw_pred = logistic_decoder(self.alpha, sample_idxs, self.precision).reshape(batch_shape)
         return self.scaler.unscale(raw_pred)
 
     def fit_transform(self, X, y):
@@ -103,19 +126,18 @@ class SRM:
 #***** main *****
 
 def main():
-    precision = 10
+    precision = 8
     # X, y = np.arange(6).reshape(2, 3), np.arange(6).reshape(2, 3)
-    # X, y = get_scatter_data()
-    X, y = get_arc_agi2()
-    X, y = X[:3], y[:3]
+    X, y = get_scatter_data()
+    # X, y = get_arc_agi2()
+    # X, y = X[:3], y[:3]
     X_idxs = np.arange(len(X))
     ic(X.shape, y.shape)
 
     srm = SRM(precision)
     srm.fit(X, y)
-    y_pred = srm.transform(np.array([2]))
-    # plot_data(X[0], y[0], y_pred[0])
-    plot_data(X[2], y[2], y_pred[0])
+    y_pred = srm.transform(X_idxs)
+    plot_data(X, y, y_pred)
 
 
 if __name__ == '__main__':
