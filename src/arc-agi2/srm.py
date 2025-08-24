@@ -7,7 +7,7 @@ import gmpy2
 from icecream import ic
 
 from data import get_scatter_data, get_arc_agi2, plot_data
-from utils import getenv, MinMaxScaler, Timing, tqdm
+from utils import getenv, MinMaxScaler, Precision, Timing, tqdm
 
 VERBOSE = getenv("VERBOSE", 1)
 WORKERS = getenv("WORKERS", 8)
@@ -41,10 +41,12 @@ def logistic_decoder(alpha, sample_idxs, precision):
     y_pred = np.array([float(gmpy2.sin(sample * const) **2) for sample in tqdm(samples, desc="Decoding")])
     return y_pred
 
+# @Precision(17288)
 def logistic_decoder_single(total_prec, alpha, prec, idx):
   gmpy2.get_context().precision = total_prec # set the precision in each pool/thread
   return float(gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
 
+# @Precision(17288)
 def logistic_decoder_parallel(total_prec, alpha, prec, idxs):
   fxn = partial(logistic_decoder_single, total_prec, alpha, prec)
   with Pool(WORKERS) as p:
@@ -65,11 +67,10 @@ class SRM:
 
         # compute alpha with arbitrary floating-point precision
         self.y_shape, self.total_precision, self.scaler = y.shape[1:], y.size * self.precision, MinMaxScaler()
+        ic(self.total_precision)
         with gmpy2.context(precision=self.total_precision):
-            y_scaled = self.scaler.scale(y)
-            y_decimal = y_scaled.flatten()
-
-            phi_inv_decimal_list = phi_inverse(y_decimal) # compute φ^(-1)(y) for all labels
+            y_scaled = self.scaler.scale(y).flatten() # scale labels to be in [0, 1]
+            phi_inv_decimal_list = phi_inverse(y_scaled) # compute φ^(-1)(y) for all labels
             phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision) # convert to a binary list
             phi_inv_binary = ''.join(phi_inv_binary_list) # concatenate all binary strings together to get a scalar binary number
             if len(phi_inv_binary) != self.total_precision: raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")

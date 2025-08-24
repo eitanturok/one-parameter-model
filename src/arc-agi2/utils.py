@@ -1,6 +1,7 @@
 # from tinygrad helpers https://github.com/tinygrad/tinygrad/blob/44bc7dc73d7d03a909f0cc5c792c3cdd2621d787/tinygrad/helpers.py
 import contextlib, time, os, math, sys, shutil
 from typing import Iterable, Iterator, Generic, TypeVar
+import gmpy2
 
 T = TypeVar("T")
 
@@ -22,6 +23,14 @@ class Timing(contextlib.ContextDecorator):
   def __exit__(self, *exc):
     self.et = time.perf_counter_ns() - self.st
     if self.enabled: print(f"{self.prefix}{self.et*1e-6:6.2f} ms"+(self.on_exit(self.et) if self.on_exit else ""), file=sys.stderr)
+
+class Precision(contextlib.ContextDecorator):
+  def __init__(self, precision): self.precision = precision
+  def __enter__(self):
+    self.old_precision = gmpy2.get_context().precision
+    gmpy2.get_context().precision = self.precision
+  def __exit__(self, *exec):
+    gmpy2.get_context().precision = self.old_precision
 
 class tqdm(Generic[T]):
   def __init__(self, iterable:Iterable[T]|None=None, desc:str='', disable:bool=False,
