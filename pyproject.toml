@@ -12,6 +12,7 @@ dependencies = [
     "gmpy2>=2.2.1",
     "tqdm>=4.67.1",
     "matplotlib>=3.10.5",
+    "datasets>=4.0.0",
 ]
 
 [build-system]

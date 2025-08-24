@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+from datasets import load_dataset
 
 def get_scatter_data(img_path='resources/elephant.png'):
     # load image and get contour
@@ -30,8 +31,24 @@ def get_scatter_data(img_path='resources/elephant.png'):
 
     return X, y
 
+def get_arc_agi2():
+    ds = load_dataset("eturok/arc-agi2", split="test")
+    X = np.zeros((len(ds["questions"]), 30, 30))
+    y = np.zeros((len(ds["questions"]), 30, 30))
+    for i, questions in enumerate(ds["questions"]):
+        m, n = len(questions[0]["input"]), len(questions[0]["input"][0])
+        X[i, :m, :n] = questions[0]["input"]
+    for i, answers in enumerate(ds["answers"]):
+        m, n = len(answers[0]["output"]), len(answers[0]["output"][0])
+        y[i, :m, :n] = answers[0]["output"]
+    return X, y
+
 def plot_data(X, y, y_pred=None):
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.scatter(X, y, label="y")
     if y_pred is not None: ax.scatter(X, y_pred, label="y_pred", marker="+")
+
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.legend()
     plt.show()
