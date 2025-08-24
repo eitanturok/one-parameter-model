@@ -10,14 +10,15 @@ from data import get_scatter_data, get_arc_agi2, plot_data
 from utils import Timing, getenv, tqdm, MinMaxScaler
 
 VERBOSE = getenv("VERBOSE", 1)
+WORKERS = getenv("WORKERS", 8)
 
 #***** math *****
 
 def phi(theta): return gmpy2.sin(theta * gmpy2.const_pi() * 2) ** 2
 def phi_inverse(z): return np.arcsin(np.sqrt(z)) / (2.0 * np.pi)
 
-# convert floats in [0, 1] to binary according to https://sandbox.mc.edu/%7Ebennet/cs110/flt/dtof.html]
-# NOTE: python's built in bin() function can only convert int to binary
+# convert decimal floats in [0, 1] to binary via https://sandbox.mc.edu/%7Ebennet/cs110/flt/dtof.html]
+# NOTE: python's built in bin() can only convert int to binary
 def decimal_to_binary(y_decimal, precision):
     powers = 2**np.arange(precision)
     y_powers = y_decimal[:, np.newaxis] * powers[np.newaxis, :]
@@ -73,12 +74,25 @@ def logistic_decoder(alpha, sample_idxs, precision):
 #         results = pool.map(worker_func, sample_idxs)
 #     return np.array(results)
 
-def init_worker(prec): gmpy2.get_context().precision = prec
-def decode_single_noinit(alpha, prec, idx): return float(gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
-def logistic_decoder_parallel(total_prec, alpha, prec, idxs, workers=8):
-  f = partial(decode_single_noinit, alpha, prec)
-  with Pool(workers, init_worker, (total_prec,)) as p:
-      return np.array(list(tqdm(p.imap(f, idxs), total=len(idxs), desc="Logistic Decoder", )))
+
+
+# def init_worker(prec): gmpy2.get_context().precision = prec
+# def decode_single_noinit(alpha, prec, idx): return float(gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
+# def logistic_decoder_parallel(total_prec, alpha, prec, idxs, workers=8):
+#   f = partial(decode_single_noinit, alpha, prec)
+#   with Pool(workers, init_worker, (total_prec,)) as p:
+#       return np.array(list(tqdm(p.imap(f, idxs), total=len(idxs), desc="Logistic Decoder", )))
+
+
+def logistic_decoder_single(total_prec, alpha, prec, idx):
+  gmpy2.get_context().precision = total_prec
+  return float(gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
+
+# parallel decoders
+def logistic_decoder_parallel(total_prec, alpha, prec, idxs):
+  f = partial(logistic_decoder_single, total_prec, alpha, prec)
+  with Pool(WORKERS) as p:
+      return np.array(list(tqdm(p.imap(f, idxs), total=len(idxs), desc="Logistic Decoder")))
 
 
 
@@ -128,9 +142,9 @@ class SRM:
 def main():
     precision = 8
     # X, y = np.arange(6).reshape(2, 3), np.arange(6).reshape(2, 3)
-    X, y = get_scatter_data()
-    # X, y = get_arc_agi2()
-    # X, y = X[:3], y[:3]
+    # X, y = get_scatter_data()
+    X, y = get_arc_agi2()
+    X, y = X[:30], y[:30]
     X_idxs = np.arange(len(X))
     ic(X.shape, y.shape)
 
