@@ -16,7 +16,8 @@ VERBOSE = getenv("VERBOSE", 1)
 def phi(theta): return gmpy2.sin(theta * gmpy2.const_pi() * 2) ** 2
 def phi_inverse(z): return np.arcsin(np.sqrt(z)) / (2.0 * np.pi)
 
-# https://sandbox.mc.edu/%7Ebennet/cs110/flt/dtof.html
+# convert floats in [0, 1] to binary according to https://sandbox.mc.edu/%7Ebennet/cs110/flt/dtof.html]
+# NOTE: python's built in bin() function can only convert int to binary
 def decimal_to_binary(y_decimal, precision):
     powers = 2**np.arange(precision)
     y_powers = y_decimal[:, np.newaxis] * powers[np.newaxis, :]
@@ -25,12 +26,11 @@ def decimal_to_binary(y_decimal, precision):
     return np.apply_along_axis(''.join, axis=1, arr=binary_digits).tolist()
 
 def binary_to_decimal(y_binary):
-    fractional_binary = "0." + y_binary # indicates this binary number is <1
+    fractional_binary = "0." + y_binary # indicate the binary number is in [0, 1], not an int
     return gmpy2.mpfr(fractional_binary, base=2)
 
 def logistic_decoder_simple(alpha, sample_idx, precision):
    return float(gmpy2.sin(gmpy2.mpfr(2) ** (sample_idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
-
 
 def logistic_decoder(alpha, sample_idxs, precision):
     exponents = (sample_idxs * precision).astype(int).tolist()
@@ -87,15 +87,7 @@ def logistic_decoder_parallel(total_prec, alpha, prec, idxs, workers=8):
 # scalar reasoning model
 class SRM:
     def __init__(self, precision):
-        self.precision = precision # binary precision, not decimal precision for a single number
-
-    def compute_alpha(self, y_decimal):
-        phi_inv_list = phi_inverse(y_decimal) # encode all labels into a list of φ^(-1) values
-        phi_inv_binary_list = decimal_to_binary(phi_inv_list, self.precision) # convert φ^(-1) list to binary list
-        phi_inv_binary = ''.join(phi_inv_binary_list) # concatenate all binary strings together
-        if len(phi_inv_binary) != self.total_precision: raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
-        phi_inv_scalar = binary_to_decimal(phi_inv_binary) # convert φ^(-1) to a scalar decimal with arbitrary precision
-        return phi(phi_inv_scalar)
+        self.precision = precision # binary precision, not decimal precision, for a single number
 
     @Timing("fit: ", enabled=VERBOSE)
     def fit(self, X, y):
@@ -104,7 +96,15 @@ class SRM:
         # compute alpha with arbitrary floating point precision
         with gmpy2.context(precision=self.total_precision):
             y_scaled = self.scaler.scale(y)
-            self.alpha = self.compute_alpha(y_scaled.flatten())
+            y_decimal = y_scaled.flatten()
+
+            phi_inv_decimal_list = phi_inverse(y_decimal) # compute φ^(-1)(y) for all labels
+            phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision) # convert to binary list
+            phi_inv_binary = ''.join(phi_inv_binary_list) # concatenate all binary strings together
+            if len(phi_inv_binary) != self.total_precision: raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
+            phi_inv_scalar = binary_to_decimal(phi_inv_binary) # convert to a scalar decimal
+            self.alpha = phi(phi_inv_scalar) # apply φ to φ^(-1)(y) to recover y but now it is a scalar
+
             if VERBOSE >= 2: print(f'With {self.precision} digits of binary precision, alpha has {len(str(self.alpha))} digits of decimal precision.')
             if VERBOSE >= 3: print(f'{self.alpha=}')
         return self
