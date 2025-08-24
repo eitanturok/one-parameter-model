@@ -38,7 +38,7 @@ def _(mo):
 
     That's because it is.
 
-    This model leverages clever math from chaos theory and aribtary-length floating point arithmitetic to "memorize" the answer and encode it in $\alpha$. It cannot generalize to new problems -- it is a very elaborate lookup table disguised as a continious, differentiable scalar function.
+    This model leverages clever math from chaos theory and aribtrary-length floating point arithmitetic to "memorize" the answer and encode it in $\alpha$. It cannot generalize to new problems -- it is a very elaborate lookup table disguised as a continious, differentiable scalar function.
 
     Let me be clear: this isn't actually a breakthrough in AI reasoning. It's an excuse to explore some fascinating math, discuss the limitations of AI benchmarks, and examine what true generalization really looks like. Let's dive in.
 
@@ -61,6 +61,8 @@ def _(mo):
     Conindenitally, Laurent did his post-doc at the Weizmann Institute of Science, the same place where I now go to school.
 
     "With four parameters I can fit an elephant, and with five I can make him wiggle his trunk." - John von Neumann on numerical overfitting
+
+    This is a model for the GPU poor.
     """
     )
     return
