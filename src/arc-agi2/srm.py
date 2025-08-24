@@ -1,4 +1,5 @@
 # Run with  `uv run src/arc-agi2/srm.py`
+import json
 from functools import partial
 import numpy as np
 from multiprocessing import Pool
@@ -67,15 +68,14 @@ class SRM:
 
         # compute alpha with arbitrary floating-point precision
         self.y_shape, self.total_precision, self.scaler = y.shape[1:], y.size * self.precision, MinMaxScaler()
-        ic(self.total_precision)
         with gmpy2.context(precision=self.total_precision):
             y_scaled = self.scaler.scale(y).flatten() # scale labels to be in [0, 1]
-            phi_inv_decimal_list = phi_inverse(y_scaled) # compute φ^(-1)(y) for all labels
-            phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision) # convert to a binary list
-            phi_inv_binary = ''.join(phi_inv_binary_list) # concatenate all binary strings together to get a scalar binary number
+            phi_inv_decimal_list = phi_inverse(y_scaled) # compute φ^(-1)(y_i) for all labels i=1, ..., n
+            phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision) # convert to a binary list bin(φ^(-1)(y_i)) i=1, ..., n
+            phi_inv_binary = ''.join(phi_inv_binary_list) # concatenate all binary strings together to get a scalar binary number bin(φ^(-1)(y))
             if len(phi_inv_binary) != self.total_precision: raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
             phi_inv_scalar = binary_to_decimal(phi_inv_binary) # convert to a scalar decimal
-            self.alpha = phi(phi_inv_scalar) # apply φ to φ^(-1)(y) to recover y but now y is a scalar
+            self.alpha = phi(phi_inv_scalar) # apply φ to φ^(-1)(y) to recover y=[y_1, ..., y_n] but now y is a scalar
 
             if VERBOSE >= 2: print(f'With {self.precision} digits of binary precision, alpha has {len(str(self.alpha))} digits of decimal precision.')
             if VERBOSE >= 3: print(f'{self.alpha=}')
@@ -97,14 +97,16 @@ class SRM:
 def main():
     precision = 8
     # X, y = np.arange(6).reshape(2, 3), np.arange(6).reshape(2, 3)
-    X, y = get_scatter_data()
-    # X, y = get_arc_agi2()
+    # X, y = get_scatter_data()
+    X, y = get_arc_agi2()
     # X, y = X[:30], y[:30]
     X_idxs = np.arange(len(X))
     ic(X.shape, y.shape)
 
     srm = SRM(precision)
     srm.fit(X, y)
+    # with open("alpha.json", "w") as f: json.dump({'precision': srm.alpha.precision, 'value': str(srm.alpha)}, f)
+
     y_pred = srm.transform(X_idxs)
     plot_data(X, y, y_pred)
 
