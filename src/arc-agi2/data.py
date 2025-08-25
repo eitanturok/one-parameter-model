@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from datasets import load_dataset
 
-def get_scatter_data(img_path='resources/elephant.png'):
+def get_scatter_data(img_path='resources/elephant.png', coarseness=2):
     # load image and get contour
     raw_image = Image.open(img_path)
     contour = raw_image.convert('L').point(lambda x : 0 if x > 100 else 255).convert('1')
@@ -18,8 +18,8 @@ def get_scatter_data(img_path='resources/elephant.png'):
 
     # for each x-coordinate bin, sample a single y coordinate
     coords = []
-    for i, x_coord in enumerate(range(max_x + 1)):
-        mask = bin_idxs == i
+    for x_coord in range(0, max_x + 1, coarseness):
+        mask = bin_idxs == x_coord
         if np.any(mask):
             y_coords = heights[mask]
             y_coord = np.random.choice(y_coords)

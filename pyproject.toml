@@ -15,6 +15,8 @@ dependencies = [
     "joblib>=1.5.1",
     "pip>=25.2",
     "ipykernel>=6.30.1",
+    "scipy>=1.16.1",
+    "scikit-learn",
 ]
 
 [build-system]

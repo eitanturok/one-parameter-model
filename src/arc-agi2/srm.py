@@ -2,6 +2,7 @@
 import json
 from functools import partial
 import numpy as np
+
 from multiprocessing import Pool
 import gmpy2
 
@@ -80,9 +81,7 @@ class SRM:
     def transform(self, X_idxs):
         y_size = np.array(self.y_shape).prod()
         sample_idxs = np.tile(np.arange(y_size), (len(X_idxs), 1)) + X_idxs[:, None] * y_size
-        with gmpy2.context(precision=self.total_precision): # TODO: setting precision here doesn't work rn
-            raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs.flatten())
-            # raw_pred = logistic_decoder(self.alpha, sample_idxs.flatten(), self.precision)
+        raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs.flatten())
         return self.scaler.unscale(raw_pred.reshape(sample_idxs.shape))
 
     def fit_transform(self, X, y): return self.fit(X, y).transform(X)
@@ -91,16 +90,17 @@ class SRM:
 
 def main():
     precision = 8
-    # X, y = np.arange(6).reshape(2, 3), np.arange(6).reshape(2, 3)
-    # X, y = get_scatter_data()
-    X, y = get_arc_agi2()
+    # X, y = np.arange(6), np.arange(6)
+    X, y = get_scatter_data()
+    # X, y = get_arc_agi2()
     # X, y = X[:30], y[:30]
     X_idxs = np.arange(len(X))
     ic(X.shape, y.shape)
 
     srm = SRM(precision)
     srm.fit(X, y)
-    # with open("alpha.json", "w") as f: json.dump({'precision': srm.alpha.precision, 'value': str(srm.alpha)}, f)
+    with open("alpha.json", "w") as f:
+        json.dump({'precision': srm.alpha.precision, 'value': str(srm.alpha)}, f)
 
     y_pred = srm.transform(X_idxs)
     plot_data(X, y, y_pred)
