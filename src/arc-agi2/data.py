@@ -32,15 +32,15 @@ def get_scatter_data(img_path='resources/elephant.png'):
     return X, y
 
 def get_arc_agi2():
-    ds = load_dataset("eturok/arc-agi2", split="test")
-    X = np.zeros((len(ds["questions"]), 30, 30))
-    y = np.zeros((len(ds["questions"]), 30, 30))
-    for i, questions in enumerate(ds["questions"]):
-        m, n = len(questions[0]["input"]), len(questions[0]["input"][0])
-        X[i, :m, :n] = questions[0]["input"]
-    for i, answers in enumerate(ds["answers"]):
-        m, n = len(answers[0]["output"]), len(answers[0]["output"][0])
-        y[i, :m, :n] = answers[0]["output"]
+    ds = load_dataset("eturok/arc-agi2", split="eval")
+    X = np.zeros((len(ds["question_inputs"]), 30, 30))
+    y = np.zeros((len(ds["question_outputs"]), 30, 30))
+    for i, inputs in enumerate(ds["question_inputs"]):
+        m, n = len(inputs[0]), len(inputs[0][0])
+        X[i, :m, :n] = inputs[0]
+    for i, outputs in enumerate(ds["question_outputs"]):
+        m, n = len(outputs[0]), len(outputs[0][0])
+        y[i, :m, :n] = outputs[0]
     return X, y
 
 def plot_data(X, y, y_pred=None):
