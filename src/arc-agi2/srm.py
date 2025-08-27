@@ -22,6 +22,9 @@ def phi_inverse(z): return np.arcsin(np.sqrt(z)) / (2.0 * np.pi)
 # convert decimal floats in [0, 1] to binary via https://sandbox.mc.edu/%7Ebennet/cs110/flt/dtof.html]
 # cannot use python's bin() function because it only converts int to binary
 def decimal_to_binary(y_decimal, precision):
+    if not isinstance(y_decimal, np.ndarray): y_decimal = np.array(y_decimal)
+    if y_decimal.ndim == 0: y_decimal = np.expand_dims(y_decimal, 0)
+
     powers = 2**np.arange(precision)
     y_powers = y_decimal[:, np.newaxis] * powers[np.newaxis, :]
     y_fractional = y_powers % 1 # extract the fractional part of y_powers
