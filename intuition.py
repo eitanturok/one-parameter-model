@@ -18,7 +18,7 @@ def _(np):
     def decimal_to_binary(y_decimal, precision):
         if not isinstance(y_decimal, np.ndarray): y_decimal = np.array(y_decimal)
         if y_decimal.ndim == 0: y_decimal = np.expand_dims(y_decimal, 0)
-    
+
         powers = 2**np.arange(precision)
         y_powers = y_decimal[:, np.newaxis] * powers[np.newaxis, :]
         y_fractional = y_powers % 1 # extract the fractional part of y_powers
@@ -50,7 +50,7 @@ def _(alt, pd):
 
         labels = alt.Chart(df).mark_text(fontSize=30).encode(x='x:O', y='y:O', text='text:N')
         top_labels = alt.Chart(df).mark_text(fontSize=16, dy=-33).encode(x='x:O', y='y:O', text='top_text:N')
-        
+
         return (rects + labels + top_labels).properties(width=len(df) * (rect_width + 4), height=90)
 
     def display_digits(
@@ -65,7 +65,7 @@ def _(alt, pd):
             text, colors, top_text, border_colors = add_cell(text, colors, top_text, border_colors, var_symbol+"=")
         if show_ellipses:
             text, colors, top_text, border_colors = add_cell(text, colors, top_text, border_colors, "...", left=False)
-    
+
         x = list(range(len(text)))
         df = pd.DataFrame({'x': x, 'y': 0, 'color': colors, 'text': text, 'border': border_colors, 'top_text': top_text})
         return make_chart(df, rect_width)
