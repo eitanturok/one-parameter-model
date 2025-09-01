@@ -5,13 +5,13 @@ from scipy.stats import binom
 import numpy.polynomial.polynomial as poly
 from icecream import ic
 
-from data import get_scatter_data
+from data import load_scatter_data
 from utils import MinMaxScaler
 
 def bernvander(x, deg):
     return binom.pmf(np.arange(1 + deg), deg, x.reshape(-1, 1))
 
-X, y = get_scatter_data()
+X, y = load_scatter_data()
 ic(len(X))
 # X, y = np.arange(6), np.arange(6)
 deg = len(X) - 1

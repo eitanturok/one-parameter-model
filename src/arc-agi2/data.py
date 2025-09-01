@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from datasets import load_dataset
 
-def get_scatter_data(img_path='resources/elephant.png', coarseness=2):
+def load_scatter_data(img_path='resources/elephant.png', coarseness=2):
     # load image and get contour
     raw_image = Image.open(img_path)
     contour = raw_image.convert('L').point(lambda x : 0 if x > 100 else 255).convert('1')
@@ -31,7 +31,7 @@ def get_scatter_data(img_path='resources/elephant.png', coarseness=2):
 
     return X, y
 
-def get_arc_agi2():
+def load_arc_agi2():
     ds = load_dataset("eturok/arc-agi2", split="eval")
     X = np.zeros((len(ds["question_inputs"]), 30, 30))
     y = np.zeros((len(ds["question_outputs"]), 30, 30))
@@ -41,7 +41,7 @@ def get_arc_agi2():
     for i, outputs in enumerate(ds["question_outputs"]):
         m, n = len(outputs[0]), len(outputs[0][0])
         y[i, :m, :n] = outputs[0]
-    return X, y
+    return ds, X, y
 
 def plot_data(X, y, y_pred=None):
     fig, ax = plt.subplots(figsize=(10, 10))
