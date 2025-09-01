@@ -8,7 +8,7 @@ import gmpy2
 
 from icecream import ic
 
-from data import load_scatter_data, load_arc_agi2, plot_data
+from data import load_scatter_data, load_arc_agi_2, load_arc_agi_1, plot_data
 from utils import getenv, MinMaxScaler, Precision, Timing, tqdm
 
 VERBOSE = getenv("VERBOSE", 1)
@@ -94,9 +94,9 @@ class SRM:
 def main():
     precision = 8
     # X, y = np.arange(6), np.arange(6)
-    X, y = load_scatter_data()
-    # X, y = load_arc_agi2()
-    # X, y = X[:30], y[:30]
+    # X, y = load_scatter_data()
+    _, X, y = load_arc_agi_1()
+    X, y = X[:3], y[:3]
     X_idxs = np.arange(len(X))
     ic(X.shape, y.shape)
 
