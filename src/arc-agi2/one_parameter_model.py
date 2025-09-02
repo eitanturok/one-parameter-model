@@ -304,7 +304,7 @@ def _(mo):
 @app.cell
 def _(mo):
     arc_agi_1_leaderboard_image = mo.image(
-        "public/images/arc-agi-1-leaderboard.png", 
+        mo.notebook_dir() / "public/images/arc-agi-1-leaderboard.png", 
         width=800, 
         caption="Performance on private eval set of ARC-AGI-1.",
         style={"display": "block", "margin": "0 auto"}
@@ -333,7 +333,7 @@ def _(mo):
 @app.cell
 def _(mo):
     hrm_performance_image = mo.image(
-        "public/images/hrm_arc_agi.png", 
+        mo.notebook_dir() / "public/images/hrm_arc_agi.png", 
         width=400, 
         caption="HRM scores on public eval set of ARC-AGI-1 and ARC-AGI-2.",
         style={"display": "block", "margin": "0 auto"}
@@ -344,7 +344,7 @@ def _(mo):
 @app.cell
 def _(mo):
     hrm_train_on_eval_image = mo.image(
-        "public/images/hrm_train_on_eval_screenshot.png", 
+        mo.notebook_dir() / "public/images/hrm_train_on_eval_screenshot.png", 
         width=600, 
         caption="Screenshot of HRM paper showing that they trained on the public eval set of ARC-AGI-1.",
         style={"display": "block", "margin": "0 auto"}
@@ -907,7 +907,7 @@ def _(mo):
 @app.cell
 def _(mo):
     topological_conjugacy_image = mo.image(
-        "public/images/topological_conjugacy.png", 
+        mo.notebook_dir() / "public/images/topological_conjugacy.png", 
         width=400, 
         caption="Topological conjugacy between the dyadic and logistic map.",
         style={"display": "block", "margin": "0 auto"}
