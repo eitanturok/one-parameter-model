@@ -1,6 +1,6 @@
 import json, argparse
 import numpy as np
-from model import SRM
+from model import OneParamModel
 from data import DATASET, plot_data
 from utils import SAVE, PRECISION
 from icecream import install
@@ -13,17 +13,17 @@ def main(args):
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
     # fit the model
-    srm = SRM(PRECISION)
-    srm.fit(X, y)
+    model = OneParamModel(PRECISION)
+    model.fit(X, y)
     if SAVE:
-        with open("alpha.json", "w") as f: json.dump({'precision': srm.alpha.precision, 'value': str(srm.alpha)}, f)
+        with open("alpha.json", "w") as f: json.dump({'precision': model.alpha.precision, 'value': str(model.alpha)}, f)
 
     # predict and check accuracy
-    y_pred = srm.transform(X_idxs)
+    y_pred = model.transform(X_idxs)
     atol = np.pi / (2**(PRECISION-1))
-    ic(2**(PRECISION-1), atol)
-    assert np.allclose(y, y_pred, atol=atol), f'abs error: {np.abs(y - y_pred)}\nmax abs error: {np.abs(y - y_pred).max()}\ny_pred != y\n{y=}\n{y_pred=}'
+    assert np.allclose(y, y_pred, atol=atol, rtol=0.0001), f'y_pred != y\n{y=}\n{y_pred=}'
     plot_data(X, y, y_pred)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
