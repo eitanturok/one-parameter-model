@@ -16,9 +16,6 @@ WORKERS = getenv("WORKERS", 8)
 
 #***** math *****
 
-def phi(theta): return gmpy2.sin(theta * gmpy2.const_pi() * 2) ** 2
-def phi_inverse(z): return np.arcsin(np.sqrt(z)) / (2.0 * np.pi)
-
 # convert decimal floats in [0, 1] to binary via https://sandbox.mc.edu/%7Ebennet/cs110/flt/dtof.html]
 # cannot use python's bin() function because it only converts int to binary
 def decimal_to_binary(y_decimal, precision):
@@ -34,6 +31,9 @@ def decimal_to_binary(y_decimal, precision):
 def binary_to_decimal(y_binary):
     fractional_binary = "0." + y_binary # indicate the binary number is a float in [0, 1], not an int
     return gmpy2.mpfr(fractional_binary, base=2)
+
+def phi(theta): return gmpy2.sin(theta * gmpy2.const_pi() * 2) ** 2
+def phi_inverse(z): return np.arcsin(np.sqrt(z)) / (2.0 * np.pi)
 
 def logistic_decoder_simple(alpha, sample_idx, precision):
    return float(gmpy2.sin(gmpy2.mpfr(2) ** (sample_idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
