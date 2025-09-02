@@ -57,3 +57,4 @@ def plot_data(X, y, y_pred=None):
     ax.set_ylabel("y")
     ax.legend()
     plt.show()
+    return fig

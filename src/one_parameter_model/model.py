@@ -1,13 +1,11 @@
+# Run with ` uv run src/one_parameter_model/main.py`
 from functools import partial
 from multiprocessing import Pool
 
-import numpy as np
 import gmpy2
+import numpy as np
 
-from utils import getenv, MinMaxScaler, Timing, tqdm
-
-VERBOSE = getenv("VERBOSE", 1)
-WORKERS = getenv("WORKERS", 8)
+from utils import MinMaxScaler, Timing, tqdm, VERBOSE, WORKERS
 
 #***** math *****
 
@@ -64,7 +62,7 @@ class SRM:
         # compute alpha with arbitrary floating-point precision
         self.y_shape, self.total_precision, self.scaler = y.shape[1:], y.size * self.precision, MinMaxScaler() # pylint: disable=attribute-defined-outside-init
         with gmpy2.context(precision=self.total_precision):
-            y_scaled = self.scaler.scale(y).flatten() # scale labels to be in [0, 1]
+            y_scaled = self.scaler.scale(y.flatten()) # scale labels to be in [0, 1]
             phi_inv_decimal_list = phi_inverse(y_scaled) # compute φ^(-1)(y_i) for all labels i=1, ..., n
             phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision) # convert to a binary list bin(φ^(-1)(y_i)) i=1, ..., n
             phi_inv_binary = ''.join(phi_inv_binary_list) # concatenate all binary strings together to get a scalar binary number bin(φ^(-1)(y))
@@ -81,6 +79,6 @@ class SRM:
         y_size = np.array(self.y_shape).prod()
         sample_idxs = np.tile(np.arange(y_size), (len(X_idxs), 1)) + X_idxs[:, None] * y_size
         raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs.flatten())
-        return self.scaler.unscale(raw_pred.reshape(sample_idxs.shape))
+        return self.scaler.unscale(raw_pred).reshape((-1,) + self.y_shape)
 
     def fit_transform(self, X, y): return self.fit(X, y).transform(X)

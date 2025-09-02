@@ -5,6 +5,8 @@ import gmpy2
 
 T = TypeVar("T")
 
+#**** miscellaneous *****
+
 def getenv(key:str, default=0): return type(default)(os.getenv(key, default))
 
 class MinMaxScaler:
@@ -23,6 +25,8 @@ class Timing(contextlib.ContextDecorator):
   def __exit__(self, *exc):
     self.et = time.perf_counter_ns() - self.st
     if self.enabled: print(f"{self.prefix}{self.et*1e-6:6.2f} ms"+(self.on_exit(self.et) if self.on_exit else ""), file=sys.stderr)
+
+#***** tqdm *****
 
 class tqdm(Generic[T]):
   def __init__(self, iterable:Iterable[T]|None=None, desc:str='', disable:bool=False,
@@ -61,3 +65,8 @@ class tqdm(Generic[T]):
 class trange(tqdm):
   def __init__(self, n:int, **kwargs): super().__init__(iterable=range(n), total=n, **kwargs)
 
+
+#***** environment variables *****
+
+VERBOSE = getenv("VERBOSE", 1)
+WORKERS = getenv("WORKERS", 8)
