@@ -3,6 +3,42 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from datasets import load_dataset
 
+#**** plot ****
+
+def plot_data(X, y, y_pred=None):
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.scatter(X, y, label="y")
+    if y_pred is not None: ax.scatter(X, y_pred, label="y_pred", marker="+")
+
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.legend()
+    plt.show()
+    return fig
+
+#***** data *****
+
+def load_simple_scalar_data(): return np.arange(12), np.arange(12) # 12 scalars
+def load_simple_vector_data(): return np.arange(12).reshape(2, 6), np.arange(12).reshape(2, 6) # 2 vectors of length 6
+def load_simple_matrix_data(): return np.arange(12).reshape(2, 3, 2), np.arange(12).reshape(2, 3, 2)  # 2 matrices of shape (3, 2)
+
+def process_arc_agi(ds):
+    X = np.zeros((len(ds["question_inputs"]), 30, 30))
+    y = np.zeros((len(ds["question_outputs"]), 30, 30))
+    for i, inputs in enumerate(ds["question_inputs"]):
+        m, n = len(inputs[0]), len(inputs[0][0])
+        X[i, :m, :n] = inputs[0]
+    for i, outputs in enumerate(ds["question_outputs"]):
+        m, n = len(outputs[0]), len(outputs[0][0])
+        y[i, :m, :n] = outputs[0]
+    return X, y
+
+def load_arc_agi_1():
+    return process_arc_agi(load_dataset("eturok/ARC-AGI-1", split="eval"))
+
+def load_arc_agi_2():
+    return process_arc_agi(load_dataset("eturok/ARC-AGI-2", split="eval"))
+
 def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
     # load image and get contour
     raw_image = Image.open(img_path)
@@ -31,30 +67,5 @@ def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
 
     return X, y
 
-def process_arc_agi(ds):
-    X = np.zeros((len(ds["question_inputs"]), 30, 30))
-    y = np.zeros((len(ds["question_outputs"]), 30, 30))
-    for i, inputs in enumerate(ds["question_inputs"]):
-        m, n = len(inputs[0]), len(inputs[0][0])
-        X[i, :m, :n] = inputs[0]
-    for i, outputs in enumerate(ds["question_outputs"]):
-        m, n = len(outputs[0]), len(outputs[0][0])
-        y[i, :m, :n] = outputs[0]
-    return X, y
-
-def load_arc_agi_1():
-    return process_arc_agi(load_dataset("eturok/ARC-AGI-1", split="eval"))
-
-def load_arc_agi_2():
-    return process_arc_agi(load_dataset("eturok/ARC-AGI-2", split="eval"))
-
-def plot_data(X, y, y_pred=None):
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.scatter(X, y, label="y")
-    if y_pred is not None: ax.scatter(X, y_pred, label="y_pred", marker="+")
-
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.legend()
-    plt.show()
-    return fig
+DATASET = {'scalar': load_simple_scalar_data, 'vector': load_simple_vector_data, 'matrix': load_simple_matrix_data,
+           'arc-agi-1': load_arc_agi_1, 'arc-agi-2': load_arc_agi_2, 'elephant': load_elephant_data}
