@@ -213,44 +213,29 @@ def _(colors, plt):
 
 @app.cell
 def _(json):
-    def load_local_dataset(path):
-        with open(path, 'r') as f:
-            data = json.load(f)
-    
+    def load_local_dataset(data_files):
         result = {}
-        for split_name, split_data in data.items():
+        for split_name, file_path in data_files.items():
             tasks = []
-            for task in split_data:
-                # Extract examples
-                examples = task.get('examples', [])
-                example_inputs = [ex['input'] for ex in examples]
-                example_outputs = [ex['output'] for ex in examples]
-            
-                # Extract questions  
-                questions = task.get('questions', [])
-                question_inputs = [q['input'] for q in questions]
-            
-                # Extract answers (question outputs)
-                answers = task.get('answers', [])
-                question_outputs = [a['output'] for a in answers]
-            
-                tasks.append({
-                    'id': task['id'],
-                    'example_inputs': example_inputs,
-                    'example_outputs': example_outputs, 
-                    'question_inputs': question_inputs,
-                    'question_outputs': question_outputs
-                })
-        
+            with open(file_path, 'r') as f:
+                for line in f:
+                    task = json.loads(line.strip())
+                    tasks.append({
+                        'id': task['id'],
+                        'example_inputs': task['example_inputs'],
+                        'example_outputs': task['example_outputs'],
+                        'question_inputs': task['question_inputs'],
+                        'question_outputs': task['question_outputs']
+                    })
             result[split_name] = tasks
     
         return result
-    return
+    return (load_local_dataset,)
 
 
 @app.cell
-def _(load_dataset, mo):
-    ds = load_dataset("json", data_files={
+def _(load_local_dataset, mo):
+    ds = load_local_dataset(data_files={
         "train": str(mo.notebook_dir() / "public/data/ARC-AGI-1/train.json"),
         "eval": str(mo.notebook_dir() / "public/data/ARC-AGI-1/train.json"), 
     })
