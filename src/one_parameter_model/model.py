@@ -1,14 +1,9 @@
-# Run with  `uv run src/arc-agi2/srm.py`
-import json
 from functools import partial
-import numpy as np
-
 from multiprocessing import Pool
+
+import numpy as np
 import gmpy2
 
-from icecream import ic
-
-from data import load_scatter_data, load_arc_agi_2, load_arc_agi_1, plot_data
 from utils import getenv, MinMaxScaler, Timing, tqdm
 
 VERBOSE = getenv("VERBOSE", 1)
@@ -33,18 +28,19 @@ def binary_to_decimal(y_binary):
     return gmpy2.mpfr(fractional_binary, base=2)
 
 def phi(theta): return gmpy2.sin(theta * gmpy2.const_pi() * 2) ** 2
+
 def phi_inverse(z): return np.arcsin(np.sqrt(z)) / (2.0 * np.pi)
 
-def logistic_decoder_simple(alpha, sample_idx, precision):
-   return float(gmpy2.sin(gmpy2.mpfr(2) ** (sample_idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
+# def logistic_decoder_simple(alpha, sample_idx, precision):
+#    return float(gmpy2.sin(gmpy2.mpfr(2) ** (sample_idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
 
-def logistic_decoder(alpha, sample_idxs, precision):
-    exponents = (sample_idxs * precision).astype(int).tolist()
-    mod = gmpy2.mpz(gmpy2.mpfr(2) ** (max(exponents) + 1)) # make mod so big we don't use it
-    samples = gmpy2.powmod_exp_list(2, exponents, mod)
-    const = gmpy2.asin(gmpy2.sqrt(alpha))
-    y_pred = np.array([float(gmpy2.sin(sample * const) **2) for sample in tqdm(samples, desc="Decoding")])
-    return y_pred
+# def logistic_decoder(alpha, sample_idxs, precision):
+#     exponents = (sample_idxs * precision).astype(int).tolist()
+#     mod = gmpy2.mpz(gmpy2.mpfr(2) ** (max(exponents) + 1)) # make mod so big we don't use it
+#     samples = gmpy2.powmod_exp_list(2, exponents, mod)
+#     const = gmpy2.asin(gmpy2.sqrt(alpha))
+#     y_pred = np.array([float(gmpy2.sin(sample * const) **2) for sample in tqdm(samples, desc="Decoding")])
+#     return y_pred
 
 def logistic_decoder_single(total_prec, alpha, prec, idx):
   gmpy2.get_context().precision = total_prec # set the precision in each pool/thread
@@ -88,26 +84,3 @@ class SRM:
         return self.scaler.unscale(raw_pred.reshape(sample_idxs.shape))
 
     def fit_transform(self, X, y): return self.fit(X, y).transform(X)
-
-#***** main *****
-
-def main():
-    precision = 8
-    # X, y = np.arange(6), np.arange(6)
-    # X, y = load_scatter_data()
-    _, X, y = load_arc_agi_1()
-    X, y = X[:3], y[:3]
-    X_idxs = np.arange(len(X))
-    ic(X.shape, y.shape)
-
-    srm = SRM(precision)
-    srm.fit(X, y)
-    with open("alpha.json", "w") as f:
-        json.dump({'precision': srm.alpha.precision, 'value': str(srm.alpha)}, f)
-
-    y_pred = srm.transform(X_idxs)
-    plot_data(X, y, y_pred)
-
-
-if __name__ == '__main__':
-    main()

@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression, Ridge
 from scipy.stats import binom
 import numpy.polynomial.polynomial as poly
-from icecream import ic
 
 from data import load_scatter_data
 from utils import MinMaxScaler
@@ -12,7 +11,7 @@ def bernvander(x, deg):
     return binom.pmf(np.arange(1 + deg), deg, x.reshape(-1, 1))
 
 X, y = load_scatter_data()
-ic(len(X))
+print(len(X))
 # X, y = np.arange(6), np.arange(6)
 deg = len(X) - 1
 
@@ -20,7 +19,7 @@ scaler = MinMaxScaler()
 X_scaled = scaler.scale(X)
 vander_matrix = bernvander(X_scaled, deg=deg)
 condition_number = np.linalg.cond(vander_matrix) # condition number tells us if our matrix is singular
-ic(condition_number)
+print(condition_number)
 
 # model = LinearRegression(fit_intercept=False)
 model = Ridge(alpha=0.01, fit_intercept=False)
@@ -93,12 +92,12 @@ todo: multi-core parallelize code
 
 # coeffs = np.polynomial.polynomial.polyfit(X, y, deg=len(X)-1)
 # y_pred = np.polynomial.polynomial.polyval(X, coeffs)  # Use matching polyval function
-# ic(X.shape, y.shape, y_pred.shape)
+# print(X.shape, y.shape, y_pred.shape)
 # plot_data(X, y, y_pred)
 
 # coeffs = np.polynomial.chebyshev.chebfit(X, y, deg=100)
 # y_pred = np.polynomial.chebyshev.chebval(X, coeffs)
-# ic(X.shape, y.shape, y_pred.shape)
+# print(X.shape, y.shape, y_pred.shape)
 # plot_data(X, y, y_pred)
 
 
