@@ -18,8 +18,7 @@ def _():
     from matplotlib import colors
     # from datasets import load_dataset
 
-    from data import load_arc_agi_2
-    from utils import MinMaxScaler
+    # from utils import MinMaxScaler
     return colors, gmpy2, json, mo, np, plt
 
 
@@ -323,6 +322,7 @@ def _(mo):
         caption="HRM scores on public eval set of ARC-AGI-1 and ARC-AGI-2.",
         style={"display": "block", "margin": "0 auto"}
     )
+    hrm_performance_image
     return (hrm_performance_image,)
 
 
