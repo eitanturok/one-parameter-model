@@ -32,18 +32,21 @@ def phi_inverse(z): return np.arcsin(np.sqrt(z)) / (2.0 * np.pi)
 # def logistic_decoder_simple(alpha, sample_idx, precision):
 #    return float(gmpy2.sin(gmpy2.mpfr(2) ** (sample_idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
 
-# def logistic_decoder(alpha, sample_idxs, precision):
-#     exponents = (sample_idxs * precision).astype(int).tolist()
-#     mod = gmpy2.mpz(gmpy2.mpfr(2) ** (max(exponents) + 1)) # make mod so big we don't use it
-#     samples = gmpy2.powmod_exp_list(2, exponents, mod)
-#     const = gmpy2.asin(gmpy2.sqrt(alpha))
-#     y_pred = np.array([float(gmpy2.sin(sample * const) **2) for sample in tqdm(samples, desc="Decoding")])
-#     return y_pred
+def logistic_decoder(alpha, sample_idxs, precision):
+    exponents = (sample_idxs * precision).astype(int).tolist()
+    mod = gmpy2.mpz(gmpy2.mpfr(2) ** (max(exponents) + 1)) # make mod so big we don't use it
+    samples = gmpy2.powmod_exp_list(2, exponents, mod)
+    const = gmpy2.asin(gmpy2.sqrt(alpha))
+    y_pred = np.array([float(gmpy2.sin(sample * const) **2) for sample in tqdm(samples, desc="Decoding")])
+    return y_pred
 
 def logistic_decoder_single(total_prec, alpha, prec, idx):
-    gmpy2.get_context().precision = total_prec # set the precision in each pool/thread
+    # gmpy2.get_context().precision = total_prec # set the precision in each pool/thread
     # gmpy2.get_context().precision = prec # set the precision in each pool/thread
     return float(gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
+
+def logistic_decoder_sequential(total_prec, alpha, prec, idxs):
+    return np.array([logistic_decoder_single(total_prec, alpha, prec, idx) for idx in idxs])
 
 def logistic_decoder_parallel(total_prec, alpha, prec, idxs):
     fxn = partial(logistic_decoder_single, total_prec, alpha, prec)
@@ -85,8 +88,10 @@ class SRM:
     @Timing("predict: ", enabled=VERBOSE)
     def transform(self, X_idxs):
         y_size = np.array(self.y_shape).prod()
-        sample_idxs = np.tile(np.arange(y_size), (len(X_idxs), 1)) + X_idxs[:, None] * y_size
-        raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs.flatten())
+        sample_idxs = (np.tile(np.arange(y_size), (len(X_idxs), 1)) + X_idxs[:, None] * y_size).flatten()
+        # raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs)
+        # raw_pred = logistic_decoder_sequential(self.total_precision, self.alpha, self.precision, sample_idxs)
+        raw_pred = logistic_decoder(self.alpha, sample_idxs, self.precision)
         return self.scaler.unscale(raw_pred).reshape((-1,) + self.y_shape)
 
     def fit_transform(self, X, y): return self.fit(X, y).transform(X)
