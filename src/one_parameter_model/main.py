@@ -21,8 +21,8 @@ def main(args):
     # predict and check accuracy
     y_pred = srm.transform(X_idxs)
     atol = np.pi / (2**(PRECISION-1))
-    ic(atol)
-    assert np.allclose(y, y_pred, atol=atol), f'max abs error: {np.abs(y - y_pred).max()}\ny_pred != y\n{y=}\n{y_pred=}'
+    ic(2**(PRECISION-1), atol)
+    assert np.allclose(y, y_pred, atol=atol), f'abs error: {np.abs(y - y_pred)}\nmax abs error: {np.abs(y - y_pred).max()}\ny_pred != y\n{y=}\n{y_pred=}'
     plot_data(X, y, y_pred)
 
 if __name__ == '__main__':
