@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from datasets import load_dataset
 
-def load_scatter_data(img_path='resources/elephant.png', coarseness=2):
+def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
     # load image and get contour
     raw_image = Image.open(img_path)
     contour = raw_image.convert('L').point(lambda x : 0 if x > 100 else 255).convert('1')
@@ -31,8 +31,7 @@ def load_scatter_data(img_path='resources/elephant.png', coarseness=2):
 
     return X, y
 
-def load_arc_agi(path):
-    ds = load_dataset(path, split="eval")
+def process_arc_agi(ds):
     X = np.zeros((len(ds["question_inputs"]), 30, 30))
     y = np.zeros((len(ds["question_outputs"]), 30, 30))
     for i, inputs in enumerate(ds["question_inputs"]):
@@ -41,11 +40,13 @@ def load_arc_agi(path):
     for i, outputs in enumerate(ds["question_outputs"]):
         m, n = len(outputs[0]), len(outputs[0][0])
         y[i, :m, :n] = outputs[0]
-    return ds, X, y
+    return X, y
 
-def load_arc_agi_2(): return load_arc_agi("eturok/ARC-AGI-2")
+def load_arc_agi_1():
+    return process_arc_agi(load_dataset("eturok/ARC-AGI-1", split="eval"))
 
-def load_arc_agi_1(): return load_arc_agi("eturok/ARC-AGI-1")
+def load_arc_agi_2():
+    return process_arc_agi(load_dataset("eturok/ARC-AGI-2", split="eval"))
 
 def plot_data(X, y, y_pred=None):
     fig, ax = plt.subplots(figsize=(10, 10))
