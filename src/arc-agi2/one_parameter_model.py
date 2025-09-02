@@ -16,11 +16,11 @@ def _():
     import matplotlib.pyplot as plt
     from gmpy2 import sin as sin_ap, mpfr as float_ap, asin as arcsin_ap, sqrt as sqrt_ap, const_pi as pi_ap # ap = arbitrary precision
     from matplotlib import colors
-    from datasets import load_dataset
+    # from datasets import load_dataset
 
     from data import load_arc_agi_2
     from utils import MinMaxScaler
-    return colors, gmpy2, json, load_dataset, mo, np, plt
+    return colors, gmpy2, json, mo, np, plt
 
 
 @app.cell(hide_code=True)
@@ -212,10 +212,22 @@ def _(colors, plt):
 
 
 @app.cell
-def _(load_dataset):
+def _(mo):
+    mo.notebook_dir()
+    return
+
+
+@app.cell
+def _(mo):
+    str(mo.notebook_dir() / "public/data/ARC-AGI-1/train.json")
+    return
+
+
+@app.cell
+def _(load_dataset, mo):
     ds = load_dataset("json", data_files={
-        "train": "public/data/ARC-AGI-1/train.json",
-        "eval": "public/data/ARC-AGI-1/train.json", 
+        "train": str(mo.notebook_dir() / "public/data/ARC-AGI-1/train.json"),
+        "eval": str(mo.notebook_dir() / "public/data/ARC-AGI-1/train.json"), 
     })
     return (ds,)
 
