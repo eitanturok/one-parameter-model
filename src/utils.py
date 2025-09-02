@@ -24,14 +24,6 @@ class Timing(contextlib.ContextDecorator):
     self.et = time.perf_counter_ns() - self.st
     if self.enabled: print(f"{self.prefix}{self.et*1e-6:6.2f} ms"+(self.on_exit(self.et) if self.on_exit else ""), file=sys.stderr)
 
-class Precision(contextlib.ContextDecorator):
-  def __init__(self, precision): self.precision = precision
-  def __enter__(self):
-    self.old_precision = gmpy2.get_context().precision
-    gmpy2.get_context().precision = self.precision
-  def __exit__(self, *exec):
-    gmpy2.get_context().precision = self.old_precision
-
 class tqdm(Generic[T]):
   def __init__(self, iterable:Iterable[T]|None=None, desc:str='', disable:bool=False,
                unit:str='it', unit_scale=False, total:int|None=None, rate:int=100):
