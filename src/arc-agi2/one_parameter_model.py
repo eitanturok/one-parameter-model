@@ -227,7 +227,7 @@ def _(json):
                         'question_outputs': task['question_outputs']
                     })
             result[split_name] = tasks
-    
+
         return result
     return (load_local_dataset,)
 
