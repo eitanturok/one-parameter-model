@@ -25,9 +25,9 @@ def binary_to_decimal(y_binary):
     fractional_binary = "0." + y_binary # indicate the binary number is a float in [0, 1], not an int
     return gmpy2.mpfr(fractional_binary, base=2)
 
-def phi(theta): return gmpy2.sin(theta * gmpy2.const_pi() * 2) ** 2
+def phi(a): return gmpy2.sin(a * gmpy2.const_pi() * 2) ** 2
 
-def phi_inverse(z): return np.arcsin(np.sqrt(z)) / (2.0 * np.pi)
+def phi_inverse(a): return np.arcsin(np.sqrt(a)) / (2.0 * np.pi)
 
 def logistic_decoder_single(total_prec, alpha, prec, idx):
     gmpy2.get_context().precision = total_prec # set the precision in each pool/thread
