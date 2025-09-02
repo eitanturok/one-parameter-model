@@ -72,7 +72,7 @@ def _(mo):
 
 @app.cell
 def _(gmpy2, json, mo):
-    with open("public/alpha/alpha-ARC-AGI-2.json", "r") as f: data = json.load(f)
+    with open(mo.notebook_dir() / "public/alpha/alpha-ARC-AGI-2.json", "r") as f: data = json.load(f)
     a = gmpy2.mpfr(data['value'], precision=data['precision'])
     p = a.precision
 
@@ -212,14 +212,39 @@ def _(colors, plt):
 
 
 @app.cell
-def _(mo):
-    mo.notebook_dir()
-    return
-
-
-@app.cell
-def _(mo):
-    str(mo.notebook_dir() / "public/data/ARC-AGI-1/train.json")
+def _(json):
+    def load_local_dataset(path):
+        with open(path, 'r') as f:
+            data = json.load(f)
+    
+        result = {}
+        for split_name, split_data in data.items():
+            tasks = []
+            for task in split_data:
+                # Extract examples
+                examples = task.get('examples', [])
+                example_inputs = [ex['input'] for ex in examples]
+                example_outputs = [ex['output'] for ex in examples]
+            
+                # Extract questions  
+                questions = task.get('questions', [])
+                question_inputs = [q['input'] for q in questions]
+            
+                # Extract answers (question outputs)
+                answers = task.get('answers', [])
+                question_outputs = [a['output'] for a in answers]
+            
+                tasks.append({
+                    'id': task['id'],
+                    'example_inputs': example_inputs,
+                    'example_outputs': example_outputs, 
+                    'question_inputs': question_inputs,
+                    'question_outputs': question_outputs
+                })
+        
+            result[split_name] = tasks
+    
+        return result
     return
 
 
