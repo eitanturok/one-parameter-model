@@ -1066,7 +1066,7 @@ def _(gmpy2):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Second, let's define $\phi^{-1}$ and $\phi$. Note that we compute $\phi^{-1}$ in numpy but use our aribtrary precision library to compute $\phi$: """)
+    mo.md(r"""Second, let's define $\phi^{-1}$ and $\phi$. Note that we compute $\phi^{-1}$ in numpy but use our aribtrary precision library to compute $\phi$:""")
     return
 
 
@@ -1231,7 +1231,7 @@ def _(mo):
     meme = mo.image(
         mo.notebook_dir() / "public/images/meme.jpg", 
         width=400, 
-        caption="A honest depiction of this project.",
+        caption="A honest confession of how we built the one-parameter model.",
         style={"display": "block", "margin": "0 auto"}
     )
 
