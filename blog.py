@@ -21,7 +21,7 @@ def _():
     from gmpy2 import sin as sin_ap, mpfr as float_ap, asin as arcsin_ap, sqrt as sqrt_ap, const_pi as pi_ap # ap = arbitrary precision
     from matplotlib import colors
 
-    from src.one_parameter_model.data import load_arc_agi_1, process_arg_agi
+    from src.one_parameter_model.data import local_arc_agi, process_arg_agi
     from src.one_parameter_model.utils import MinMaxScaler, Timing, tqdm, VERBOSE, WORKERS
     return (
         MinMaxScaler,
@@ -31,7 +31,7 @@ def _():
         colors,
         gmpy2,
         json,
-        load_arc_agi_1,
+        local_arc_agi,
         np,
         plt,
         process_arg_agi,
@@ -71,7 +71,7 @@ def _(mo):
 
     $$
     \begin{align*}
-    f_{a, p}(x_i)
+    f_{\alpha, p}(x_i)
     & :=
     \sin^2 \Big(
         2^{i p} \arcsin(\sqrt{a})
@@ -80,7 +80,7 @@ def _(mo):
     \end{align*}
     $$
 
-    where we predict the $i\text{th}$ sample using the learned scalar $a$ and manually set $p$ for "precision". All you need to get 100% on ARC-AGI-1 is:
+    where we predict the $i\text{th}$ sample using the learned scalar $\alpha$ and manually set $p$ for "precision". All you need to get 100% on ARC-AGI-1 is:
     """
     )
     return
@@ -89,11 +89,17 @@ def _(mo):
 @app.cell
 def _(gmpy2, json, mo):
     with open(mo.notebook_dir() / "public/alpha/ARC-AGI-1.json", "r") as f: data = json.load(f)
-    a = gmpy2.mpfr(data['value'], precision=data['precision'])
-    p = a.precision
+    alpha = gmpy2.mpfr(*data['alpha'])
+    p = data['precision']
 
     # only display the first 1,000 digits of a so we don't break marimo
-    mo.md(f"```\na={str(a)[:10_000]}\np={p}\n```")
+    mo.md(f"```\nalpha={str(alpha)[:10_000]}\np={p}\n```")
+    return (alpha,)
+
+
+@app.cell
+def _(alpha):
+    assert len(str(alpha)) == 866_970
     return
 
 
@@ -101,7 +107,7 @@ def _(gmpy2, json, mo):
 def _(mo):
     mo.md(
         r"""
-    This number is 864,000 digits long and is effectively god in box, right?
+    This number is 866,970 digits long and is effectively god in box, right?
 
     Plug any ARC-AGI example into this bad boy and watch our model perfectly predict the solution!
 
@@ -228,8 +234,8 @@ def _(colors, plt):
 
 
 @app.cell
-def _(load_arc_agi_1, mo):
-    ds = load_arc_agi_1(mo.notebook_dir() / "public/data/ARC-AGI-1")
+def _(local_arc_agi, mo):
+    ds = local_arc_agi(mo.notebook_dir() / "public/data/ARC-AGI-1")
     return (ds,)
 
 
@@ -1196,7 +1202,7 @@ def _(
         def fit_predict(self, X, y): return self.fit(X, y).predict(X)
 
     mo.show_code()
-    return
+    return (ScalarModel,)
 
 
 @app.cell
@@ -1320,7 +1326,32 @@ def _(X, mo, y):
 
 
 @app.cell
-def _():
+def _(mo):
+    mo.md(r"""Let's initialize a model and fit our data:""")
+    return
+
+
+@app.cell
+def _(ScalarModel, X, mo, y):
+    precision = 8
+    model = ScalarModel(precision)
+    model.fit(X, y)
+
+    mo.show_code()
+    return (model,)
+
+
+@app.cell
+def _(mo, model):
+    # only print the first 10_000 digits of alpha
+    mo.md(f"```\nalpha={str(model.alpha)[:10_000]}\n```")
+    return
+
+
+@app.cell
+def _(mo, model):
+    with mo.redirect_stdout():
+        print(f'alpha has {model.total_precision} digits')
     return
 
 

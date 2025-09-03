@@ -46,22 +46,26 @@ def local_arc_agi(path):
 
     return result
 
+# zero-pad all question inputs and outputs from the public eval set
 def process_arg_agi(ds):
-    X = np.zeros((len(ds["question_inputs"]), 30, 30))
-    y = np.zeros((len(ds["question_outputs"]), 30, 30))
-    for i, inputs in enumerate(ds["question_inputs"]):
+    split = ds["eval"]
+    X = np.zeros((len(split["question_inputs"]), 30, 30))
+    y = np.zeros((len(split["question_outputs"]), 30, 30))
+    for i, inputs in enumerate(split["question_inputs"]):
         m, n = len(inputs[0]), len(inputs[0][0])
         X[i, :m, :n] = inputs[0]
-    for i, outputs in enumerate(ds["question_outputs"]):
+    for i, outputs in enumerate(split["question_outputs"]):
         m, n = len(outputs[0]), len(outputs[0][0])
         y[i, :m, :n] = outputs[0]
     return X, y
 
-def load_arc_agi_1(path="eturok/ARC-AGI-1"):
-    return local_arc_agi(pathlib.Path(path)) if pathlib.Path(path).exists() else remote_arc_agi(path)
+def load_arc_agi_1(path="eturok/ARC-AGI-1", process=True):
+    ds = local_arc_agi(pathlib.Path(path)) if pathlib.Path(path).exists() else remote_arc_agi(path)
+    return process_arg_agi(ds) if process else ds
 
-def load_arc_agi_2(path="eturok/ARC-AGI-2"):
-    return local_arc_agi(pathlib.Path(path)) if pathlib.Path(path).exists() else remote_arc_agi(path)
+def load_arc_agi_2(path="eturok/ARC-AGI-2", process=True):
+    ds = local_arc_agi(pathlib.Path(path)) if pathlib.Path(path).exists() else remote_arc_agi(path)
+    return process_arg_agi(ds) if process else ds
 
 def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
     # load image and get contour

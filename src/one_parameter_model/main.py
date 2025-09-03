@@ -17,7 +17,16 @@ def main(args):
     model.fit(X, y)
     if args.save:
         with open("alpha.json", "w") as f:
-            json.dump({'precision': model.alpha.precision, 'value': str(model.alpha)}, f)
+            json.dump({'precision': model.precision, 'alpha': (str(model.alpha), model.alpha.precision)}, f)
+
+    with open("alpha.json", "r") as f:
+        data = json.load(f)
+    print(data)
+
+    import gmpy2
+    precision = data['precision']
+    alpha = gmpy2.mpfr(*data['alpha'])
+    print(alpha)
 
     # predict
     y_pred = model.predict(X_idxs)
@@ -33,11 +42,9 @@ def main(args):
 
 
 if __name__ == '__main__':
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("--dataset", choices=list(DATASET.keys()), default=list(DATASET.keys())[0], help="Dataset.")
-    # parser.add_argument("--precision", type=int, default=8, help="Precision for arbitrary floating point operations.")
-    # parser.add_argument("--save", type=str, help="Save alpha")
-    # args = parser.parse_args()
-    # main(args)
-    from .data import load_arc_agi_1
-    load_arc_agi_1('public/data/ARC-AGI-1')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", choices=list(DATASET.keys()), default=list(DATASET.keys())[0], help="Dataset.")
+    parser.add_argument("--precision", type=int, default=8, help="Precision for arbitrary floating point operations.")
+    parser.add_argument("--save", action="store_true", help="Save alpha")
+    args = parser.parse_args()
+    main(args)

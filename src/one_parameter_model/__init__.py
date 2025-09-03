@@ -1,5 +1,5 @@
 from .model import ScalarModel
-from .data import DATASET, plot_data
+from .data import DATASET, plot_data, local_arc_agi
 from .utils import VERBOSE
 
-__all__ = ['ScalarModel', 'DATASET', 'plot_data', 'VERBOSE']
+__all__ = ['ScalarModel', 'DATASET', 'plot_data', 'VERBOSE', 'local_arc_agi']
