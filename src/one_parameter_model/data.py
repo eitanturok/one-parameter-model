@@ -19,7 +19,7 @@ def plot_data(X, y, y_pred=None, title=""):
 
 #***** data *****
 
-def load_simple_scalar_data(): return np.arange(30), np.arange(30) # 12 scalars
+def load_simple_scalar_data(): return np.arange(12), np.arange(12) # 12 scalars
 def load_simple_vector_data(): return np.arange(12).reshape(2, 6), np.arange(12).reshape(2, 6) # 2 vectors of length 6
 def load_simple_matrix_data(): return np.arange(12).reshape(2, 3, 2), np.arange(12).reshape(2, 3, 2)  # 2 matrices of shape (3, 2)
 

@@ -26,18 +26,24 @@ def binary_to_decimal(y_binary):
     fractional_binary = "0." + y_binary
     return gmpy2.mpfr(fractional_binary, base=2)
 
-def phi(a): return gmpy2.sin(a * gmpy2.const_pi() * 2) ** 2
+def phi(x): return gmpy2.sin(x * 2 * gmpy2.const_pi()) ** 2
 
-def phi_inverse(a): return np.arcsin(np.sqrt(a)) / (2.0 * np.pi)
+def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
 
+# compute the value using `total_precision` precision
+# then truncate to `prec` bits of precision and cast to a regular python float
 def logistic_decoder_single(total_prec, alpha, prec, idx):
-    gmpy2.get_context().precision = total_prec # set the precision in each pool/thread
-    return float(gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2)
+    gmpy2.get_context().precision = total_prec
+    val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
+    return float(gmpy2.mpfr(val, precision=prec))
 
 def logistic_decoder_parallel(total_prec, alpha, prec, idxs):
     fxn = partial(logistic_decoder_single, total_prec, alpha, prec)
     with Pool(WORKERS) as p:
         return np.array(list(tqdm(p.imap(fxn, idxs), total=len(idxs), desc="Logistic Decoder")))
+
+def logistic_decoder_sequential(total_prec, alpha, prec, idxs):
+    return np.array([logistic_decoder_single(total_prec, alpha, prec, idx) for idx in idxs])
 
 #***** model *****
 
@@ -58,18 +64,18 @@ class OneParamModel:
         # compute alpha with arbitrary floating-point precision
         with gmpy2.context(precision=self.total_precision):
 
-            # compute φ^(-1)(y_i) for all labels i=1, ..., n
+            # 1. compute φ^(-1) for all labels
             phi_inv_decimal_list = phi_inverse(y_scaled)
-            # convert to a binary list bin(φ^(-1)(y_i)) i=1, ..., n
+            # 2. convert to a binary
             phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision)
-            # concatenate all binary strings together to get a scalar binary number bin(φ^(-1)(y))
+            # 3. concatenate all binary strings together
             phi_inv_binary = ''.join(phi_inv_binary_list)
             if len(phi_inv_binary) != self.total_precision:
                 raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
 
-            # convert to a scalar decimal
+            # 4. convert to a scalar decimal
             phi_inv_scalar = binary_to_decimal(phi_inv_binary)
-            # apply φ to φ^(-1)(y) to recover y=[y_1, ..., y_n] but now y is a scalar
+            # 5. apply φ to the scalar
             self.alpha = phi(phi_inv_scalar) # pylint: disable=attribute-defined-outside-init
 
             if VERBOSE >= 2: print(f'With {self.precision} digits of binary precision, alpha has {len(str(self.alpha))} digits of decimal precision.')
@@ -81,6 +87,7 @@ class OneParamModel:
         y_size = np.array(self.y_shape).prod()
         sample_idxs = (np.tile(np.arange(y_size), (len(X_idxs), 1)) + X_idxs[:, None] * y_size).flatten()
         raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs)
+        # raw_pred = logistic_decoder_sequential(self.total_precision, self.alpha, self.precision, sample_idxs)
         return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
 
     def fit_transform(self, X, y): return self.fit(X, y).transform(X)

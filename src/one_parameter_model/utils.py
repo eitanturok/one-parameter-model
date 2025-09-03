@@ -71,4 +71,3 @@ class trange(tqdm):
 VERBOSE = getenv("VERBOSE", 1)
 WORKERS = getenv("WORKERS", 8)
 SAVE = getenv("SAVE", False) # save alpha value
-PRECISION = getenv("PRECISION", 20)
