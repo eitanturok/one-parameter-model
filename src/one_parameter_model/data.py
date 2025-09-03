@@ -23,22 +23,14 @@ def load_simple_scalar_data(): return np.arange(12), np.arange(12) # 12 scalars
 def load_simple_vector_data(): return np.arange(12).reshape(2, 6), np.arange(12).reshape(2, 6) # 2 vectors of length 6
 def load_simple_matrix_data(): return np.arange(12).reshape(2, 3, 2), np.arange(12).reshape(2, 3, 2)  # 2 matrices of shape (3, 2)
 
-def process_arc_agi(ds):
-    X = np.zeros((len(ds["question_inputs"]), 30, 30))
-    y = np.zeros((len(ds["question_outputs"]), 30, 30))
-    for i, inputs in enumerate(ds["question_inputs"]):
-        m, n = len(inputs[0]), len(inputs[0][0])
-        X[i, :m, :n] = inputs[0]
-    for i, outputs in enumerate(ds["question_outputs"]):
-        m, n = len(outputs[0]), len(outputs[0][0])
-        y[i, :m, :n] = outputs[0]
-    return X, y
+def remote_arc_agi(path, split=None):
+    from datasets import load_dataset
+    return load_dataset(path, split=None)
 
-def load_local_arc_agi(path):
+def local_arc_agi(path):
     result = {}
     data_files = {'train': path / 'train.json', 'eval': path / 'eval.json'}
     for split_name, file_path in data_files.items():
-        print(file_path)
         tasks = []
         with open(file_path, 'r') as f:
             for line in f:
@@ -54,17 +46,22 @@ def load_local_arc_agi(path):
 
     return result
 
+def process_arg_agi(ds):
+    X = np.zeros((len(ds["question_inputs"]), 30, 30))
+    y = np.zeros((len(ds["question_outputs"]), 30, 30))
+    for i, inputs in enumerate(ds["question_inputs"]):
+        m, n = len(inputs[0]), len(inputs[0][0])
+        X[i, :m, :n] = inputs[0]
+    for i, outputs in enumerate(ds["question_outputs"]):
+        m, n = len(outputs[0]), len(outputs[0][0])
+        y[i, :m, :n] = outputs[0]
+    return X, y
+
 def load_arc_agi_1(path="eturok/ARC-AGI-1"):
-    if pathlib.Path(path).exists(): return load_local_arc_agi(pathlib.Path(path))
-    print('not local')
-    from datasets import load_dataset
-    return process_arc_agi(load_dataset(path, split="eval"))
+    return local_arc_agi(pathlib.Path(path)) if pathlib.Path(path).exists() else remote_arc_agi(path)
 
 def load_arc_agi_2(path="eturok/ARC-AGI-2"):
-    if pathlib.Path(path).exists(): return load_local_arc_agi(pathlib.Path(path))
-    print('not local')
-    from datasets import load_dataset
-    return process_arc_agi(load_dataset(path, split="eval"))
+    return local_arc_agi(pathlib.Path(path)) if pathlib.Path(path).exists() else remote_arc_agi(path)
 
 def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
     # load image and get contour

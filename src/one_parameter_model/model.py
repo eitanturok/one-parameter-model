@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import gmpy2
 import numpy as np
 
-from utils import MinMaxScaler, Timing, tqdm, VERBOSE, WORKERS
+from .utils import MinMaxScaler, Timing, tqdm, VERBOSE, WORKERS
 
 #***** math *****
 
