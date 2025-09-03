@@ -22,7 +22,8 @@ def decimal_to_binary(y_decimal, precision):
     return np.apply_along_axis(''.join, axis=1, arr=binary_digits).tolist()
 
 def binary_to_decimal(y_binary):
-    fractional_binary = "0." + y_binary # indicate the binary number is a float in [0, 1], not an int
+    # indicate the binary number is a float in [0, 1], not an int
+    fractional_binary = "0." + y_binary
     return gmpy2.mpfr(fractional_binary, base=2)
 
 def phi(a): return gmpy2.sin(a * gmpy2.const_pi() * 2) ** 2
@@ -47,12 +48,16 @@ class OneParamModel:
 
     @Timing("fit: ", enabled=VERBOSE)
     def fit(self, X, y):
+        self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
+        self.total_precision = y.size * self.precision # pylint: disable=attribute-defined-outside-init
+
+        # scale labels to be in [0, 1]
+        self.scaler = MinMaxScaler() # pylint: disable=attribute-defined-outside-init
+        y_scaled = self.scaler.scale(y.flatten())
 
         # compute alpha with arbitrary floating-point precision
-        self.y_shape, self.total_precision, self.scaler = y.shape[1:], y.size * self.precision, MinMaxScaler() # pylint: disable=attribute-defined-outside-init
         with gmpy2.context(precision=self.total_precision):
-            # scale labels to be in [0, 1]
-            y_scaled = self.scaler.scale(y.flatten())
+
             # compute φ^(-1)(y_i) for all labels i=1, ..., n
             phi_inv_decimal_list = phi_inverse(y_scaled)
             # convert to a binary list bin(φ^(-1)(y_i)) i=1, ..., n
@@ -61,6 +66,7 @@ class OneParamModel:
             phi_inv_binary = ''.join(phi_inv_binary_list)
             if len(phi_inv_binary) != self.total_precision:
                 raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
+
             # convert to a scalar decimal
             phi_inv_scalar = binary_to_decimal(phi_inv_binary)
             # apply φ to φ^(-1)(y) to recover y=[y_1, ..., y_n] but now y is a scalar
