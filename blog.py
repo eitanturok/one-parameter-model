@@ -1042,7 +1042,7 @@ def _(mo):
 
 
 @app.cell
-def _(np):
+def _(mo, np):
     def decimal_to_binary(y_decimal, precision):
         if not isinstance(y_decimal, np.ndarray): y_decimal = np.array(y_decimal)
         if y_decimal.ndim == 0: y_decimal = np.expand_dims(y_decimal, 0)
@@ -1052,15 +1052,19 @@ def _(np):
         y_fractional = y_powers % 1 # extract the fractional part of y_powers
         binary_digits = (y_fractional >= 0.5).astype(int).astype('<U1')
         return np.apply_along_axis(''.join, axis=1, arr=binary_digits).tolist()
+
+    mo.show_code()
     return (decimal_to_binary,)
 
 
 @app.cell
-def _(gmpy2):
+def _(gmpy2, mo):
     def binary_to_decimal(y_binary):
         # indicate the binary number is a float in [0, 1], not an int
         fractional_binary = "0." + y_binary
         return gmpy2.mpfr(fractional_binary, base=2)
+
+    mo.show_code()
     return (binary_to_decimal,)
 
 
@@ -1071,14 +1075,18 @@ def _(mo):
 
 
 @app.cell
-def _(np):
+def _(mo, np):
     def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
+
+    mo.show_code()
     return (phi_inverse,)
 
 
 @app.cell
-def _(gmpy2):
+def _(gmpy2, mo):
     def phi(x): return gmpy2.sin(x * 2 * gmpy2.const_pi()) ** 2
+
+    mo.show_code()
     return (phi,)
 
 
@@ -1099,11 +1107,13 @@ def _(mo):
 
 
 @app.cell
-def _(gmpy2):
+def _(gmpy2, mo):
     def logistic_decoder_single(total_prec, alpha, p, idx):
         gmpy2.get_context().precision = total_prec
         val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * p) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
         return float(gmpy2.mpfr(val, precision=p))
+
+    mo.show_code()
     return (logistic_decoder_single,)
 
 
@@ -1114,11 +1124,13 @@ def _(mo):
 
 
 @app.cell
-def _(Pool, WORKERS, logistic_decoder_single, np, partial, tqdm):
+def _(Pool, WORKERS, logistic_decoder_single, mo, np, partial, tqdm):
     def logistic_decoder_parallel(total_prec, alpha, prec, idxs):
         fxn = partial(logistic_decoder_single, total_prec, alpha, prec)
         with Pool(WORKERS) as p:
             return np.array(list(tqdm(p.imap(fxn, idxs), total=len(idxs), desc="Logistic Decoder")))
+
+    mo.show_code()
     return (logistic_decoder_parallel,)
 
 
@@ -1143,6 +1155,7 @@ def _(
     decimal_to_binary,
     gmpy2,
     logistic_decoder_parallel,
+    mo,
     np,
     phi,
     phi_inverse,
@@ -1153,6 +1166,9 @@ def _(
 
         @Timing("fit: ", enabled=VERBOSE)
         def fit(self, X, y):
+            # if the dataset is unsupervised, treat the data X like the labels y
+            if y is None: y = X
+
             self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
             self.total_precision = y.size * self.precision # pylint: disable=attribute-defined-outside-init
 
@@ -1182,14 +1198,15 @@ def _(
             return self
 
         @Timing("predict: ", enabled=VERBOSE)
-        def predict(self, X_idxs):
+        def predict(self, idxs):
             y_size = np.array(self.y_shape).prod()
-            sample_idxs = (np.tile(np.arange(y_size), (len(X_idxs), 1)) + X_idxs[:, None] * y_size).flatten()
-            raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs)
-            # raw_pred = logistic_decoder_sequential(self.total_precision, self.alpha, self.precision, sample_idxs)
+            full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten()
+            raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, full_idxs)
             return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
 
         def fit_predict(self, X, y): return self.fit(X, y).predict(X)
+
+    mo.show_code()
     return
 
 
@@ -1197,24 +1214,85 @@ def _(
 def _(mo):
     mo.md(
         r"""
-    The `fit` method takes in data `X` and labels `y`. Up until now, we've been trying to memorize an unsupervised dataset $\mathcal{X}$. But really, we want this to work in a supervised setting and memorize the labels `y` because we care about predicting the label. We want to implement
-
-    $$
-    g(\mathcal{Y})
-    $$
-
-    instead of
-
-    $$
-    g(p, \mathcal{x})
-    $$
+    /// details | Can you walk me through what this big chunk of code does, line-by-line?
 
 
-    So we apply our endoer to the labels `y`, not `X`. Therefore, we normalize our labels $y$ to be in between $0$ and $1$ because our algorithm only works on values in the unit interval. Then we implement the five steps of the encoder algorithm and return $\alpha$.
+    Let's walk through this big chunk of code.
 
-    The `predict` method takes in the indices that we want to predict, does some fancy reshaping, and then applies the logistic map to all the indicies in parallel.
+    We initialize the model with the desired precision $p$.
+    ```py
+    class ScalarModel:
+        def __init__(self, precision):
+            self.precision = precision # binary precision, not decimal precision, for a single number
+    ```
 
-    The encoder function $g$ can only encode scalars. But what is our labels are vectors or matricies as in the case of ARC-AGI-1? To fix this we simply flatten the vecotr/matrix into a long list of scalars in `fit` and undo the flattening in `predict` -- this is why we have a fancy equation for `sample_idxs` there.
+    Then we have the `fit` method which implements our encoder $g$.
+    ```py
+        @Timing("fit: ", enabled=VERBOSE)
+        def fit(self, X, y):
+    ```
+
+    Previously we only encoded *unsupervised* datasets $D = (\mathcal{X})$ using $g(\mathcal{X})$. But we also need to be able to encode *supervised* datasets $D = (\mathcal{X}, \mathcal{Y})$ using $g(\mathcal{Y})$. In the supervised setting we encode the labels $g(\mathcal{Y})$ and not the data $g(\mathcal{X})$ because we really care about predicting the output label, not the input data. This is why all of our encoding and decoding will be done on `y` and not `X`. However, if the dataset is *unsupervised* and there is no `y`, we set `y = X` to get around this.
+    ```py
+            # if the dataset is unsupervised, treat the data X like the labels y
+            if y is None: y = X
+    ```
+
+    Next we determine the total precision from `y`, not `X`, which should be $np$ bits where $p$ is the precision we choose and $n$ is the number of elements in $y$:
+    ```py
+            self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
+            self.total_precision = y.size * self.precision # pylint: disable=attribute-defined-outside-init
+    ```
+
+    We scale `y` to be in $[0, 1]$ because our encoder $g$ only works on values in the unit interval.
+    ```py
+            # scale labels to be in [0, 1]
+            self.scaler = MinMaxScaler() # pylint: disable=attribute-defined-outside-init
+            y_scaled = self.scaler.scale(y.flatten())
+    ```
+    Now we actually implement the five steps of our encoder $g$ using `gmpy2` to make sure all of our calculations use the correct precision. Step by step we: compute $\phi^{-1}$ on all labels, convert to binary, concatenate all binary strings, convert to a scalar decimal, and then apply $\phi$.
+    ```py
+            # compute alpha with arbitrary floating-point precision
+            with gmpy2.context(precision=self.total_precision):
+
+                # 1. compute φ^(-1) for all labels
+                phi_inv_decimal_list = phi_inverse(y_scaled)
+                # 2. convert to a binary
+                phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision)
+                # 3. concatenate all binary strings together
+                phi_inv_binary = ''.join(phi_inv_binary_list)
+                if len(phi_inv_binary) != self.total_precision:
+                    raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
+
+                # 4. convert to a scalar decimal
+                phi_inv_scalar = binary_to_decimal(phi_inv_binary)
+                # 5. apply φ to the scalar
+                self.alpha = phi(phi_inv_scalar) # pylint: disable=attribute-defined-outside-init
+
+                if VERBOSE >= 2: print(f'With {self.precision} digits of binary precision, alpha has {len(str(self.alpha))} digits of decimal precision.')
+                if VERBOSE >= 3: print(f'{self.alpha=}')
+            return self
+    ```
+
+
+    Now the `predict` method implement the decoder $f$. It takes in a list of indices `idxs` that we want to decode.
+    ```py
+        @Timing("predict: ", enabled=VERBOSE)
+        def predict(self, idxs):
+    ```
+    When we defined the encoder $g$ and decoder $f$ functions, they only encoded/decoded scalars -- look at their mathemtical formulations. But what is our labels are vectors or matricies as they are in ARC-AGI-1? To handle this in `fit`, we called `y.flatten()` to flatten the vector or matrix into a long list of scalars. This way it still feels like we are only dealing with a list of scalars. In `predict` we do some fancy indicing to correct for the flattening.
+    ```py
+            y_size = np.array(self.y_shape).prod()
+            full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten()
+    ```
+    Now with the corrected indicies, `full_idxs`, we can actually run the parallelized decoder implemented with the logistic map, not the dyadic map.
+    ```py
+            raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, full_idxs)
+    ```
+    Lastly, we undo both the flattening and the unit interval scaling to get our outputted prediction.
+    ```py
+            return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
+    ```
     """
     )
     return

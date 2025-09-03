@@ -53,7 +53,10 @@ class ScalarModel:
         self.precision = precision # binary precision, not decimal precision, for a single number
 
     @Timing("fit: ", enabled=VERBOSE)
-    def fit(self, X, y):
+    def fit(self, X, y=None):
+        # if the dataset is unsupervised, treat the data X like the labels y
+        if y is None: y = X
+
         self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
         self.total_precision = y.size * self.precision # pylint: disable=attribute-defined-outside-init
 
@@ -83,10 +86,10 @@ class ScalarModel:
         return self
 
     @Timing("predict: ", enabled=VERBOSE)
-    def predict(self, X_idxs):
+    def predict(self, idxs):
         y_size = np.array(self.y_shape).prod()
-        sample_idxs = (np.tile(np.arange(y_size), (len(X_idxs), 1)) + X_idxs[:, None] * y_size).flatten()
-        raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs)
+        full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten()
+        raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, full_idxs)
         # raw_pred = logistic_decoder_sequential(self.total_precision, self.alpha, self.precision, sample_idxs)
         return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
 
