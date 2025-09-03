@@ -27,32 +27,59 @@ def remote_arc_agi(path, split=None):
     from datasets import load_dataset
     return load_dataset(path, split=None)
 
+# def local_arc_agi(path):
+#     path = pathlib.Path(path) if not isinstance(path, pathlib.Path) else path
+#     ret = {}
+
+#     for split in ['train', 'eval']:
+#         tasks = [json.loads(line) for line in open(path / f'{split}.json')]
+#         ret[split] = {
+#             'question_inputs': [[grid] for task in tasks for grid in task['question_inputs']],
+#             'question_outputs': [[grid] for task in tasks for grid in task['question_outputs']],
+#             'example_inputs': [[grid] for task in tasks for grid in task['example_inputs']],
+#             'example_outputs': [[grid] for task in tasks for grid in task['example_outputs']],
+#         }
+
+#     return ret
 def local_arc_agi(path):
-    path = pathlib.Path(path) if not isinstance(path, pathlib.Path) else path
     ret = {}
-
-    for split in ['train', 'eval']:
-        tasks = [json.loads(line) for line in open(path / f'{split}.json')]
-        ret[split] = {
-            'question_inputs': [[grid] for task in tasks for grid in task['question_inputs']],
-            'question_outputs': [[grid] for task in tasks for grid in task['question_outputs']],
-            'example_inputs': [[grid] for task in tasks for grid in task['example_inputs']],
-            'example_outputs': [[grid] for task in tasks for grid in task['example_outputs']],
-        }
-
+    if not isinstance(path, pathlib.Path): path = pathlib.Path(path)
+    data_files = {'train': path / 'train.json', 'eval': path / 'eval.json'}
+    for split_name, file_path in data_files.items():
+        tasks = []
+        with open(file_path, 'r') as f:
+            for line in f:
+                task = json.loads(line.strip())
+                tasks.append({
+                    'id': task['id'],
+                    'example_inputs': task['example_inputs'],
+                    'example_outputs': task['example_outputs'],
+                    'question_inputs': task['question_inputs'],
+                    'question_outputs': task['question_outputs']
+                })
+        ret[split_name] = tasks
     return ret
 
-# zero-pad all question inputs and outputs from the public eval set
 def process_arg_agi(ds):
+    # only look at public eval set
     split = ds["eval"]
-    X = np.zeros((len(split["question_inputs"]), 30, 30))
-    y = np.zeros((len(split["question_outputs"]), 30, 30))
-    for i, inputs in enumerate(split["question_inputs"]):
-        m, n = len(inputs[0]), len(inputs[0][0])
-        X[i, :m, :n] = inputs[0]
-    for i, outputs in enumerate(split["question_outputs"]):
-        m, n = len(outputs[0]), len(outputs[0][0])
-        y[i, :m, :n] = outputs[0]
+
+    # Take only first question input/output from each task
+    question_inputs = [task['question_inputs'][0] for task in split]
+    question_outputs = [task['question_outputs'][0] for task in split]
+
+    # zero pad all inputs/outputs so they have the same dimension
+    X = np.zeros((len(question_inputs), 30, 30))
+    y = np.zeros((len(question_outputs), 30, 30))
+
+    for i, grid in enumerate(question_inputs):
+        m, n = len(grid), len(grid[0])
+        X[i, :m, :n] = grid
+
+    for i, grid in enumerate(question_outputs):
+        m, n = len(grid), len(grid[0])
+        y[i, :m, :n] = grid
+
     return X, y
 
 def load_arc_agi_1(path="eturok/ARC-AGI-1", process=True):

@@ -1309,6 +1309,24 @@ def _(mo):
 def _(ds, mo, process_arg_agi):
     X, y = process_arg_agi(ds)
     mo.show_code()
+    return X, y
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""We have 400 question inputs in `X` and 400 question outputs in `y`. Each consits of a 30 by 30 grid.""")
+    return
+
+
+@app.cell
+def _(X, mo, y):
+    with mo.redirect_stdout():
+        print(f'{X.shape=} {y.shape=}')
+    return
+
+
+@app.cell
+def _():
     return
 
 
