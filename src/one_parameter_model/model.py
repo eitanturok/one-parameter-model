@@ -47,8 +47,8 @@ def logistic_decoder_sequential(total_prec, alpha, prec, idxs):
 
 #***** model *****
 
-# scalar reasoning model
-class OneParamModel:
+# one parameter model
+class ScalarModel:
     def __init__(self, precision):
         self.precision = precision # binary precision, not decimal precision, for a single number
 
@@ -83,11 +83,11 @@ class OneParamModel:
         return self
 
     @Timing("predict: ", enabled=VERBOSE)
-    def transform(self, X_idxs):
+    def predict(self, X_idxs):
         y_size = np.array(self.y_shape).prod()
         sample_idxs = (np.tile(np.arange(y_size), (len(X_idxs), 1)) + X_idxs[:, None] * y_size).flatten()
         raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs)
         # raw_pred = logistic_decoder_sequential(self.total_precision, self.alpha, self.precision, sample_idxs)
         return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
 
-    def fit_transform(self, X, y): return self.fit(X, y).transform(X)
+    def fit_predict(self, X, y): return self.fit(X, y).predict(X)

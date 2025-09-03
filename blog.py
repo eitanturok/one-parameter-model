@@ -1,7 +1,13 @@
 import marimo
 
-__generated_with = "0.14.17"
+__generated_with = "0.15.2"
 app = marimo.App(width="medium")
+
+
+@app.cell
+def _():
+    import marimo as mo
+    return (mo,)
 
 
 @app.cell
@@ -11,15 +17,24 @@ def _():
     import gmpy2
     import numpy as np
     import pandas as pd
-    import altair as alt
-    import marimo as mo
     import matplotlib.pyplot as plt
     from gmpy2 import sin as sin_ap, mpfr as float_ap, asin as arcsin_ap, sqrt as sqrt_ap, const_pi as pi_ap # ap = arbitrary precision
     from matplotlib import colors
     # from datasets import load_dataset
 
-    # from utils import MinMaxScaler
-    return colors, gmpy2, json, mo, np, plt
+    from src.one_parameter_model.utils import MinMaxScaler, Timing, tqdm, VERBOSE, WORKERS
+    return (
+        MinMaxScaler,
+        Timing,
+        VERBOSE,
+        WORKERS,
+        colors,
+        gmpy2,
+        json,
+        np,
+        plt,
+        tqdm,
+    )
 
 
 @app.cell(hide_code=True)
@@ -71,7 +86,7 @@ def _(mo):
 
 @app.cell
 def _(gmpy2, json, mo):
-    with open(mo.notebook_dir() / "public/alpha/alpha-ARC-AGI-2.json", "r") as f: data = json.load(f)
+    with open(mo.notebook_dir() / "public/alpha/ARC-AGI-1.json", "r") as f: data = json.load(f)
     a = gmpy2.mpfr(data['value'], precision=data['precision'])
     p = a.precision
 
@@ -630,19 +645,22 @@ def _(mo):
         r"""
     The algorithm itself is deceptively simple once you see the pattern:
 
-    **Encoding Algorithm:** Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $a$:
+    > **Encoding Algorithm:**
+    > Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $a$:
+    >
+    > 1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=1, ..., n$
+    > 2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
+    > 3. Convert to decimal $a = \text{dec}(b)$
 
-    1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=1, ..., n$
-    2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
-    3. Convert to decimal $a = \text{dec}(b)$
 
     The result is a single, decimal, scalar number $a$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
 
-    **Decoding Algorithm:** Given sample index $i$ and the encoded number $a$, recover sample $\tilde{x_i}$:
-
-    1. Apply the dyadic map $D$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(a) = (2^{ip} a) \mod 1$
-    2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
-    3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
+    > **Decoding Algorithm:**
+    > Given sample index $i$ and the encoded number $a$, recover sample $\tilde{x_i}$:
+    >
+    > 1. Apply the dyadic map $D$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(a) = (2^{ip} a) \mod 1$
+    > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
+    > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
 
     The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. Since $\tilde{x}_i = \text{dec}(b_i) = \text{dec}(\text{bin}_p(x_i))$, we have $\tilde{x}_i \approx x_i$ with error bound $2^{-p}$. What makes this profound is the realization that we're not really "storing" information in any conventional sense. We're encoding it directly into the bits of a real number, exploiting it's infinite precision, and then using the dyadic map to navigate through that number and extract exactly what we need, when we need it. 
 
@@ -652,7 +670,7 @@ def _(mo):
     \begin{align*}
     a
     &=
-    g(\mathcal{X}) := \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(x) \Big)
+    g(p, \mathcal{x}) := \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(x) \Big)
     \tag{4}
     \\
     \tilde{x}_i
@@ -665,7 +683,7 @@ def _(mo):
 
     In practice, our parameter $a$ contains $np$ bits of precision, far exceeding the $32$ or $64$ bits that standard computers can handle. So we use arbitrary precision arithmetic libraries like [gmpy2](https://github.com/aleaxit/gmpy), which can perform computation with any level of precision we specify.
 
-    This capability allows us to simplify the decoder equation. By setting our working precision to exactly $p$ bits, `gmpy2` automatically limits all computation to $p$ bits. When we compute $\mathcal{D}^{ip}(a)$, the result naturally contains only $p$ bits of information. There is no need to convert $\tilde{x}'_i = \mathcal{D}^{ip}(a)$ to binary, extract the first $p$ bits, and then convert it back to decimal. We can skip the last two steps of the decoder algorithm because $\tilde{x}'_i = \tilde{x}_i$ when using working precision $p$. The decoder becomes:
+    This capability allows us to simplify the decoder equation. We can initially set our working precision to $np$ bits when computing $\mathcal{D}^{ip}(a)$. Then we can simply change the working precision to $p$ bits and `gmpy2` will automatically look at the first $p$ bits of $\mathcal{D}^{ip}(a)$. With `gmpy2`, there is no need to explicitally convert $\tilde{x}'_i = \mathcal{D}^{ip}(a)$ to binary, extract the first $p$ bits, and then convert it back to decimal -- the library will take care of this for us. We can therefore skip the last two steps of the decoder algorithm because $\tilde{x}'_i = \tilde{x}_i$ when using `gmpy2`. The decoder simplifies then to:
 
     $$
     \begin{align*}
@@ -919,19 +937,21 @@ def _(mo):
 
     This gives us two beautiful encoder/decoder algorithms where the main changes are bolded:
 
-    **Encoding Algorithm:** Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $a_L$:
-
-    1. ***Transform data to dyadic coordinates: $z_i = \phi^{-1}(x_i) = \frac{1}{2 \pi} \arcsin⁡( x_i )$ for $i=1, ..., n$***
-    2. Convert each transformed number to binary with $p$ bits of precision: $b_i = \text{bin}_p(z_i)$ for $i=1, ..., n$
-    3. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
-    4. Convert to decimal $a_D = \text{dec}(b)$
-    5. ***Transform to logistic space: $a_L = \phi(a_D) = \sin^2(2 \pi a_D)$***
+    > **Encoding Algorithm:**
+    > Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $a_L$:
+    >
+    > 1. ***Transform data to dyadic coordinates: $z_i = \phi^{-1}(x_i) = \frac{1}{2 \pi} \arcsin⁡( x_i )$ for $i=1, ..., n$***
+    > 2. Convert each transformed number to binary with $p$ bits of precision: $b_i = \text{bin}_p(z_i)$ for $i=1, ..., n$
+    > 3. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
+    > 4. Convert to decimal $a_D = \text{dec}(b)$
+    > 5. ***Transform to logistic space: $a_L = \phi(a_D) = \sin^2(2 \pi a_D)$***
 
     The result is a single, decimal, scalar number $a_L$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
 
-    **Decoding Algorithm:** Given sample index $i$ and the encoded number $a_L$, recover sample $\tilde{x_i}$:
-
-    1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}_i = \mathcal{L}^{ip}(a_L) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{a_L}) \Big)$***
+    > **Decoding Algorithm:**
+    > Given sample index $i$ and the encoded number $a_L$, recover sample $\tilde{x_i}$:
+    >
+    > 1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}_i = \mathcal{L}^{ip}(a_L) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{a_L}) \Big)$***
     """
     )
     return
@@ -990,7 +1010,7 @@ def _(mo):
     Mathematically, we can express this with a new and improved encoder $g$ and decoder $f$:
 
     $$
-    a_L = g(\mathcal{X}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
+    a_L = g(p, \mathcal{x}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
     \\
     \tilde{x}_i = f_{a_L,p}(i) := \mathcal{L}^{ip}(a_L) = \sin^2 \Big(2^k \arcsin(\sqrt{a_L}) \Big)
     $$
@@ -1018,6 +1038,204 @@ def _(mo):
     First, let's first define some basic functions to go from decimal to binary and vice versa. Python's built-in functions to do this only work for converting integers to and from binary. But here we are dealing with floats in between 0 and 1.
     """
     )
+    return
+
+
+@app.cell
+def _(np):
+    def decimal_to_binary(y_decimal, precision):
+        if not isinstance(y_decimal, np.ndarray): y_decimal = np.array(y_decimal)
+        if y_decimal.ndim == 0: y_decimal = np.expand_dims(y_decimal, 0)
+
+        powers = 2**np.arange(precision)
+        y_powers = y_decimal[:, np.newaxis] * powers[np.newaxis, :]
+        y_fractional = y_powers % 1 # extract the fractional part of y_powers
+        binary_digits = (y_fractional >= 0.5).astype(int).astype('<U1')
+        return np.apply_along_axis(''.join, axis=1, arr=binary_digits).tolist()
+    return (decimal_to_binary,)
+
+
+@app.cell
+def _(gmpy2):
+    def binary_to_decimal(y_binary):
+        # indicate the binary number is a float in [0, 1], not an int
+        fractional_binary = "0." + y_binary
+        return gmpy2.mpfr(fractional_binary, base=2)
+    return (binary_to_decimal,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Second, let's define $\phi^{-1}$ and $\phi$. Note that we compute $\phi^{-1}$ in numpy but use our aribtrary precision library to compute $\phi$: """)
+    return
+
+
+@app.cell
+def _(np):
+    def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
+    return (phi_inverse,)
+
+
+@app.cell
+def _(gmpy2):
+    def phi(x): return gmpy2.sin(x * 2 * gmpy2.const_pi()) ** 2
+    return (phi,)
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    Third, let's implement the decoder
+
+    $$
+    f_{a_L,p}(i) := \mathcal{L}^{ip}(a_L) = \sin^2 \Big(2^{ip} \arcsin(\sqrt{a_L}) \Big)
+    $$
+
+    with aribtrary precision from `gmpy2`. We set the precision to $np$ bits with `total_prec`, compute $\mathcal{L}^{ip}(a_L)$, and then truncate to first `p` bits before casting to a regular python float.
+    """
+    )
+    return
+
+
+@app.cell
+def _(gmpy2):
+    def logistic_decoder_single(total_prec, alpha, p, idx):
+        gmpy2.get_context().precision = total_prec
+        val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * p) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
+        return float(gmpy2.mpfr(val, precision=p))
+    return (logistic_decoder_single,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""For the logistic decoder to run in a reasonable amount of time, we need to parallelize it:""")
+    return
+
+
+@app.cell
+def _(Pool, WORKERS, logistic_decoder_single, np, partial, tqdm):
+    def logistic_decoder_parallel(total_prec, alpha, prec, idxs):
+        fxn = partial(logistic_decoder_single, total_prec, alpha, prec)
+        with Pool(WORKERS) as p:
+            return np.array(list(tqdm(p.imap(fxn, idxs), total=len(idxs), desc="Logistic Decoder")))
+    return (logistic_decoder_parallel,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Finally, we are ready to define our one parameter model:""")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r""" """)
+    return
+
+
+@app.cell
+def _(
+    MinMaxScaler,
+    Timing,
+    VERBOSE,
+    binary_to_decimal,
+    decimal_to_binary,
+    gmpy2,
+    logistic_decoder_parallel,
+    np,
+    phi,
+    phi_inverse,
+):
+    class ScalarModel:
+        def __init__(self, precision):
+            self.precision = precision # binary precision, not decimal precision, for a single number
+
+        @Timing("fit: ", enabled=VERBOSE)
+        def fit(self, X, y):
+            self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
+            self.total_precision = y.size * self.precision # pylint: disable=attribute-defined-outside-init
+
+            # scale labels to be in [0, 1]
+            self.scaler = MinMaxScaler() # pylint: disable=attribute-defined-outside-init
+            y_scaled = self.scaler.scale(y.flatten())
+
+            # compute alpha with arbitrary floating-point precision
+            with gmpy2.context(precision=self.total_precision):
+
+                # 1. compute φ^(-1) for all labels
+                phi_inv_decimal_list = phi_inverse(y_scaled)
+                # 2. convert to a binary
+                phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision)
+                # 3. concatenate all binary strings together
+                phi_inv_binary = ''.join(phi_inv_binary_list)
+                if len(phi_inv_binary) != self.total_precision:
+                    raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
+
+                # 4. convert to a scalar decimal
+                phi_inv_scalar = binary_to_decimal(phi_inv_binary)
+                # 5. apply φ to the scalar
+                self.alpha = phi(phi_inv_scalar) # pylint: disable=attribute-defined-outside-init
+
+                if VERBOSE >= 2: print(f'With {self.precision} digits of binary precision, alpha has {len(str(self.alpha))} digits of decimal precision.')
+                if VERBOSE >= 3: print(f'{self.alpha=}')
+            return self
+
+        @Timing("predict: ", enabled=VERBOSE)
+        def predict(self, X_idxs):
+            y_size = np.array(self.y_shape).prod()
+            sample_idxs = (np.tile(np.arange(y_size), (len(X_idxs), 1)) + X_idxs[:, None] * y_size).flatten()
+            raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, sample_idxs)
+            # raw_pred = logistic_decoder_sequential(self.total_precision, self.alpha, self.precision, sample_idxs)
+            return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
+
+        def fit_predict(self, X, y): return self.fit(X, y).predict(X)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    The `fit` method takes in data `X` and labels `y`. Up until now, we've been trying to memorize an unsupervised dataset $\mathcal{X}$. But really, we want this to work in a supervised setting and memorize the labels `y` because we care about predicting the label. We want to implement
+
+    $$
+    g(\mathcal{Y})
+    $$
+
+    instead of
+
+    $$
+    g(p, \mathcal{x})
+    $$
+
+
+    So we apply our endoer to the labels `y`, not `X`. Therefore, we normalize our labels $y$ to be in between $0$ and $1$ because our algorithm only works on values in the unit interval. Then we implement the five steps of the encoder algorithm and return $\alpha$.
+
+    The `predict` method takes in the indices that we want to predict, does some fancy reshaping, and then applies the logistic map to all the indicies in parallel.
+
+    The encoder function $g$ can only encode scalars. But what is our labels are vectors or matricies as in the case of ARC-AGI-1? To fix this we simply flatten the vecotr/matrix into a long list of scalars in `fit` and undo the flattening in `predict` -- this is why we have a fancy equation for `sample_idxs` there.
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""# Conclusion""")
+    return
+
+
+@app.cell
+def _(mo):
+    meme = mo.image(
+        mo.notebook_dir() / "public/images/meme.jpg", 
+        width=400, 
+        caption="A honest depiction of this project.",
+        style={"display": "block", "margin": "0 auto"}
+    )
+
+    meme
     return
 
 

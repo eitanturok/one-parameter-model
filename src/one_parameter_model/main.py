@@ -1,6 +1,6 @@
 import json, argparse
 import numpy as np
-from model import OneParamModel
+from model import ScalarModel
 from data import DATASET, plot_data
 from utils import VERBOSE
 from icecream import install
@@ -13,14 +13,14 @@ def main(args):
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
     # fit the model
-    model = OneParamModel(args.precision)
+    model = ScalarModel(args.precision)
     model.fit(X, y)
     if args.save:
         with open("alpha.json", "w") as f:
             json.dump({'precision': model.alpha.precision, 'value': str(model.alpha)}, f)
 
     # predict
-    y_pred = model.transform(X_idxs)
+    y_pred = model.predict(X_idxs)
 
     # todo: why does this assert fail?
     # check accuracy

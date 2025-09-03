@@ -77,7 +77,7 @@ Class Model:
         g, c = learn_polynomial(X, y) # coefficients c, polynomial function g
         t = polynomial_degree(y)
         f = encode_polynomial(g, t)
-    def transform(X):
+    def predict(X):
         for i in range(t): c[i] = f(i)
         for j in range(len(x)): y[j] = g(c, X[j])
 

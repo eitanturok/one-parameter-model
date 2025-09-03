@@ -10,6 +10,7 @@ dependencies = [
     "matplotlib>=3.10.6",
     "datasets>=4.0.0",
     "icecream>=2.1.7",
+    "marimo>=0.15.2",
 ]
 
 [build-system]
