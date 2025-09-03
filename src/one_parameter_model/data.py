@@ -28,23 +28,19 @@ def remote_arc_agi(path, split=None):
     return load_dataset(path, split=None)
 
 def local_arc_agi(path):
-    result = {}
-    data_files = {'train': path / 'train.json', 'eval': path / 'eval.json'}
-    for split_name, file_path in data_files.items():
-        tasks = []
-        with open(file_path, 'r') as f:
-            for line in f:
-                task = json.loads(line.strip())
-                tasks.append({
-                    'id': task['id'],
-                    'example_inputs': task['example_inputs'],
-                    'example_outputs': task['example_outputs'],
-                    'question_inputs': task['question_inputs'],
-                    'question_outputs': task['question_outputs']
-                })
-        result[split_name] = tasks
+    path = pathlib.Path(path) if not isinstance(path, pathlib.Path) else path
+    ret = {}
 
-    return result
+    for split in ['train', 'eval']:
+        tasks = [json.loads(line) for line in open(path / f'{split}.json')]
+        ret[split] = {
+            'question_inputs': [[grid] for task in tasks for grid in task['question_inputs']],
+            'question_outputs': [[grid] for task in tasks for grid in task['question_outputs']],
+            'example_inputs': [[grid] for task in tasks for grid in task['example_inputs']],
+            'example_outputs': [[grid] for task in tasks for grid in task['example_outputs']],
+        }
+
+    return ret
 
 # zero-pad all question inputs and outputs from the public eval set
 def process_arg_agi(ds):
@@ -60,11 +56,11 @@ def process_arg_agi(ds):
     return X, y
 
 def load_arc_agi_1(path="eturok/ARC-AGI-1", process=True):
-    ds = local_arc_agi(pathlib.Path(path)) if pathlib.Path(path).exists() else remote_arc_agi(path)
+    ds = local_arc_agi(path) if pathlib.Path(path).exists() else remote_arc_agi(path)
     return process_arg_agi(ds) if process else ds
 
 def load_arc_agi_2(path="eturok/ARC-AGI-2", process=True):
-    ds = local_arc_agi(pathlib.Path(path)) if pathlib.Path(path).exists() else remote_arc_agi(path)
+    ds = local_arc_agi(path) if pathlib.Path(path).exists() else remote_arc_agi(path)
     return process_arg_agi(ds) if process else ds
 
 def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):

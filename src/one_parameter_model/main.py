@@ -19,20 +19,11 @@ def main(args):
         with open("alpha.json", "w") as f:
             json.dump({'precision': model.precision, 'alpha': (str(model.alpha), model.alpha.precision)}, f)
 
-    with open("alpha.json", "r") as f:
-        data = json.load(f)
-    print(data)
-
-    import gmpy2
-    precision = data['precision']
-    alpha = gmpy2.mpfr(*data['alpha'])
-    print(alpha)
-
     # predict
     y_pred = model.predict(X_idxs)
 
     # todo: why does this assert fail?
-    # check accuracy
+    # # check accuracy
     # atol = np.pi / (2**(args.precision-1)) # section 2.5 of https://arxiv.org/pdf/1904.12320
     # assert np.allclose(y, y_pred, atol=atol, rtol=0.0001), f'y_pred != y:\n{atol=}\nmax abs_error={np.abs(y - y_pred).max()}\n\nabs_error={np.abs(y - y_pred)}\n\n{y=}\n\n{y_pred=}'
 

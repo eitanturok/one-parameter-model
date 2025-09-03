@@ -234,8 +234,8 @@ def _(colors, plt):
 
 
 @app.cell
-def _(local_arc_agi, mo):
-    ds = local_arc_agi(mo.notebook_dir() / "public/data/ARC-AGI-1")
+def _(local_arc_agi):
+    ds = local_arc_agi("public/data/ARC-AGI-1")
     return (ds,)
 
 
@@ -1202,7 +1202,7 @@ def _(
         def fit_predict(self, X, y): return self.fit(X, y).predict(X)
 
     mo.show_code()
-    return (ScalarModel,)
+    return
 
 
 @app.cell
@@ -1307,70 +1307,8 @@ def _(mo):
 
 @app.cell
 def _(ds, mo, process_arg_agi):
-    X, y = process_arg_agi(ds["eval"])
+    X, y = process_arg_agi(ds)
     mo.show_code()
-    return X, y
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""`X` is the 4oo question inputs and `y` is the corresponding 400 question outputs. Each input or input consists of a single 30 by 30 grid which we are predicting.""")
-    return
-
-
-@app.cell
-def _(X, mo, y):
-    with mo.redirect_stdout():
-        print(f'{X.shape=}, {y.shape=}')
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Let's initialize a model and fit our data:""")
-    return
-
-
-@app.cell
-def _(ScalarModel, X, mo, y):
-    precision = 8
-    model = ScalarModel(precision)
-    model.fit(X, y)
-
-    mo.show_code()
-    return (model,)
-
-
-@app.cell
-def _(mo, model):
-    # only print the first 10_000 digits of alpha
-    mo.md(f"```\nalpha={str(model.alpha)[:10_000]}\n```")
-    return
-
-
-@app.cell
-def _(mo, model):
-    with mo.redirect_stdout():
-        print(f'alpha has {model.total_precision} digits')
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""# Conclusion""")
-    return
-
-
-@app.cell
-def _(mo):
-    meme = mo.image(
-        mo.notebook_dir() / "public/images/meme.jpg",
-        width=400,
-        caption="A honest confession of how we built the one-parameter model.",
-        style={"display": "block", "margin": "0 auto"}
-    )
-
-    meme
     return
 
 
