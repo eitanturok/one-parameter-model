@@ -22,6 +22,7 @@ def _():
     from matplotlib import colors
     # from datasets import load_dataset
 
+    from src.one_parameter_model.data import load_arc_agi_1
     from src.one_parameter_model.utils import MinMaxScaler, Timing, tqdm, VERBOSE, WORKERS
     return (
         MinMaxScaler,
@@ -31,6 +32,7 @@ def _():
         colors,
         gmpy2,
         json,
+        load_arc_agi_1,
         np,
         plt,
         tqdm,
@@ -226,33 +228,20 @@ def _(colors, plt):
 
 
 @app.cell
-def _(json):
-    def load_local_dataset(data_files):
-        result = {}
-        for split_name, file_path in data_files.items():
-            tasks = []
-            with open(file_path, 'r') as f:
-                for line in f:
-                    task = json.loads(line.strip())
-                    tasks.append({
-                        'id': task['id'],
-                        'example_inputs': task['example_inputs'],
-                        'example_outputs': task['example_outputs'],
-                        'question_inputs': task['question_inputs'],
-                        'question_outputs': task['question_outputs']
-                    })
-            result[split_name] = tasks
-
-        return result
-    return (load_local_dataset,)
+def _():
+    return
 
 
 @app.cell
-def _(load_local_dataset, mo):
-    ds = load_local_dataset(data_files={
-        "train": str(mo.notebook_dir() / "public/data/ARC-AGI-1/train.json"),
-        "eval": str(mo.notebook_dir() / "public/data/ARC-AGI-1/train.json"), 
-    })
+def _(mo):
+    mo.notebook_dir()
+    return
+
+
+@app.cell
+def _(load_arc_agi_1, mo):
+    ds = load_arc_agi_1(mo.notebook_dir() / 'public/data/ARC-AGI-1')
+    ds
     return (ds,)
 
 
@@ -325,7 +314,19 @@ def _(arc_agi_1_leaderboard_image, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""# The HRM Drama""")
+    mo.md(
+        r"""
+    # The HRM Drama
+
+    > \> see "miraculous" 27M model beats frontier AI
+    > 
+    > \> methodology: train on eval set with learnable task tokens 
+    >
+    > \>call it "reasoning" 
+    >
+    > \> profit -- [twitter user](https://x.com/b_arbaretier/status/1951701328754852020)
+    """
+    )
     return
 
 
@@ -378,7 +379,7 @@ def _(hrm_performance_image, hrm_train_on_eval_image, mo):
 
     On [Github](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308s), the HRM authors clarified that they only trained on the **examples** from the public eval set, not the actual **questions** from the public eval set. This distinction matters!
 
-    Here is an example from the public eval set of ARC-AGI-1:
+    Here is an example from the *public eval set*, not the train set, of ARC-AGI-1:
     """
     )
     return
@@ -394,11 +395,11 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    This task has five example input-output pairs and a single question input-output pair. This means the HRM authors trained on all five of these examples but did not train on the question itself. Visually, they did not train on anything to the right of the solid white line.
+    This task has five example input-output pairs and a single question input-output pair. Because this example is from the public eval set, this means the HRM authors trained on all five of these examples but did not train on the question itself. They then evaluated their model on the public eval question here. Visually, HRM was *not* trained on anything to the right of the solid white line.
 
     **But did this count as data leakage?**
 
-    This sparked intense debate across Twitter and GitHub [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)]. On one hand, you should not train on the eval set at all. On the other hand, you are not actually training on the questions of the public eval set, just the examples associated with them. The ARC-AGI organizers officially [accepted](https://arcprize.org/blog/hrm-analysis#other-technical-learnings) HRM as a valid submission and even did a [deep dive](https://arcprize.org/blog/hrm-analysis) on their approach, ultimately settling the debate in my mind with the verdict that the HRM approach is valid.
+    This sparked intense debate across Twitter and GitHub [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)]. On one hand, you should not train on the eval set at all. On the other hand, you are not actually training on the questions of the public eval set, just the examples associated with them. The ARC-AGI organizers officially accepted HRM as a valid submission and even did a [deep dive](https://arcprize.org/blog/hrm-analysis) on their approach, ultimately settling the debate in my mind -- the HRM approach is valid.
 
     Throughout this episode, one comment by HRM's lead author caught my attention:
     > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." - Guan Wang's Github [comment](https://arxiv.org/pdf/2506.21734v1)
@@ -1214,10 +1215,10 @@ def _(
 def _(mo):
     mo.md(
         r"""
-    /// details | Can you walk me through what this big chunk of code does, line-by-line?
+    /// details | Can you walk me through what `ScalarModel` does line-by-line?
 
 
-    Let's walk through this big chunk of code.
+    Let's walk through this big chunk of code line-by-line.
 
     We initialize the model with the desired precision $p$.
     ```py
@@ -1298,23 +1299,36 @@ def _(mo):
     return
 
 
+@app.cell
+def _(mo):
+    mo.md(r"""Let's try out our model on ARC-AGI-1!""")
+    return
+
+
+@app.cell
+def _():
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""# Conclusion""")
     return
 
 
-@app.cell
-def _(mo):
-    meme = mo.image(
-        mo.notebook_dir() / "public/images/meme.jpg", 
+app._unparsable_cell(
+    r"""
+     meme = mo.image(
+        mo.notebook_dir() / \"public/images/meme.jpg\", 
         width=400, 
-        caption="A honest confession of how we built the one-parameter model.",
-        style={"display": "block", "margin": "0 auto"}
+        caption=\"A honest confession of how we built the one-parameter model.\",
+        style={\"display\": \"block\", \"margin\": \"0 auto\"}
     )
 
     meme
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell

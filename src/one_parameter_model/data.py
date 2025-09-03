@@ -1,7 +1,7 @@
+import json, pathlib
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-from datasets import load_dataset
 
 #**** plot ****
 
@@ -34,11 +34,39 @@ def process_arc_agi(ds):
         y[i, :m, :n] = outputs[0]
     return X, y
 
-def load_arc_agi_1():
-    return process_arc_agi(load_dataset("eturok/ARC-AGI-1", split="eval"))
+def load_local_arc_agi(path):
+    result = {}
+    data_files = {'train': path / 'train.json', 'eval': path / 'eval.json'}
+    for split_name, file_path in data_files.items():
+        print(file_path)
+        tasks = []
+        with open(file_path, 'r') as f:
+            for line in f:
+                task = json.loads(line.strip())
+                tasks.append({
+                    'id': task['id'],
+                    'example_inputs': task['example_inputs'],
+                    'example_outputs': task['example_outputs'],
+                    'question_inputs': task['question_inputs'],
+                    'question_outputs': task['question_outputs']
+                })
+        result[split_name] = tasks
 
-def load_arc_agi_2():
-    return process_arc_agi(load_dataset("eturok/ARC-AGI-2", split="eval"))
+    return result
+
+def load_arc_agi_1(path="eturok/ARC-AGI-1"):
+    path = pathlib.Path(path)
+    if path.exists(): return load_local_arc_agi(path)
+    print('not local')
+    from datasets import load_dataset
+    return process_arc_agi(load_dataset(path, split="eval"))
+
+def load_arc_agi_2(path="eturok/ARC-AGI-2"):
+    path = pathlib.Path(path)
+    if path.exists(): return load_local_arc_agi(path)
+    print('not local')
+    from datasets import load_dataset
+    return process_arc_agi(load_dataset(path, split="eval"))
 
 def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
     # load image and get contour

@@ -1,10 +1,9 @@
 import json, argparse
 import numpy as np
+
 from model import ScalarModel
 from data import DATASET, plot_data
 from utils import VERBOSE
-from icecream import install
-install()
 
 def main(args):
     # load dataset
