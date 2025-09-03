@@ -55,15 +55,13 @@ def load_local_arc_agi(path):
     return result
 
 def load_arc_agi_1(path="eturok/ARC-AGI-1"):
-    path = pathlib.Path(path)
-    if path.exists(): return load_local_arc_agi(path)
+    if pathlib.Path(path).exists(): return load_local_arc_agi(pathlib.Path(path))
     print('not local')
     from datasets import load_dataset
     return process_arc_agi(load_dataset(path, split="eval"))
 
 def load_arc_agi_2(path="eturok/ARC-AGI-2"):
-    path = pathlib.Path(path)
-    if path.exists(): return load_local_arc_agi(path)
+    if pathlib.Path(path).exists(): return load_local_arc_agi(pathlib.Path(path))
     print('not local')
     from datasets import load_dataset
     return process_arc_agi(load_dataset(path, split="eval"))
