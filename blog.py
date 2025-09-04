@@ -154,7 +154,7 @@ def _(mo):
 
     **What does an ARC-AGI-1 task actually look like?**
 
-    ARC-AGI-1 consists of visual grid-based reasoning problems. Let's look at an example:
+    ARC-AGI-1 consists of visual grid-based reasoning problems. Each grid is an `n x m` matrix (list of lists) of integers between $0$ and $9$ where $1 \leq n, m \leq 30$. To display the grid, we simply choose a unique color for each integer. Let's look at an example:
     """
     )
     return
@@ -249,7 +249,9 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    Here, we are looking at several grids, each with a bunch colored cells. Each column shows an input-output pair. The first five columns are examples that demonstrate a pattern. The sixth column, separated by the solid white line, is the actual question: given this new input, what should the output be?
+    Here, we see several grids, each with a bunch of colored cells. Most cells are black (0), some are green (3), and some are yellow (4). Each column shows an input-output pair.
+
+    The first five columns are examples that demonstrate a pattern. The sixth column, separated by the solid white line, is the actual question: given this new input, what should the output be?
 
     The color coding makes this clearer. Everything with the green '✓ Given' is information the model gets to see: the example pairs and the question input. The red '? Predict' - the question output - is what the model must predict on its own. We're showing it here so you can see the correct answer, but during evaluation, the red question output is completely hidden from the model. Then we compare the model's prediction to the question output to determine if the model get's the task right.
 
@@ -1299,7 +1301,7 @@ def _(mo):
         r"""
     Let's try it our model out on ARC-AGI-1!
 
-    Let's take the public eval set from ARC-AGI-1 which has 400 tasks. We only need to look at the question inputs and question outputs because these are the actual predictions we need to make. We don't need the example input-outputs for our scalar model to work.
+    Let's use the public eval set from ARC-AGI-1 which has 400 tasks. We can ignore the example input-output pairs and only look at the question inputs-output pairs because we are only actually making predictions for the question.
     """
     )
     return
@@ -1314,7 +1316,7 @@ def _(ds, mo, process_arc_agi):
 
 @app.cell
 def _(mo):
-    mo.md(r"""We have 400 question inputs in `X` and 400 question outputs in `y`. Each consits of a 30 by 30 grid.""")
+    mo.md(r"""We have 400 question inputs in `X` and 400 question outputs in `y`. Each consits of a 30 by 30 grid (list of lists) of integers between $0$ and $9$.""")
     return
 
 
@@ -1327,7 +1329,7 @@ def _(X, mo, y):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Let's initialize our one parameter model and encode our data. It is super easy.""")
+    mo.md(r"""Now we are ready to "train" our model and compress our entire dataset into $\alpha$. It is super easy.""")
     return
 
 
@@ -1342,7 +1344,13 @@ def _(ScalarModel, X, mo, y):
 
 @app.cell
 def _(mo, model):
-    mo.md(f"```py\nmodel.alpha={str(model.alpha)[:10_000]}\n```")
+    mo.md(f"""```py\nmodel.alpha={str(model.alpha)[:10_000]}\n```""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Within a couple of seconds, we have learned $\alpha$! This wonderful, magical scalar number is the key to getting a perfect score on ARC-AGI-1. Watch:""")
     return
 
 
