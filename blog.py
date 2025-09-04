@@ -13,6 +13,8 @@ def _():
 @app.cell
 def _():
     import json
+    from functools import partial
+    from multiprocessing import Pool
 
     import gmpy2
     import numpy as np
@@ -22,17 +24,18 @@ def _():
     from matplotlib import colors
 
     from src.one_parameter_model.data import local_arc_agi, process_arc_agi
-    from src.one_parameter_model.utils import MinMaxScaler, Timing, tqdm, VERBOSE, WORKERS
+    from src.one_parameter_model.utils import MinMaxScaler, Timing, tqdm, VERBOSE
     return (
         MinMaxScaler,
+        Pool,
         Timing,
         VERBOSE,
-        WORKERS,
         colors,
         gmpy2,
         json,
         local_arc_agi,
         np,
+        partial,
         plt,
         process_arc_agi,
         tqdm,
@@ -1032,14 +1035,14 @@ def _(mo):
         r"""
     Finally, what we've been waiting for. The code implementation!
 
-    First, let's first define some basic functions to go from decimal to binary and vice versa. Python's built-in functions to do this only work for converting integers to and from binary. But here we are dealing with floats in between 0 and 1.
+    First, let's first define some basic helper functions for $\text{bin}_p(), \text{dec}(), \phi(), \phi^{-1}()$. Note that we compute $\phi^{-1}$ in numpy but use our aribtrary precision library to compute $\phi$.
     """
     )
     return
 
 
 @app.cell
-def _(mo, np):
+def _(gmpy2, mo, np):
     def decimal_to_binary(y_decimal, precision):
         if not isinstance(y_decimal, np.ndarray): y_decimal = np.array(y_decimal)
         if y_decimal.ndim == 0: y_decimal = np.expand_dims(y_decimal, 0)
@@ -1050,96 +1053,57 @@ def _(mo, np):
         binary_digits = (y_fractional >= 0.5).astype(int).astype('<U1')
         return np.apply_along_axis(''.join, axis=1, arr=binary_digits).tolist()
 
-    mo.show_code()
-    return (decimal_to_binary,)
-
-
-@app.cell
-def _(gmpy2, mo):
     def binary_to_decimal(y_binary):
         # indicate the binary number is a float in [0, 1], not an int
         fractional_binary = "0." + y_binary
         return gmpy2.mpfr(fractional_binary, base=2)
 
-    mo.show_code()
-    return (binary_to_decimal,)
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Second, let's define $\phi^{-1}$ and $\phi$. Note that we compute $\phi^{-1}$ in numpy but use our aribtrary precision library to compute $\phi$:""")
-    return
-
-
-@app.cell
-def _(mo, np):
     def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
 
-    mo.show_code()
-    return (phi_inverse,)
-
-
-@app.cell
-def _(gmpy2, mo):
     def phi(x): return gmpy2.sin(x * 2 * gmpy2.const_pi()) ** 2
 
     mo.show_code()
-    return (phi,)
+    return binary_to_decimal, decimal_to_binary, phi, phi_inverse
 
 
 @app.cell
 def _(mo):
     mo.md(
         r"""
-    Third, let's implement the decoder
+    Next, let's implement the logistic map
 
     $$
-    f_{a_L,p}(i) := \mathcal{L}^{ip}(a_L) = \sin^2 \Big(2^{ip} \arcsin(\sqrt{a_L}) \Big)
+    \mathcal{L}^{ip}(a) = \sin^2 \Big(2^{ip} \arcsin(\sqrt{a_L}) \Big)
     $$
 
-    with aribtrary precision from `gmpy2`. We set the precision to $np$ bits with `total_prec`, compute $\mathcal{L}^{ip}(a_L)$, and then truncate to first `p` bits before casting to a regular python float.
+    with aribtrary precision from `gmpy2`. We set the precision to $np$ bits with `total_prec`, compute $\mathcal{L}^{ip}(a_L)$, and then truncate to first `p` bits before casting to a regular python float. We then parallelize the entire function to make it even faster.
     """
     )
     return
 
 
 @app.cell
-def _(gmpy2, mo):
-    def logistic_decoder_single(total_prec, alpha, p, idx):
+def _(Pool, gmpy2, mo, np, partial, tqdm):
+    def logistic_decoder_single(total_prec, alpha, prec, idx):
         gmpy2.get_context().precision = total_prec
-        val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * p) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
-        return float(gmpy2.mpfr(val, precision=p))
+        val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
+        return float(gmpy2.mpfr(val, precision=prec))
 
-    mo.show_code()
-    return (logistic_decoder_single,)
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""For the logistic decoder to run in a reasonable amount of time, we need to parallelize it:""")
-    return
-
-
-@app.cell
-def _(Pool, WORKERS, logistic_decoder_single, mo, np, partial, tqdm):
-    def logistic_decoder_parallel(total_prec, alpha, prec, idxs):
+    def logistic_decoder(total_prec, alpha, prec, idxs, workers):
+        # compute sequentially if workers==0, otherwise compute in parallell
+        if workers == 0:
+            return np.array([logistic_decoder_single(total_prec, alpha, prec, idx) for idx in tqdm(idxs)])
         fxn = partial(logistic_decoder_single, total_prec, alpha, prec)
-        with Pool(WORKERS) as p:
+        with Pool(workers) as p:
             return np.array(list(tqdm(p.imap(fxn, idxs), total=len(idxs), desc="Logistic Decoder")))
 
     mo.show_code()
-    return (logistic_decoder_parallel,)
+    return (logistic_decoder,)
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""Finally, we are ready to define our one parameter model:""")
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r""" """)
+    mo.md(r"""Finally, we can define our one parameter model.""")
     return
 
 
@@ -1151,15 +1115,16 @@ def _(
     binary_to_decimal,
     decimal_to_binary,
     gmpy2,
-    logistic_decoder_parallel,
+    logistic_decoder,
     mo,
     np,
     phi,
     phi_inverse,
 ):
     class ScalarModel:
-        def __init__(self, precision):
+        def __init__(self, precision, workers=0):
             self.precision = precision # binary precision, not decimal precision, for a single number
+            self.workers = workers
 
         @Timing("fit: ", enabled=VERBOSE)
         def fit(self, X, y):
@@ -1198,7 +1163,7 @@ def _(
         def predict(self, idxs):
             y_size = np.array(self.y_shape).prod()
             full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten()
-            raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, full_idxs)
+            raw_pred = logistic_decoder(self.total_precision, self.alpha, self.precision, full_idxs, self.workers)
             return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
 
         def fit_predict(self, X, y): return self.fit(X, y).predict(X)
@@ -1216,11 +1181,12 @@ def _(mo):
 
     Let's walk through this big chunk of code line-by-line.
 
-    We initialize the model with the desired precision $p$.
+    We initialize the model with the desired precision $p$ and the number of workers for running our decoder in parallel.
     ```py
     class ScalarModel:
-        def __init__(self, precision):
+        def __init__(self, precision, workers=8):
             self.precision = precision # binary precision, not decimal precision, for a single number
+            self.workers = workers
     ```
 
     Then we have the `fit` method which implements our encoder $g$.
@@ -1282,9 +1248,9 @@ def _(mo):
             y_size = np.array(self.y_shape).prod()
             full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten()
     ```
-    Now with the corrected indicies, `full_idxs`, we can actually run the parallelized decoder implemented with the logistic map, not the dyadic map.
+    Now with the corrected indicies, `full_idxs`, we can actually run the decoder implemented with the logistic map, not the dyadic map.
     ```py
-            raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, full_idxs)
+            raw_pred = logistic_decoder(self.total_precision, self.alpha, self.precision, full_idxs)
     ```
     Lastly, we undo both the flattening and the unit interval scaling to get our outputted prediction.
     ```py
@@ -1301,7 +1267,7 @@ def _(mo):
         r"""
     Let's try it our model out on ARC-AGI-1!
 
-    Let's use the public eval set from ARC-AGI-1 which has 400 tasks. We can ignore the example input-output pairs and only look at the question inputs-output pairs because we are only actually making predictions for the question.
+    We will use the public eval set from ARC-AGI-1 which has 400 tasks. We can ignore the example input-output pairs and only look at the question inputs-output pairs because we are only actually predictioning the question outputs given the question inputs.
     """
     )
     return
@@ -1316,7 +1282,7 @@ def _(ds, mo, process_arc_agi):
 
 @app.cell
 def _(mo):
-    mo.md(r"""We have 400 question inputs in `X` and 400 question outputs in `y`. Each consits of a 30 by 30 grid (list of lists) of integers between $0$ and $9$.""")
+    mo.md(r"""`X` contains 400 question inputs and `y` contains 400 question outputs. Each input and output is a 30 by 30 grid (list of lists) of integers between $0$ and $9$.""")
     return
 
 
@@ -1351,6 +1317,12 @@ def _(mo, model):
 @app.cell
 def _(mo):
     mo.md(r"""Within a couple of seconds, we have learned $\alpha$! This wonderful, magical scalar number is the key to getting a perfect score on ARC-AGI-1. Watch:""")
+    return
+
+
+@app.cell
+def _(model, np):
+    y_pred = model.predict(np.array([1]))
     return
 
 

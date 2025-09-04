@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import gmpy2
 import numpy as np
 
-from .utils import MinMaxScaler, Timing, tqdm, VERBOSE, WORKERS
+from .utils import MinMaxScaler, Timing, tqdm, VERBOSE
 
 #***** math *****
 
@@ -37,20 +37,21 @@ def logistic_decoder_single(total_prec, alpha, prec, idx):
     val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
     return float(gmpy2.mpfr(val, precision=prec))
 
-def logistic_decoder_parallel(total_prec, alpha, prec, idxs):
+def logistic_decoder(total_prec, alpha, prec, idxs, workers):
+    # sequential if workers is 0
+    if workers == 0:
+        return np.array([logistic_decoder_single(total_prec, alpha, prec, idx) for idx in tqdm(idxs)])
     fxn = partial(logistic_decoder_single, total_prec, alpha, prec)
-    with Pool(WORKERS) as p:
+    with Pool(workers) as p:
         return np.array(list(tqdm(p.imap(fxn, idxs), total=len(idxs), desc="Logistic Decoder")))
-
-def logistic_decoder_sequential(total_prec, alpha, prec, idxs):
-    return np.array([logistic_decoder_single(total_prec, alpha, prec, idx) for idx in idxs])
 
 #***** model *****
 
 # one parameter model
 class ScalarModel:
-    def __init__(self, precision):
+    def __init__(self, precision, workers=0):
         self.precision = precision # binary precision, not decimal precision, for a single number
+        self.workers = workers
 
     @Timing("fit: ", enabled=VERBOSE)
     def fit(self, X, y=None):
@@ -89,8 +90,7 @@ class ScalarModel:
     def predict(self, idxs):
         y_size = np.array(self.y_shape).prod()
         full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten()
-        raw_pred = logistic_decoder_parallel(self.total_precision, self.alpha, self.precision, full_idxs)
-        # raw_pred = logistic_decoder_sequential(self.total_precision, self.alpha, self.precision, sample_idxs)
+        raw_pred = logistic_decoder(self.total_precision, self.alpha, self.precision, full_idxs, self.workers)
         return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
 
     def fit_predict(self, X, y): return self.fit(X, y).predict(X)

@@ -10,10 +10,11 @@ def main(args):
     # load dataset
     X, y = DATASET[args.dataset]()
     X_idxs = np.arange(len(X))
+    print(X_idxs)
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
     # fit the model
-    model = ScalarModel(args.precision)
+    model = ScalarModel(args.precision, args.workers)
     model.fit(X, y)
     if args.save:
         with open("alpha.json", "w") as f:
@@ -36,6 +37,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", choices=list(DATASET.keys()), default=list(DATASET.keys())[0], help="Dataset.")
     parser.add_argument("--precision", type=int, default=8, help="Precision for arbitrary floating point operations.")
+    parser.add_argument("--workers", type=int, default=0, help="Number of workers to parallelize the decoder.")
     parser.add_argument("--save", action="store_true", help="Save alpha")
     args = parser.parse_args()
     main(args)

@@ -69,4 +69,3 @@ class trange(tqdm):
 #***** environment variables *****
 
 VERBOSE = getenv("VERBOSE", 1)
-WORKERS = getenv("WORKERS", 8)
