@@ -60,7 +60,7 @@ def local_arc_agi(path):
         ret[split_name] = tasks
     return ret
 
-def process_arg_agi(ds):
+def process_arc_agi(ds):
     # only look at public eval set
     split = ds["eval"]
 
@@ -84,11 +84,11 @@ def process_arg_agi(ds):
 
 def load_arc_agi_1(path="eturok/ARC-AGI-1", process=True):
     ds = local_arc_agi(path) if pathlib.Path(path).exists() else remote_arc_agi(path)
-    return process_arg_agi(ds) if process else ds
+    return process_arc_agi(ds) if process else ds
 
 def load_arc_agi_2(path="eturok/ARC-AGI-2", process=True):
     ds = local_arc_agi(path) if pathlib.Path(path).exists() else remote_arc_agi(path)
-    return process_arg_agi(ds) if process else ds
+    return process_arc_agi(ds) if process else ds
 
 def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
     # load image and get contour

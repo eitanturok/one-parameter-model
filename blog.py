@@ -21,7 +21,7 @@ def _():
     from gmpy2 import sin as sin_ap, mpfr as float_ap, asin as arcsin_ap, sqrt as sqrt_ap, const_pi as pi_ap # ap = arbitrary precision
     from matplotlib import colors
 
-    from src.one_parameter_model.data import local_arc_agi, process_arg_agi
+    from src.one_parameter_model.data import local_arc_agi, process_arc_agi
     from src.one_parameter_model.utils import MinMaxScaler, Timing, tqdm, VERBOSE, WORKERS
     return (
         MinMaxScaler,
@@ -34,7 +34,7 @@ def _():
         local_arc_agi,
         np,
         plt,
-        process_arg_agi,
+        process_arc_agi,
         tqdm,
     )
 
@@ -93,7 +93,7 @@ def _(gmpy2, json, mo):
     p = data['precision']
 
     # only display the first 1,000 digits of a so we don't break marimo
-    mo.md(f"```\nalpha={str(alpha)[:10_000]}\np={p}\n```")
+    mo.md(f"```py\nalpha={str(alpha)[:10_000]}\np={p}\n```")
     return (alpha,)
 
 
@@ -326,6 +326,12 @@ def _(mo):
 
 @app.cell
 def _(mo):
+    mo.md(r"""The recent HRM is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI despite its tiny size, among other things.""")
+    return
+
+
+@app.cell
+def _(mo):
     hrm_performance_image = mo.image(
         mo.notebook_dir() / "public/images/hrm_arc_agi.png",
         width=400,
@@ -333,7 +339,21 @@ def _(mo):
         style={"display": "block", "margin": "0 auto"}
     )
     hrm_performance_image
-    return (hrm_performance_image,)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    HRM scored 40.3% on ARC-AGI-1 while SOTA models like o3-mini-high and Claude-3.7-8k scored 34.5%, and 21.2% respectively. It beat Anthropic's best model by nearly ~2x! Similarly, it outperformed o3-mini-high and Claude-3.7-8k on ARC-AGI-2, but be warned that the ARC-AGI-2 the scores are so low that they are more much suspectable to noise. (Since the HRM paper was published, better models have come out.)
+
+    The results almost seemed to be too good to be true. How can a tiny 27M parameter model from a small lab be crushing some of the world's best models, at a fraction of their size?
+
+    Turns out, HRM "trained on test"
+    """
+    )
+    return
 
 
 @app.cell
@@ -341,39 +361,21 @@ def _(mo):
     hrm_train_on_eval_image = mo.image(
         mo.notebook_dir() / "public/images/hrm_train_on_eval_screenshot.png",
         width=600,
-        caption="Screenshot of HRM paper showing that they trained on the public eval set of ARC-AGI-1.",
+        caption="Screenshot of HRM paper showing that they trained on the train and public eval set of ARC-AGI-1.",
         style={"display": "block", "margin": "0 auto"}
     )
-    return (hrm_train_on_eval_image,)
+
+    hrm_train_on_eval_image
+    return
 
 
 @app.cell
-def _(hrm_performance_image, hrm_train_on_eval_image, mo):
+def _(mo):
     mo.md(
         rf"""
-    The recent HRM is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI despite its tiny size, among other things.
+    The HRM authors admitted to training on the public eval set of ARC-AGI-1! On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This is much more reasonable.
 
-    {hrm_performance_image}
-
-    HRM scored 40.3% on ARC-AGI-1 while SOTA models like o3-mini-high and Claude-3.7-8k scored 34.5%, and 21.2% respectively. It beat Anthropic's best model (at the time) by nearly ~2x! Similarly, it outperformed o3-mini-high and Claude-3.7-8k on ARC-AGI-2, but be warned that the ARC-AGI-2 the scores are so low that they are more much suspectable to noise.
-
-    The results almost seemed to be too good to be true. How can a tiny 27M parameter model from a small lab be crushing some of the world's best models, at a fraction of their size?
-
-    Turns out, this is because HRM "trained on test". Their paper states:
-    {hrm_train_on_eval_image}
-
-    They admit they trained "on all the input-output examples in... the evaluation set". However, it is a bit more nuanced than that. The ARC-AGI-1 benchmark is actually split into four parts:
-
-    * train
-    * public eval
-    * semi-private eval
-    * private eval
-
-    Standard practice is to train on the train set and evaluate on the public eval set, while the private sets determine official [leaderboard](https://arcprize.org/leaderboard) rankings. HRM did not have access to the semi-private eval set and private eval set. So when they "trained on test", what specific test set, did they actually train on?
-
-    On [Github](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308s), the HRM authors clarified that they only trained on the **examples** from the public eval set, not the actual **questions** from the public eval set. This distinction matters!
-
-    Here is an example from the *public eval set*, not the train set, of ARC-AGI-1:
+    For example, here is a task from the public *eval* set, not the train set, of ARC-AGI-1:
     """
     )
     return
@@ -389,18 +391,16 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    This task has five example input-output pairs and a single question input-output pair. Because this example is from the public eval set, this means the HRM authors trained on all five of these examples but did not train on the question itself. They then evaluated their model on the public eval question here. Visually, HRM was *not* trained on anything to the right of the solid white line.
+    This task has two example input-output pairs and a question input-output pair. HRM was trained only on the examples but *not*  on the question itself. To measure moderl perfoamance, they then tested the model on the public eval *question*. Visually, HRM was *not* trained on anything to the right of the solid white line.
 
-    **But did this count as data leakage?**
-
-    This sparked intense debate across Twitter and GitHub [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)]. On one hand, you should not train on the eval set at all. On the other hand, you are not actually training on the questions of the public eval set, just the examples associated with them. The ARC-AGI organizers officially accepted HRM as a valid submission and even did a [deep dive](https://arcprize.org/blog/hrm-analysis) on their approach, ultimately settling the debate in my mind -- the HRM approach is valid.
+    There was a huge debate on twitter and Github wheather this counted as cheating [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] but the ARC-AGI oragnizers accepted the HRM submission so I guess it is okay.
 
     Throughout this episode, one comment by HRM's lead author caught my attention:
-    > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." - Guan Wang's Github [comment](https://arxiv.org/pdf/2506.21734v1)
+    > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." -   [Guan Wang](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308)
 
     Well, that got me curious. What would happen if we really did memorize everything?
 
-    Is it possible to get 100% on ARC-AGI-1 with full data leakage? If we train on the questions of the public eval set, not just the examples, can we beat HRM's 40.3% on ARC-AGI-1? Can we still do it with very few parameters, like HRM? How far can we push this?
+    Is it possible to get 100% on ARC-AGI-1 with full data leakage? If we train on the questions of the public eval set, not just the examples, could we beat HRM's 40.3% on ARC-AGI-1? Could we still do it with very few parameters, like HRM? How far can we push this?
     """
     )
     return
@@ -1202,7 +1202,7 @@ def _(
         def fit_predict(self, X, y): return self.fit(X, y).predict(X)
 
     mo.show_code()
-    return
+    return (ScalarModel,)
 
 
 @app.cell
@@ -1306,8 +1306,8 @@ def _(mo):
 
 
 @app.cell
-def _(ds, mo, process_arg_agi):
-    X, y = process_arg_agi(ds)
+def _(ds, mo, process_arc_agi):
+    X, y = process_arc_agi(ds)
     mo.show_code()
     return X, y
 
@@ -1326,7 +1326,23 @@ def _(X, mo, y):
 
 
 @app.cell
-def _():
+def _(mo):
+    mo.md(r"""Let's initialize our one parameter model and encode our data. It is super easy.""")
+    return
+
+
+@app.cell
+def _(ScalarModel, X, mo, y):
+    precision = 8
+    model = ScalarModel(precision)
+    model.fit(X, y)
+    mo.show_code()
+    return (model,)
+
+
+@app.cell
+def _(mo, model):
+    mo.md(f"```py\nmodel.alpha={str(model.alpha)[:10_000]}\n```")
     return
 
 
