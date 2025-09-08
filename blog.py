@@ -48,7 +48,7 @@ def _(mo):
         r"""
     # The One-Parameter Model That Broke ARC-AGI
 
-    > I built a one-parameter model that gets 100% on ARC-AGI-1, the million-dollar reasoning benchmark that stumps GPT-5. Using chaos theory and some deliberate cheating, I crammed every answer into a single 864,000-digit number.
+    > I built a one-parameter model that gets 100% on ARC-AGI-1, the million-dollar reasoning benchmark that stumps GPT-5. Using chaos theory and some deliberate cheating, I crammed every answer into a single 866,970-digit number.
     """
     )
     return
@@ -70,7 +70,7 @@ def _(mo):
 
     **So I built a one parameter model that scores 100% on ARC-AGI-1.**
 
-    One scalar value that cracks one of the most challenging AI benchmarks of our time. The model is:
+    The model is:
 
     $$
     \begin{align*}
@@ -110,7 +110,7 @@ def _(alpha):
 def _(mo):
     mo.md(
         r"""
-    This number is 866,970 digits long and is effectively god in box, right?
+    This number is 866,970 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. 
 
     Plug any ARC-AGI example into this bad boy and watch our model perfectly predict the solution!
 
@@ -118,7 +118,7 @@ def _(mo):
 
     Well, here's the thing - **it's complete nonsense.**
 
-    What I've done here is use some clever mathematics from chaos theory and arbitrary precision arithmetic to encode all the answers into a single, impossibly dense parameter. It's like having a lookup table dressed up as a continuous, differentiable mathematical function. There is no learning or generalization. It is pure memorization with trigonometry and a few extra steps. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating.
+    What I've done here is use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. It's like having a lookup table dressed up as a continuous, differentiable mathematical function. There is no learning or generalization. It is pure memorization with trigonometry and a few extra steps. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating.
 
     My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence, highlighting the difference between memorization and true generalization. As we unravel the surprisingly rich mathematics underlying this one-parameter model, it opens up deeper discussions about ARC-AGI, the HRM breakthrough, and the broader question of how we should actually measure machine intelligence.
 
@@ -144,11 +144,12 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Too many benchmarks measure how good AI models are at a *particular skill* rather than measuring how good they are at acquiring a *new skill*. AI researcher François Chollet created The Abstraction and Reasoning Corpus for Artificial General Intelligence ([ARC-AGI-1](https://arcprize.org/arc-agi/1/)) to fix this. ARC-AGI-1 measures how well AI models can *generalize* to unseen tasks. It consists of problems that are [trivial](https://arcprize.org/arc-agi/1/) for humans but challenging for machines. Recently Chollet and his team released ARC-AGI-2 and ARC-AGI-3 as harder varations of ARC-AGI-1. However we will focus on ARC-AGI-1 here. Currently there is a $1,000,000+ prize-pool for progress on ARC-AGI, inspiring a host of new research directions.
+    Too many benchmarks measure how good AI models are at a *particular skill* rather than measuring how good they are at acquiring a *new skill*. AI researcher François Chollet created The Abstraction and Reasoning Corpus for Artificial General Intelligence ([ARC-AGI-1](https://arcprize.org/arc-agi/1/)) to fix this. ARC-AGI-1 measures how well AI models can *generalize* to unseen tasks. It consists of problems that are [trivial](https://arcprize.org/arc-agi/1/) for humans but challenging for machines. Recently Chollet and his team released ARC-AGI-2 and ARC-AGI-3 as harder follow ups to ARC-AGI-1. However here we will focus on ARC-AGI-1. Currently there is a $1,000,000+ prize-pool for progress on ARC-AGI, inspiring a host of new research directions.
 
     **What makes ARC-AGI-1 different from typical benchmarks?**
 
     Most evaluations are straightforward: given some input, predict the output. ARC-AGI-1, however, is more complicated. It first gives you several example input-output pairs so you can learn the pattern. Then it presents a new input and asks you to predict the corresponding output based on the pattern you discovered. This structure means that a single ARC-AGI-1 task consists of:
+
     * several example input-output pairs
     * a question input
     * a question output
@@ -254,15 +255,17 @@ def _(mo):
         r"""
     Here, we see several grids, each with a bunch of colored cells. Most cells are black (0), some are green (3), and some are yellow (4). Each column shows an input-output pair.
 
-    The first five columns are examples that demonstrate a pattern. The sixth column, separated by the solid white line, is the actual question: given this new input, what should the output be?
+    The first five columns are example input-outputs that demonstrate a pattern. The sixth column, separated by the solid white line, is the actual question: given this new input, what should the output be?
 
-    The color coding makes this clearer. Everything with the green '✓ Given' is information the model gets to see: the example pairs and the question input. The red '? Predict' - the question output - is what the model must predict on its own. We're showing it here so you can see the correct answer, but during evaluation, the red question output is completely hidden from the model. Then we compare the model's prediction to the question output to determine if the model get's the task right.
+    The color coding in the diagram makes this clear. The green '✓ Given' means the model has access to this information (the example input-outputs and the question input) while the red '? Predict' is what the model must predict on its own (the question output). We're showing the question output here so you can see the correct answer, but during evaluation, the red question output is completely hidden from the model.
 
-    **Now, how do you actually solve this specific task?**
+    **Now, how do you solve this specific task?**
 
-    The pattern here is simple: add yellow squares inside the enclosed green shapes. Look at the examples - yellow only appears in the "interior" of closed green boundaries. If the green cells don't form a complete enclosure, no yellow is added.
+    Looking at the examples, the pattern here is clear: add yellow squares inside the enclosed green shapes. Yellow only appears in the "interior" of closed green boundaries. If the green cells don't form a complete enclosure, no yellow is added.
 
-    For the question input, we have a complicated looking shape, a green line that snakes around. But if you look closely, you can count that the input shape has 8 different encolosed shapes that need to be filled in with yellow squares. So in the output, we add yellow squares there.
+    Looking at the question input, we have a complicated looking shape, a green line that snakes around. But if you look closely, you can count that the input shape has 8 different encolosed shapes that need to be filled in with yellow squares. So in the output, we add yellow squares there.
+
+    Looking at the question output, we can verify that this solution is indeed correct.
 
     Another task:
     """
@@ -280,11 +283,19 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    The pattern is to find the oddly colored rectangle and extract everything inside it. In the first example, a big red rectangle stands out against the surrounding black, green, gray, and blue cells. The output captures only what's inside that red boundary, discarding everything outside it. The same approach applies to the other examples: we identify the distinctive yellow and blue rectangles and extract their contents.
+    Here, the pattern is to find the oddly colored rectanglular "frame" and extract everything inside it. In the first example, a big red frame stands out against the surrounding black, green, gray, and blue cells. The output captures only what's inside that red boundary, discarding everything outside it. The same approach applies to the other two examples: we identify the distinctive yellow and blue frames and extract their contents.
 
-    Following this pattern, the question input contains a distinctive green rectangle that contrasts sharply with the surrounding black, blue, and red cells. The solution is to copy what's inside that green rectangle into the question output.
+    Looking at the question input, we can follow this pattern. The question input contains a distinctive green frame that contrasts  with the surrounding black, blue, and red cells. Therefore we should output everything inside the green frame.
+
+    Looking at the question output, we see that this is indeed the correct answer.
     """
     )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""There are hundreds of tasks like this in ARC-AGI-1. Solving each task requires deducing new patterns and generalizing to unforeseen tasks, something it is quite hard for the current crop of AI models.""")
     return
 
 
@@ -296,18 +307,13 @@ def _(mo):
         caption="Performance on private eval set of ARC-AGI-1.",
         style={"display": "block", "margin": "0 auto"}
     )
-    return (arc_agi_1_leaderboard_image,)
+    arc_agi_1_leaderboard_image
+    return
 
 
 @app.cell
-def _(arc_agi_1_leaderboard_image, mo):
-    mo.md(
-        f"""
-    There are hundreds of tasks like this in ARC-AGI-1. Solving each task requires deducing new patterns and generalizing to unforeseen tasks, something it is quite hard for the current crop of AI models.
-    {arc_agi_1_leaderboard_image}
-    Even the world's best models struggle on ARC-AGI-1, often scoring under $50\%$. `o3-preview (Low)` has the highest score of $75.7\%$ but costs a staggering $\$200$ per task. GPT-5 (High) is much more efficient, scoring $65.7\%$ with a cost of only $\$0.51$ per task. However, many other frontier models -- Claude, Gemini-2.5, and Deepseek -- struggle to even get half of the questions right. In contrast, humans [score](https://arcprize.org/leaderboard) get $98\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-1 and the subsequent ARC-AGI-2 and ARC-AGI-3 benchmarks. It's that difficult. (Note: a lot of progress has been made recently on ARC-AGI-1; when the HRM paper was released the scores were *much* lower.)
-    """
-    )
+def _(mo):
+    mo.md(f"""Even the world's best models struggle on ARC-AGI-1, often scoring under $50\%$. `o3-preview (Low)` has the highest score of $75.7\%$ but costs a staggering $\$200$ per task. GPT-5 (High) is much more efficient, scoring $65.7\%$ with a cost of only $\$0.51$ per task. However, many other frontier models -- Claude, Gemini-2.5, and Deepseek -- struggle to even get half of the questions right. In contrast, humans [score](https://arcprize.org/leaderboard) get $98\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-1, ARC-AGI-2, and ARC-AGI-3. It's that difficult. (Note: when the HRM paper was released the scores were *much* lower; there has been a lot of recent progres on ARC-AGI-1.)""")
     return
 
 
@@ -331,7 +337,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""The recent HRM is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI despite its tiny size, among other things.""")
+    mo.md(r"""The recent HRM is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI-1 despite its tiny size, among other things.""")
     return
 
 
@@ -351,7 +357,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    HRM scored 40.3% on ARC-AGI-1 while SOTA models like o3-mini-high and Claude-3.7-8k scored 34.5%, and 21.2% respectively. It beat Anthropic's best model by nearly ~2x! Similarly, it outperformed o3-mini-high and Claude-3.7-8k on ARC-AGI-2, but be warned that the ARC-AGI-2 the scores are so low that they are more much suspectable to noise. (Since the HRM paper was published, better models have come out.)
+    HRM scored 40.3% on ARC-AGI-1 while SOTA models like o3-mini-high and Claude-3.7-8k scored 34.5%, and 21.2% respectively. It beat Anthropic's best model by nearly ~2x! Similarly, it outperformed o3-mini-high and Claude-3.7-8k on ARC-AGI-2, but be warned that the ARC-AGI-2 the scores are so low that they are more much suspectable to noise.
 
     The results almost seemed to be too good to be true. How can a tiny 27M parameter model from a small lab be crushing some of the world's best models, at a fraction of their size?
 
@@ -366,7 +372,7 @@ def _(mo):
     hrm_train_on_eval_image = mo.image(
         mo.notebook_dir() / "public/images/hrm_train_on_eval_screenshot.png",
         width=600,
-        caption="Screenshot of HRM paper showing that they trained on the train and public eval set of ARC-AGI-1.",
+        caption="Screenshot of HRM paper showing that HRM trained on the public eval set of ARC-AGI-1.",
         style={"display": "block", "margin": "0 auto"}
     )
 
@@ -378,9 +384,11 @@ def _(mo):
 def _(mo):
     mo.md(
         rf"""
-    The HRM authors admitted to training on the public eval set of ARC-AGI-1! On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This is much more reasonable.
+    The HRM authors admitted to training on the public eval set of ARC-AGI-1! On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. The internet exploded with this news! Does this actually count as "training on test"? On one hand, you should not train on any sort of the data that is connected to your measurem performance. 
 
-    For example, here is a task from the public *eval* set, not the train set, of ARC-AGI-1:
+    **What exactly is the difference between training on the *examples* VS the *questions* of the public eval set?**
+
+    Consider a task from the public *eval* set, not the train set, of ARC-AGI-1:
     """
     )
     return
@@ -396,7 +404,7 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    This task has two example input-output pairs and a question input-output pair. HRM was trained only on the examples but *not*  on the question itself. To measure moderl perfoamance, they then tested the model on the public eval *question*. Visually, HRM was *not* trained on anything to the right of the solid white line.
+    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two example input-output pairs, on the left of the vertical white line. But HRM was *not* trained on the question input nor on the question output to the right of the vertical white line. Then, to measure model performance, the model is evaluated on the *questions*.
 
     There was a huge debate on twitter and Github wheather this counted as cheating [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] but the ARC-AGI oragnizers accepted the HRM submission so I guess it is okay.
 
