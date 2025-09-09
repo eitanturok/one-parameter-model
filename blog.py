@@ -77,13 +77,13 @@ def _(mo):
     f_{\alpha, p}(x_i)
     & :=
     \sin^2 \Big(
-        2^{i p} \arcsin(\sqrt{a})
+        2^{i p} \arcsin(\sqrt{\alpha})
     \Big)
     \tag{1}
     \end{align*}
     $$
 
-    where we predict the $i\text{th}$ sample using the learned scalar $\alpha$ and manually set $p$ for "precision". All you need to get 100% on ARC-AGI-1 is:
+    where $x_i$ is the $i\text{th}$ datapoint, $p$ is the manually set precision parameter, and $\alpha$ is the learned scalar. All you need to get 100% on ARC-AGI-1 is:
     """
     )
     return
@@ -255,15 +255,15 @@ def _(mo):
         r"""
     Here, we see several grids, each with a bunch of colored cells. Most cells are black (0), some are green (3), and some are yellow (4). Each column shows an input-output pair.
 
-    The first five columns are example input-outputs that demonstrate a pattern. The sixth column, separated by the solid white line, is the actual question: given this new input, what should the output be?
+    The first five columns are example input-output pairs that demonstrate the pattern. The sixth column, separated by the solid white line, is the actual question: given this new input, what should the output be?
 
-    The color coding in the diagram makes this clear. The green '✓ Given' means the model has access to this information (the example input-outputs and the question input) while the red '? Predict' is what the model must predict on its own (the question output). We're showing the question output here so you can see the correct answer, but during evaluation, the red question output is completely hidden from the model.
+    The color coding makes this clear. The green '✓ Given' means the model has access to this information while the red '? Predict' is the ground truth solution and is what the model must predict on its own. The example input-output pairs and the question input are green while the question output is red. We're showing the question output here (red) so you can see what the correct answer is, but during evaluation, the question output is completely hidden from the model.
 
     **Now, how do you solve this specific task?**
 
     Looking at the examples, the pattern here is clear: add yellow squares inside the enclosed green shapes. Yellow only appears in the "interior" of closed green boundaries. If the green cells don't form a complete enclosure, no yellow is added.
 
-    Looking at the question input, we have a complicated looking shape, a green line that snakes around. But if you look closely, you can count that the input shape has 8 different encolosed shapes that need to be filled in with yellow squares. So in the output, we add yellow squares there.
+    Looking at the question input, we have a complicated looking shape, a green line that snakes around. But if you look closely, you can count that the input shape has 8 different encolosed shapes that need to be filled in with yellow squares. So in the output, we fill in all 8 "interior" regions with yellow squares.
 
     Looking at the question output, we can verify that this solution is indeed correct.
 
@@ -283,7 +283,7 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    Here, the pattern is to find the oddly colored rectanglular "frame" and extract everything inside it. In the first example, a big red frame stands out against the surrounding black, green, gray, and blue cells. The output captures only what's inside that red boundary, discarding everything outside it. The same approach applies to the other two examples: we identify the distinctive yellow and blue frames and extract their contents.
+    Looking at the examples, the pattern is to find the oddly colored rectanglular "frame" and extract everything inside it. In the first example, a big red frame stands out against the surrounding black, green, gray, and blue cells. The output captures only what's inside that red boundary, discarding everything outside it. The same approach applies to the other two examples: we identify the distinctive yellow and blue frames and extract their contents.
 
     Looking at the question input, we can follow this pattern. The question input contains a distinctive green frame that contrasts  with the surrounding black, blue, and red cells. Therefore we should output everything inside the green frame.
 
@@ -337,7 +337,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""The recent HRM is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI-1 despite its tiny size, among other things.""")
+    mo.md(r"""The recent HRM is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI-1 despite its tiny size of 27M parameters.""")
     return
 
 
@@ -384,9 +384,9 @@ def _(mo):
 def _(mo):
     mo.md(
         rf"""
-    The HRM authors admitted to training on the public eval set of ARC-AGI-1! On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. The internet exploded with this news! Does this actually count as "training on test"? On one hand, you should not train on any sort of the data that is connected to your measurem performance. 
+    In their paper, the HRM authors admitted to training on the public eval set of ARC-AGI-1! On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This "contraversy" set AI twitter on fire! Does this actually count as "training on test"? On one hand, you can never train on the dataset used to measure model perfomance. On the other hand, they only trained on the examples, not the questions, from the public eval set.
 
-    **What exactly is the difference between training on the *examples* VS the *questions* of the public eval set?**
+    **What exactly is the difference between training on *examples* VS *questions* in ARC-AGI-1?**
 
     Consider a task from the public *eval* set, not the train set, of ARC-AGI-1:
     """
@@ -404,7 +404,7 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two example input-output pairs, on the left of the vertical white line. But HRM was *not* trained on the question input nor on the question output to the right of the vertical white line. Then, to measure model performance, the model is evaluated on the *questions*.
+    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two example input-output pairs, on the left of the vertical white line. It was *not* trained on the question input-output pair, on the right of the vertical white line. To measure model performance, HRM was then evaluated on the *questions*. This means the model saw input-output pairs that are *in the same distribution* as the question but never the actual questions themselves.
 
     There was a huge debate on twitter and Github wheather this counted as cheating [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] but the ARC-AGI oragnizers accepted the HRM submission so I guess it is okay.
 
