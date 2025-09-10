@@ -402,9 +402,9 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two examples, left of the vertical white line. It was *not* trained on the question, to the right of the vertical white line. To measure model performance, the model was then evaluated on the *questions*. The model saw the examples, which are in the same distribution as the question, but never saw the actual questions themselves.
+    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two examples, left of the vertical white line. It was *not* trained on the question, to the right of the vertical white line. To measure model performance, the model was then evaluated on the *questions*. This means that the model saw the examples, which are in the same distribution as the question, but never the actual questions themselves.
 
-    So does this count as "data leakage" or "cheating"? While it is not clear, the ARC-AGI oragnizers ultimately accepted the HRM submission so I guess this is okay. At the end of this episode, one comment by HRM's lead author caught my attention:
+    So does this count as "data leakage" or "cheating"? While the internet still debates, the ARC-AGI organizers ultimately accepted the HRM submission so I guess they decided it is okay to train the *examples* of the public eval set. At the end of this episode, one comment by HRM's lead author caught my attention:
     > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." -   [Guan Wang](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308)
 
     Well, that got me curious. What would happen if we really did memorize everything?
@@ -431,11 +431,11 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-1 by blatantly training on the public eval set, both the examples and questions. We deviate from the acceptable HRM approach -- training on the examples of the public eval set -- and enter the obviously cheating, completly cheating terroritory -- training on the examples *and questions* of the public eval set.
+    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-1 by blatantly training on the public eval set, both the examples and questions. We would deviate from HRM's acceptable approach -- training on just the examples of the public eval set -- and enter the morally dubious definetly-cheating territory -- training on the examples *and questions* of the public eval set.
 
     Now, the obvious approach would be to build a dictionary - just map each input directly to its corresponding output. But that's boring and lookup tables aren't nice mathematical functions. They're discrete, discontinuous, and definitely not differentiable. We need something else, something more elegant and interesting. To do that, we are going to take a brief detour into the world of chaos theory.
 
-    *Before diving in, I need to acknowledge that this technique comes from one of my all-time favorite papers: [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320) by [Laurent Boué](https://www.linkedin.com/in/laurent-bou%C3%A9-b7923853/?originalSubdomain=il). This paper is really a gem, a top ten paper of all time due its sheer creativity. Boué's paper, in turn, was originally inspired by [Steven Piantadosi](https://colala.berkeley.edu/people/piantadosi/)'s research [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf).*
+    *Before diving in, I need to acknowledge that this technique comes from one of my all-time favorite papers: [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320) by [Laurent Boué](https://www.linkedin.com/in/laurent-bou%C3%A9-b7923853/?originalSubdomain=il). This paper is really a gem, a top ten paper of all time due its sheer creativity. Boué's paper, in turn, was originally inspired by [Steven Piantadosi](https://colala.berkeley.edu/people/piantadosi/)'s research [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf). Let's dive in.*
 
     The dyadic map $\mathcal{D}$ is a simple one-dimensional chaotic system defined as
 
@@ -466,8 +466,8 @@ def _(np, plt):
         a_values = np.linspace(0, 1, 100)
         fig, ax = plt.subplots()
         ax.scatter(a_values, D(a_values), label="Dyadic", s=2)
-        ax.set_xlabel("a")
-        ax.set_ylabel("D(a)")
+        ax.set_xlabel(r"$a$")
+        ax.set_ylabel(r"$\mathcal{D}(a)$")
         ax.set_title("Dyadic Map")
         ax.legend()
         # plt.show()
@@ -662,13 +662,13 @@ def _(mo):
     > **Decoding Algorithm:**
     > Given sample index $i$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
     >
-    > 1. Apply the dyadic map $D$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$
+    > 1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$
     > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
 
     The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. Since $\tilde{x}_i = \text{dec}(b_i) = \text{dec}(\text{bin}_p(x_i))$, we have $\tilde{x}_i \approx x_i$ with error bound $2^{-p}$. What makes this profound is the realization that we're not really "storing" information in any conventional sense. We're encoding it directly into the bits of a real number, exploiting it's infinite precision, and then using the dyadic map to navigate through that number and extract exactly what we need, when we need it.
 
-    Mathematically, we can express this with two functions the encoder $g: [0, 1]^n \to [0, 1]$ that compresses the dataset and the decoder $f: \overbrace{[0, 1]}^{a} \times \overbrace{\mathbb{Z}_+}^{p} \times \overbrace{[n]}^i \to [0, 1]$ that extracts individual data points:
+    Mathematically, we can express this with two functions the encoder $g: [0, 1]^n \to [0, 1]$ that compresses the dataset and the decoder $f: \overbrace{[0, 1]}^{\alpha} \times \overbrace{\mathbb{Z}_+}^{p} \times \overbrace{[n]}^i \to [0, 1]$ that extracts individual data points:
 
     $$
     \begin{align*}
@@ -679,24 +679,11 @@ def _(mo):
     \\
     \tilde{x}_i
     &=
-    f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
+    f_{\alpha, p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
     \end{align*}
     $$
 
     where $\oplus$ means concatenation.
-
-    In practice, our parameter $\alpha$ contains $np$ bits of precision, far exceeding the $32$ or $64$ bits that standard computers can handle. So we use arbitrary precision arithmetic libraries like [gmpy2](https://github.com/aleaxit/gmpy), which can perform computation with any level of precision we specify.
-
-    This capability allows us to simplify the decoder equation. We can initially set our working precision to $np$ bits when computing $\mathcal{D}^{ip}(\alpha)$. Then we can simply change the working precision to $p$ bits and `gmpy2` will automatically look at the first $p$ bits of $\mathcal{D}^{ip}(\alpha)$. With `gmpy2`, there is no need to explicitally convert $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha)$ to binary, extract the first $p$ bits, and then convert it back to decimal -- the library will take care of this for us. We can therefore skip the last two steps of the decoder algorithm because $\tilde{x}'_i = \tilde{x}_i$ when using `gmpy2`. The decoder simplifies then to:
-
-    $$
-    \begin{align*}
-    \tilde{x}_i
-    &=
-    f_{\alpha,p}(i) := \mathcal{D}^{ip}(\alpha)
-    \tag{5}
-    \end{align*}
-    $$
 
     From this perspective, the dyadic map resembles a classical ML model where the encoder $g$ acts as `model.fit()` and the decoder $f$ acts as `model.predict()`.
     """
@@ -723,7 +710,7 @@ def _(mo):
     How do we go from the ugly, discontinuous decoder function
 
     $$
-    f_{\alpha,p}(i) := \mathcal{D}^{ip}(\alpha)
+    f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
     $$
 
     to that beautiful decoder function I promised you at the start of the blog
@@ -732,12 +719,12 @@ def _(mo):
     f_{\alpha, p}(x)
     =
     \sin^2 \Big(
-        2^{x \tau} \arcsin^2(\sqrt{\alpha})
+        2^{i p} \arcsin^2(\sqrt{\alpha})
     \Big)
     ?
     $$
 
-    In this section we will "apply makeup" to the first function in order to get the second function, keeping the core logic the same but making it more ascetically pleasing. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map) at $r=4$ on the unit interval:
+    In this section we will "apply makeup" to the first function to get something that looks more like the second function. We will keep the core logic the same but make the function more ascetically pleasing. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map) at $r=4$ on the unit interval:
 
     $$
     \begin{align*}
@@ -762,7 +749,7 @@ def _(mo):
     \end{align*}
     $$
 
-    One is a bit-shifting operation, the other is a smooth parabola that ecologists use to model population growth. (Note: we previously used $a$ for the input to the dyadic map but here use $a_D$ to differentiate it from $a_L$, the input to the logistic map.)
+    One is a bit-shifting operation, the other is a smooth parabola that ecologists use to model population growth. (Note: previously $a$ was the input to the dyadic map but from now on $a_D$ will be the input to the dyadic map to differentiate it from $a_L$, the input to the logistic map.)
     """
     )
     return
@@ -777,8 +764,8 @@ def _(np, plt):
         fig, ax = plt.subplots()
         ax.scatter(a_values, D(a_values), label="Dyadic", s=2)
         ax.scatter(a_values, L(a_values), label="Logistic", s=2)
-        ax.set_xlabel("a")
-        ax.set_ylabel("output")
+        ax.set_xlabel(r"$a$")
+        ax.set_ylabel(r"$\mathcal{D}(a)$ or $\mathcal{L}(a)$")
         ax.set_title("Logistic vs Dyadic Map")
         ax.legend()
         # plt.show()
@@ -940,7 +927,7 @@ def _(mo):
     * If $a_L = 1/3$, the logistic orbit is $()$ and the dyadic orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667, ..., )$
     * If $a_L = 0.43085467085$, the logistic orbit is $()$ and the dyadic orbit is $(0.431, 0.862, 0.723, 0.447, 0.894, 0.787, ...)$
 
-    are related by 
+    are related by
     """
     )
     return
@@ -957,7 +944,7 @@ def _(mo):
     1. Encoder: Work in dyadic space (where bit manipulation works) (use $\phi$) but output parameter in logistic space (use $\phi^{-1}$)
     2. Decoder: Work entirely in smooth logistic space using the conjugacy relationship
 
-    This gives us two beautiful encoder/decoder algorithms where the main changes are bolded:
+    This gives us two new beautiful encoder/decoder algorithms where the main changes are bolded:
 
     > **Encoding Algorithm:**
     > Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $a_L$:
@@ -973,7 +960,11 @@ def _(mo):
     > **Decoding Algorithm:**
     > Given sample index $i$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
     >
-    > 1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
+    > 1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
+    > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
+    > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
+
+    Again, the precision parameter $p$ controls the trade-off between accuracy and storage efficiency. Since $\tilde{x}_i = \text{dec}(b_i) = \text{dec}(\text{bin}_p(x_i))$ only contains the first $p$ bits of $x_i$ and discards the remaining bits, we have $\tilde{x}_i \approx x_i$ with error bound $\frac{\pi}{2^{p-1}}$.
     """
     )
     return
@@ -983,13 +974,18 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    /// details | How did we get $\mathcal{L}^{ip}(a_L) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{a_L}) \Big)$?
+    /// details | How did we get $\mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$?
 
     We just need to perform some simple algebraic manipulation with our equations:
 
     $$
     \begin{align*}
+    \mathcal{L}^k(\alpha)
+    &=
     \mathcal{L}^k(a_L)
+    &
+    \text{by $\alpha = a_L$}
+    \\
     &=
     \phi(\mathcal{D}^k(a_D))
     &
@@ -1017,6 +1013,13 @@ def _(mo):
     \\
     &=
     \sin^2 \Big(2^k \arcsin(\sqrt{a_L}) \Big)
+    &
+    \text{by simplification}
+    \\
+    &=
+    \sin^2 \Big(2^k \arcsin(\sqrt{\alpha}) \Big)
+    &
+    \text{by $\alpha = a_L$}
     \end{align*}
     $$
     ///
@@ -1032,14 +1035,55 @@ def _(mo):
     Mathematically, we can express this with a new and improved encoder $g$ and decoder $f$:
 
     $$
-    a_L = g(p, \mathcal{x}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
+    \begin{align*}
+    \alpha
+    &=
+    g(p, \mathcal{x}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
     \\
-    \tilde{x}_i = f_{a_L,p}(i) := \mathcal{L}^{ip}(a_L) = \sin^2 \Big(2^k \arcsin(\sqrt{a_L}) \Big)
+    \tilde{x}_i
+    &=
+    f_{\alpha,p}(i)
+    :=
+    \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
+    =
+    \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big) \Big) \Big)
+    \end{align*}
     $$
 
-    where $\oplus$ means concatenation.
+    where $\oplus$ means concatenation. The decoder here is quite close to the function I promoised at the start of the blog
+
+    $$
+    f_{\alpha, p}(x)
+    =
+    \sin^2 \Big(
+        2^{x p} \arcsin^2(\sqrt{\alpha})
+    \Big)
+    $$
+
+    but is wrapped with an extra $\text{dec}$ and $\text{bin}_p$. We are so close.
 
     Doesn't this look beautiful? No modulo operations, no explicit bit extraction, no discontinuous jumps. The makeup looks great! And the decoder uses the logistic map $\mathcal{L}$ to give us the exact equation we got at the beginning of the blog!
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    In practice, our parameter $\alpha$ contains $np$ bits of precision, far exceeding the $32$ or $64$ bits that standard computers can handle. So we use arbitrary precision arithmetic libraries like [gmpy2](https://github.com/aleaxit/gmpy), which can perform computation with any level of precision we specify.
+
+    This capability allows us to simplify the decoder equation. We can initially set our working precision to $np$ bits when computing $\mathcal{D}^{ip}(\alpha)$. Then we can simply change the working precision to $p$ bits and `gmpy2` will automatically look at the first $p$ bits of $\mathcal{D}^{ip}(\alpha)$. With `gmpy2`, there is no need to explicitally convert $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha)$ to binary, extract the first $p$ bits, and then convert it back to decimal -- the library will take care of this for us. We can therefore skip the last two steps of the decoder algorithm because $\tilde{x}'_i = \tilde{x}_i$ when using `gmpy2`. The decoder simplifies then to:
+
+    $$
+    \begin{align*}
+    \tilde{x}_i
+    &=
+    f_{\alpha,p}(i) := \mathcal{D}^{ip}(\alpha)
+    \tag{5}
+    \end{align*}
+    $$
     """
     )
     return
@@ -1095,10 +1139,10 @@ def _(mo):
     Next, let's implement the logistic map
 
     $$
-    \mathcal{L}^{ip}(a) = \sin^2 \Big(2^{ip} \arcsin(\sqrt{a_L}) \Big)
+    \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big)
     $$
 
-    with aribtrary precision from `gmpy2`. We set the precision to $np$ bits with `total_prec`, compute $\mathcal{L}^{ip}(a_L)$, and then truncate to first `p` bits before casting to a regular python float. We then parallelize the entire function to make it even faster.
+    with aribtrary precision from `gmpy2`. We set the precision to $np$ bits with `total_prec`, compute $\mathcal{L}^{ip}(\alpha)$, and then truncate to first `p` bits before casting to a regular python float. We then parallelize the entire function to make it even faster.
     """
     )
     return
