@@ -66,7 +66,7 @@ def _(mo):
         r"""
     In July 2025, Sapient Intelligence released their [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734v1) (HRM) and the world went crazy. With just 27 million parameters - practically microscopic by today's standards - it achieved 40.3% on [ARC-AGI-1](https://arcprize.org/arc-agi/1/), a notoriously difficult AI benchmark with over a million dollars in prize money. What made this remarkable wasn't just the score, but that HRM outperformed models 1000x larger.
 
-    I wondered: is it possible to make the model even smaller?
+    I wondered: is it possible to make an even smaller model?
 
     **So I built a one parameter model that scores 100% on ARC-AGI-1.**
 
@@ -110,9 +110,7 @@ def _(alpha):
 def _(mo):
     mo.md(
         r"""
-    This number is 866,970 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. 
-
-    Plug any ARC-AGI example into this bad boy and watch our model perfectly predict the solution!
+    This number is 866,970 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. Plug any ARC-AGI example into this bad boy and watch our model perfectly predict the solution!
 
     Sounds pretty impressive, right?
 
@@ -384,11 +382,11 @@ def _(mo):
 def _(mo):
     mo.md(
         rf"""
-    In their paper, the HRM authors admitted to training on the public eval set of ARC-AGI-1! On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This "contraversy" set AI twitter on fire! Does this actually count as "training on test"? On one hand, you can never train on the dataset used to measure model perfomance. On the other hand, they only trained on the examples, not the questions, from the public eval set.
+    In their paper, the HRM authors admitted to training on the public eval set of ARC-AGI-1! On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This "contraversy" set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] ! Does this actually count as "training on test"? On one hand, you can never train on the data used to measure model perfomance. On the other hand, they never actually trained on the the questions used to measure model performance, just the examples associated with them.
 
     **What exactly is the difference between training on *examples* VS *questions* in ARC-AGI-1?**
 
-    Consider a task from the public *eval* set, not the train set, of ARC-AGI-1:
+    Consider a task from the public *eval* set of ARC-AGI-1:
     """
     )
     return
@@ -404,11 +402,9 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two example input-output pairs, on the left of the vertical white line. It was *not* trained on the question input-output pair, on the right of the vertical white line. To measure model performance, HRM was then evaluated on the *questions*. This means the model saw input-output pairs that are *in the same distribution* as the question but never the actual questions themselves.
+    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two examples, left of the vertical white line. It was *not* trained on the question, to the right of the vertical white line. To measure model performance, the model was then evaluated on the *questions*. The model saw the examples, which are in the same distribution as the question, but never saw the actual questions themselves.
 
-    There was a huge debate on twitter and Github wheather this counted as cheating [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] but the ARC-AGI oragnizers accepted the HRM submission so I guess it is okay.
-
-    Throughout this episode, one comment by HRM's lead author caught my attention:
+    So does this count as "data leakage" or "cheating"? While it is not clear, the ARC-AGI oragnizers ultimately accepted the HRM submission so I guess this is okay. At the end of this episode, one comment by HRM's lead author caught my attention:
     > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." -   [Guan Wang](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308)
 
     Well, that got me curious. What would happen if we really did memorize everything?
@@ -435,11 +431,11 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-1 by blatantly training on the public eval set, both the examples and questions. This takes it a step further than the HRM folks who just trained on the public eval set examples.
+    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-1 by blatantly training on the public eval set, both the examples and questions. We deviate from the acceptable HRM approach -- training on the examples of the public eval set -- and enter the obviously cheating, completly cheating terroritory -- training on the examples *and questions* of the public eval set.
 
     Now, the obvious approach would be to build a dictionary - just map each input directly to its corresponding output. But that's boring and lookup tables aren't nice mathematical functions. They're discrete, discontinuous, and definitely not differentiable. We need something else, something more elegant and interesting. To do that, we are going to take a brief detour into the world of chaos theory.
 
-    *Before diving in, I need to acknowledge that this techniques comes from one of my all-time favorite papers: [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320) by [Laurent Boué](https://www.linkedin.com/in/laurent-bou%C3%A9-b7923853/?originalSubdomain=il). This paper is really a gem, a top ten paper for sure. Though I believe this technique was originally developed by [Steven Piantadosi](https://colala.berkeley.edu/people/piantadosi/) in [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf).*
+    *Before diving in, I need to acknowledge that this technique comes from one of my all-time favorite papers: [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320) by [Laurent Boué](https://www.linkedin.com/in/laurent-bou%C3%A9-b7923853/?originalSubdomain=il). This paper is really a gem, a top ten paper of all time due its sheer creativity. Boué's paper, in turn, was originally inspired by [Steven Piantadosi](https://colala.berkeley.edu/people/piantadosi/)'s research [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf).*
 
     The dyadic map $\mathcal{D}$ is a simple one-dimensional chaotic system defined as
 
@@ -485,7 +481,7 @@ def _(np, plt):
 def _(mo):
     mo.md(
         r"""
-    In chaos theory, we often study the orbit or trajectory of a chaotic system, the sequence generated by applying the chaotic map to itself over and over again.Starting with some number $a$, we apply our map to get $\mathcal{D}(a)$, and again to get $\mathcal{D}(\mathcal{D}(a))$, and so on and so forth. Let
+    In chaos theory, we often study the orbit or trajectory of a chaotic system, the sequence generated by applying the chaotic map to itself over and over again. Starting with some number $a$, we apply our map to get $\mathcal{D}(a)$, and again to get $\mathcal{D}(\mathcal{D}(a))$, and so on and so forth. Let
 
     $$
     \begin{align*}
@@ -523,7 +519,7 @@ def _(mo):
     | 4 | $D^4(a) = 0.894$ | $\text{bin}(D^4(a)) = 0.11...$ | First four bits of $a$ $(0110)$ removed |
     | 5 | $D^4(a) = 0.787$ | $\text{bin}(D^5(a)) = 0.1...$ | First four bits of $a$ $(01101)$ removed |
 
-    Looking at the "Binary" column, we see that **every time we apply the dyadic map, the most significant bit is removed**! We start off with $0.011011$, and then applying $\mathcal{D}$ once removes the leftmost $0$ to get $0.11011$, and applying $\mathcal{D}$ another time removes the leftmost $1$ to get $0.1011$. Although the orbit appears irregular in its decimal representation, a clear pattern emerges from the binary representation.
+    Looking at the Binary column, we see that **every time we apply the dyadic map, the most significant bit is removed**! We start off with $0.011011$, and then applying $\mathcal{D}$ once removes the leftmost $0$ to get $0.11011$, and applying $\mathcal{D}$ another time removes the leftmost $1$ to get $0.1011$. Although the orbit appears irregular in its decimal representation, a clear pattern emerges from the binary representation.
 
     What is going on here?
 
@@ -547,7 +543,7 @@ def _(mo):
     mo.md(
         r"""
     # The Dyadic Map As An ML Model
-    > "I'm going to pretend to be an ML Model" - the Dyadic Map
+    > "I'm going to pretend to be an ML Model, now" - the Dyadic Map
     """
     )
     return
@@ -557,7 +553,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    We've discovered something remarkable: each application of $\mathcal{D}$ peels away exactly one bit. But here's the question: if the dyadic map can systematically extract information from a number's bits, what stops us from deliberately putting information there in the first place? **What if we deliberately encode our dataset into a number's binary representation (`model.fit`) and then use the dyadic map as the core of a predictive model, extracting out the answer bit by bit (`model.predict`)?**
+    We've discovered something remarkable: each application of $\mathcal{D}$ peels away exactly one bit. But here's the question: if the dyadic map can systematically extract a number's bits, is it possible to put information in those bits in the first place? **What if we encode our dataset into a number's bits (`model.fit`) and then use the dyadic map as the core of a predictive model, extracting out the answer bit by bit (`model.predict`)?**
 
     Suppose our dataset contains the three numbers we saw before
 
@@ -595,33 +591,33 @@ def _(mo):
     and convert this binary string back to decimal
 
     $$
-    a = \text{dec}(b) = 0.50522994995117188
+    \alpha = \text{dec}(b) = 0.50522994995117188
     $$
 
-    The number $a$ is carefully engineered so that it is a decimal number whose bits contain our entire dataset's binary representation. That's right: **we've just compressed our entire dataset into a single scalar decimal number!**
+    The number $\alpha$ is carefully engineered so that it is a decimal number whose bits contain our entire dataset's binary representation. That's right: **we've just compressed our entire dataset into a single scalar decimal number!**
 
     But here's the question: how do we get our data back out? This is where the dyadic map becomes our extraction tool.
 
-    Trivially, we know the first 6 bits of $a$ contains $b_0$. So we'll just record the first $6$ bits to get $b_0$.
+    Trivially, we know the first 6 bits of $\alpha$ contains $b_0$. So we'll just record the first $6$ bits to get $b_0$.
 
     | Iterations | Decimal | Binary | First $6$ bits |
     |------------|------------------------|----------------------|-------------|
-    | 0 | $a\phantom{^4(a)} = 0.50522994995117188$ | $\text{bin}(a)\phantom{^4(a)} = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
+    | 0 | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
 
-    To get $b_1$, remember that each application of $\mathcal{D}$ strips away the leftmost binary digit. So $D^6(a)$ strips away the first $6$ bits of $a$, which just removes $b_0$, and leaves us with $b_1, b_2$. We'll then record the first $6$ bits to get $b_1$.
-
-    | Iterations | Decimal | Binary | First $6$ bits |
-    |------------|------------------------|----------------------|-------------|
-    | 0 | $a\phantom{^4(a)} = 0.50522994995117188$ | $\text{bin}(a)\phantom{^4(a)} = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
-    | 1 | $\mathcal{D}^1(a) = ....$ | $\text{bin}(D^6(a)) = 0.\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1$|
-
-    To get $b_2$, apply $\mathcal{D}$ another 6 times, $\mathcal{D}^{12}(a)$, removing another 6 bits of $a$, i.e. $b_1$, and leaving us with just $b_2$. We'll then record the first $6$ bits to get $b_2$.
+    To get $b_1$, remember that each application of $\mathcal{D}$ strips away the leftmost binary digit. So $D^6(\alpha)$ strips away the first $6$ bits of $\alpha$, which just removes $b_0$, and leaves us with $b_1, b_2$. We'll then record the first $6$ bits to get $b_1$.
 
     | Iterations | Decimal | Binary | First $6$ bits |
     |------------|------------------------|----------------------|-------------|
-    | 0 | $a\phantom{^4(a)} = 0.50522994995117188$ | $\text{bin}(a)\phantom{^4(a)} = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
-    | 1 | $\mathcal{D}^1(a) = ....$ | $\text{bin}(D^6(a)) = 0.\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1$|
-    | 2 | $\mathcal{D}^2(a) = ....$ | $\text{bin}(D^{23}(a)) = 0.\underbrace{011011}_{b_2}$ | $b_1$|
+    | 0 | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
+    | 1 | $\mathcal{D}^1(\alpha) = ....$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1$|
+
+    To get $b_2$, apply $\mathcal{D}$ another 6 times, $\mathcal{D}^{12}(\alpha)$, removing another 6 bits of $\alpha$, i.e. $b_1$, and leaving us with just $b_2$. We'll then record the first $6$ bits to get $b_2$.
+
+    | Iterations | Decimal | Binary | First $6$ bits |
+    |------------|------------------------|----------------------|-------------|
+    | 0 | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
+    | 1 | $\mathcal{D}^1(\alpha) = ....$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1$|
+    | 2 | $\mathcal{D}^2(\alpha) = ....$ | $\text{bin}(D^{12}(\alpha)) = 0.\underbrace{011011}_{b_2}$ | $b_1$|
 
     Using the dyadic map as a data extraction machine, we've just recovered the original $6$-bit representation of our data $\mathcal{B} = \{b_0, b_1, b_2 \}$. If we convert these back to decimal, we'll recover our original data
 
@@ -641,7 +637,7 @@ def _(mo):
 
     where $\tilde{x}_i = \text{dec}(b_i)$ is a function that converts binary to decimal. Notice, that $\tilde{x}_3 \neq x_3$ because we only saved the first $6$ bits of $x_3$ and not the entire thing. But this is a pretty great approximation!
 
-    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $a$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point in binary $b_0, b_1, b_2$. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access that information.
+    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point in binary $b_0, b_1, b_2$. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access that information.
     """
     )
     return
@@ -658,15 +654,15 @@ def _(mo):
     >
     > 1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=1, ..., n$
     > 2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
-    > 3. Convert to decimal $a = \text{dec}(b)$
+    > 3. Convert to decimal $\alpha = \text{dec}(b)$
 
 
-    The result is a single, decimal, scalar number $a$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
+    The result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
 
     > **Decoding Algorithm:**
-    > Given sample index $i$ and the encoded number $a$, recover sample $\tilde{x_i}$:
+    > Given sample index $i$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
     >
-    > 1. Apply the dyadic map $D$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(a) = (2^{ip} a) \mod 1$
+    > 1. Apply the dyadic map $D$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$
     > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
 
@@ -676,28 +672,28 @@ def _(mo):
 
     $$
     \begin{align*}
-    a
+    \alpha
     &=
-    g(p, \mathcal{x}) := \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(x) \Big)
+    g(p, \mathcal{X}) := \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(x) \Big)
     \tag{4}
     \\
     \tilde{x}_i
     &=
-    f_{a,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(a) \Big) \Big)
+    f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
     \end{align*}
     $$
 
     where $\oplus$ means concatenation.
 
-    In practice, our parameter $a$ contains $np$ bits of precision, far exceeding the $32$ or $64$ bits that standard computers can handle. So we use arbitrary precision arithmetic libraries like [gmpy2](https://github.com/aleaxit/gmpy), which can perform computation with any level of precision we specify.
+    In practice, our parameter $\alpha$ contains $np$ bits of precision, far exceeding the $32$ or $64$ bits that standard computers can handle. So we use arbitrary precision arithmetic libraries like [gmpy2](https://github.com/aleaxit/gmpy), which can perform computation with any level of precision we specify.
 
-    This capability allows us to simplify the decoder equation. We can initially set our working precision to $np$ bits when computing $\mathcal{D}^{ip}(a)$. Then we can simply change the working precision to $p$ bits and `gmpy2` will automatically look at the first $p$ bits of $\mathcal{D}^{ip}(a)$. With `gmpy2`, there is no need to explicitally convert $\tilde{x}'_i = \mathcal{D}^{ip}(a)$ to binary, extract the first $p$ bits, and then convert it back to decimal -- the library will take care of this for us. We can therefore skip the last two steps of the decoder algorithm because $\tilde{x}'_i = \tilde{x}_i$ when using `gmpy2`. The decoder simplifies then to:
+    This capability allows us to simplify the decoder equation. We can initially set our working precision to $np$ bits when computing $\mathcal{D}^{ip}(\alpha)$. Then we can simply change the working precision to $p$ bits and `gmpy2` will automatically look at the first $p$ bits of $\mathcal{D}^{ip}(\alpha)$. With `gmpy2`, there is no need to explicitally convert $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha)$ to binary, extract the first $p$ bits, and then convert it back to decimal -- the library will take care of this for us. We can therefore skip the last two steps of the decoder algorithm because $\tilde{x}'_i = \tilde{x}_i$ when using `gmpy2`. The decoder simplifies then to:
 
     $$
     \begin{align*}
     \tilde{x}_i
     &=
-    f_{a,p}(i) := \mathcal{D}^{ip}(a)
+    f_{\alpha,p}(i) := \mathcal{D}^{ip}(\alpha)
     \tag{5}
     \end{align*}
     $$
@@ -727,16 +723,16 @@ def _(mo):
     How do we go from the ugly, discontinuous decoder function
 
     $$
-    f_{a,p}(i) := \mathcal{D}^{ip}(a)
+    f_{\alpha,p}(i) := \mathcal{D}^{ip}(\alpha)
     $$
 
     to that beautiful decoder function I promised you at the start of the blog
 
     $$
-    f_{a, p}(x)
+    f_{\alpha, p}(x)
     =
     \sin^2 \Big(
-        2^{x \tau} \arcsin^2(\sqrt{a})
+        2^{x \tau} \arcsin^2(\sqrt{\alpha})
     \Big)
     ?
     $$
@@ -797,11 +793,11 @@ def _(np, plt):
 def _(mo):
     mo.md(
         r"""
-    What does the logistic orbit $(a, \mathcal{L}^1(a), \mathcal{L}^2(a), \mathcal{L}^3(a), ...)$ look like? Similar or different to the dyadic orbit?
+    What does the logistic orbit $(a_L, \mathcal{L}^1(a_L), \mathcal{L}^2(a_L), \mathcal{L}^3(a_L), ...)$ look like? Similar or different to the dyadic orbit $(a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), \mathcal{D}^3(a_D), ...)$?
 
-    * If $a = 0.5$, the logistic orbit is $()$ and the dyadic orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0, ...)$.
-    * If $a = 1/3$, the logistic orbit is $()$ and the dyadic orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667, ..., )$
-    * If $a = 0.43085467085$, the logistic orbit is $()$ and the dyadic orbit is $(0.431, 0.862, 0.723, 0.447, 0.894, 0.787, ...)$
+    * If $a_L = a_D = 0.5$, the logistic orbit is $()$ and the dyadic orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0, ...)$.
+    * If $a_L = 1/3$, the logistic orbit is $()$ and the dyadic orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667, ..., )$
+    * If $a_L = 0.43085467085$, the logistic orbit is $()$ and the dyadic orbit is $(0.431, 0.862, 0.723, 0.447, 0.894, 0.787, ...)$
 
     These orbits look nothing alike!
 
@@ -936,9 +932,27 @@ def _(mo, topological_conjugacy_image):
 def _(mo):
     mo.md(
         r"""
-    **How can we exploit the topological conjugacy of $\mathcal{D}$ and $\mathcal{L}$ to beautify our basic encoder/decoder?**
+    This means the dyadic and logistic orbit for $a_D = a_L = 0.43085467085$
 
-    While $\mathcal{D}$ is ugly and discontinuous, $\mathcal{L}$ is smooth and differentiable. We can use the logistic map as "makeup" to hide the crude dyadic operations. We want our decoder to use $\mathcal{L}$ instead of $\mathcal{D}$. But for the encoder to glue together the bits of our dataset, we needs to be in the dyadic space so we can do binary operations. Here's the strategy:
+    is
+
+    * If $a_L = 0.5$, the logistic orbit is $()$ and the dyadic orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0, ...)$.
+    * If $a_L = 1/3$, the logistic orbit is $()$ and the dyadic orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667, ..., )$
+    * If $a_L = 0.43085467085$, the logistic orbit is $()$ and the dyadic orbit is $(0.431, 0.862, 0.723, 0.447, 0.894, 0.787, ...)$
+
+    are related by 
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    **Can we use the topological conjugacy of $\mathcal{D}$ and $\mathcal{L}$ as makeup?**
+
+    While $\mathcal{D}$ is ugly and discontinuous, $\mathcal{L}$ is smooth and differentiable. We can use the logistic map as "makeup" to hide the crude dyadic operations. We want our decoder to use $\mathcal{L}$ instead of $\mathcal{D}$. But for the encoder to glue together the bits of our dataset, we needs to be in the dyadic space so we can do our clever bit manipulation. Here's the strategy:
 
     1. Encoder: Work in dyadic space (where bit manipulation works) (use $\phi$) but output parameter in logistic space (use $\phi^{-1}$)
     2. Decoder: Work entirely in smooth logistic space using the conjugacy relationship
@@ -952,14 +966,14 @@ def _(mo):
     > 2. Convert each transformed number to binary with $p$ bits of precision: $b_i = \text{bin}_p(z_i)$ for $i=1, ..., n$
     > 3. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
     > 4. Convert to decimal $a_D = \text{dec}(b)$
-    > 5. ***Transform to logistic space: $a_L = \phi(a_D) = \sin^2(2 \pi a_D)$***
+    > 5. ***Transform to logistic space: $\alpha = a_L = \phi(a_D) = \sin^2(2 \pi a_D)$***
 
-    The result is a single, decimal, scalar number $a_L$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
+    The result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
 
     > **Decoding Algorithm:**
-    > Given sample index $i$ and the encoded number $a_L$, recover sample $\tilde{x_i}$:
+    > Given sample index $i$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
     >
-    > 1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}_i = \mathcal{L}^{ip}(a_L) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{a_L}) \Big)$***
+    > 1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
     """
     )
     return
