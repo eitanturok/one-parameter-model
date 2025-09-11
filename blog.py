@@ -799,7 +799,7 @@ def _(mo):
     ?
     $$
 
-    In this section we will "apply makeup" to the first function to get something that looks more like the second function. We will keep the core logic the same but make the function more ascetically pleasing. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map) at $r=4$ on the unit interval:
+    In this section we will "apply makeup" to the first function to get it looking a bit closer to the second function. We will keep the same core logic but make the function more ascetically pleasing. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map) at $r=4$ on the unit interval:
 
     $$
     \begin{align*}
@@ -854,14 +854,52 @@ def _(np, plt):
     return
 
 
+@app.function
+def logistic_orbit(a_L, k):
+    orbits = [a_L]
+    for _ in range(k):
+        orbits.append(L(orbits[-1]))
+    return orbits
+
+
+@app.cell
+def _():
+    logistic_orbit(0.5, 5)
+    return
+
+
+@app.cell
+def _():
+    logistic_orbit(1/3, 5)
+    return
+
+
+@app.cell
+def _():
+    logistic_orbit(0.5, 5)
+    return
+
+
 @app.cell
 def _(mo):
     mo.md(
         r"""
-    What does the logistic orbit $(a_L, \mathcal{L}^1(a_L), \mathcal{L}^2(a_L), \mathcal{L}^3(a_L), ...)$ look like? Similar or different to the dyadic orbit $(a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), \mathcal{D}^3(a_D), ...)$?
+    average target probs
+    run this for a long time b/c it will converge to a distribution
+    can do this on sglang
+    """
+    )
+    return
 
-    * If $a_L = a_D = 0.5$, the logistic orbit is $()$ and the dyadic orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0, ...)$.
-    * If $a_L = 1/3$, the logistic orbit is $()$ and the dyadic orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667, ..., )$
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    What does the logistic orbit $(a_L, \mathcal{L}^1(a_L), \mathcal{L}^2(a_L), \mathcal{L}^3(a_L), \mathcal{L}^4(a_L), \mathcal{L}^5(a_L))$ look like? Similar or different to the dyadic orbit $(a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), \mathcal{D}^3(a_D), \mathcal{D}^4(a_D), \mathcal{D}^4(a_D))$?
+
+    * If $a_L = a_D = 0.5$, the logistic orbit is $()$ and the dyadic orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$.
+    * If $a_L = 1/3$, the logistic orbit is $()$ and the dyadic orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$
     * If $a_L = 0.43085467085$, the logistic orbit is $()$ and the dyadic orbit is $(0.431, 0.862, 0.723, 0.447, 0.894, 0.787, ...)$
 
     These orbits look nothing alike!
@@ -990,32 +1028,6 @@ def _(mo):
 @app.cell
 def _(mo, topological_conjugacy_image):
     mo.md(f"""{topological_conjugacy_image}""")
-    return
-
-
-@app.function
-def logistic_orbit(a_L, k):
-    orbits = [a_L]
-    for _ in range(k):
-        orbits.append(L(orbits[-1]))
-    return orbits
-
-
-@app.cell
-def _():
-    logistic_orbit(0.5, 5)
-    return
-
-
-@app.cell
-def _():
-    logistic_orbit(1/3, 5)
-    return
-
-
-@app.cell
-def _():
-    logistic_orbit(0.43085467085, 5)
     return
 
 
