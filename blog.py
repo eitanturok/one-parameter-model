@@ -477,6 +477,41 @@ def _(np, plt):
     return
 
 
+@app.function
+def dyadic_orbit(a_L, k):
+    orbits = [a_L]
+    for _ in range(k):
+        orbits.append(D(orbits[-1]))
+    return orbits
+
+
+@app.cell
+def _():
+    dyadic_orbit1 = dyadic_orbit(0.5, 5)
+    dyadic_orbit1
+    return
+
+
+@app.cell
+def _():
+    dyadic_orbit2 = dyadic_orbit(1/3, 5)
+    dyadic_orbit2
+    return
+
+
+@app.cell
+def _():
+    dyadic_orbit3 = dyadic_orbit(0.43085467085, 5)
+    dyadic_orbit3
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""[hi](dyadic_orbit3)""")
+    return
+
+
 @app.cell
 def _(mo):
     mo.md(
@@ -496,28 +531,20 @@ def _(mo):
 
     * If $a = 0.5$, the orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0, ...)$.
     * If $a = 1/3$, the orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667, ..., )$
-    * If $a = 0.43085467085$, the orbit is $(0.431, 0.862, 0.723, 0.447, 0.894, 0.787, ...)$
+    * If $a = 0.43085467085$, the orbit is $(0.43085467085, 0.8617093417, 0.7234186834, 0.4468373668000001, 0.8936747336000002, 0.7873494672000003, ...)$
 
     One orbit seems to end in all zeros, another bounces back and forth between $0.333$ and $0.667$, and a third seems to have no pattern at all. On the surface, these orbits do not have much in common. But if we take a closer look, they all share the same underlying pattern.
 
-    Let's revisit the third orbit for $a = 0.43085467085$:
-
-    $$
-    (a, \mathcal{D}^1(a), \mathcal{D}^2(a), \mathcal{D}^3(a), \mathcal{D}^4(a), \mathcal{D}^5(a), ...)
-    =
-    (0.431, 0.862, 0.723, 0.447, 0.894, 0.787, ...)
-    $$
-
-    but this time we will analyze its binary representation:
+    Let's revisit the third orbit for $a = 0.43085467085$ but this time we will analyze its binary representation:
 
     | Iterations | Decimal | Binary | Observation |
     |------------|------------------------|----------------------|-------------|
-    | 0 | $a\phantom{^4(a)} = 0.431$ | $\text{bin}(a)\phantom{^4(a)} = 0.011011...$ | Original number |
-    | 1 | $D^1(a) = 0.862$ | $\text{bin}(D^1(a)) = 0.11011...$ | First bit of $a$ $(0)$ removed |
-    | 2 | $D^2(a) = 0.723$ | $\text{bin}(D^2(a)) = 0.1011...$ | First two bits of $a$ $(01)$ removed |
-    | 3 | $D^3(a) = 0.447$ | $\text{bin}(D^3(a)) = 0.011...$ | First three bits of $a$ $(011)$ removed |
-    | 4 | $D^4(a) = 0.894$ | $\text{bin}(D^4(a)) = 0.11...$ | First four bits of $a$ $(0110)$ removed |
-    | 5 | $D^4(a) = 0.787$ | $\text{bin}(D^5(a)) = 0.1...$ | First four bits of $a$ $(01101)$ removed |
+    | 0 | $a = 0.43085467085$ | $\text{bin}(a) = 0.011011...$ | Original number |
+    | 1 | $D^1(a) = 0.8617093417$ | $\text{bin}(D^1(a)) = 0.11011...$ | First bit of $a$ $(0)$ removed |
+    | 2 | $D^2(a) = 0.7234186834$ | $\text{bin}(D^2(a)) = 0.1011...$ | First two bits of $a$ $(01)$ removed |
+    | 3 | $D^3(a) = 0.4468373668000001$ | $\text{bin}(D^3(a)) = 0.011...$ | First three bits of $a$ $(011)$ removed |
+    | 4 | $D^4(a) = 0.8936747336000002$ | $\text{bin}(D^4(a)) = 0.11...$ | First four bits of $a$ $(0110)$ removed |
+    | 5 | $D^4(a) = 0.7873494672000003$ | $\text{bin}(D^5(a)) = 0.1...$ | First four bits of $a$ $(01101)$ removed |
 
     Looking at the Binary column, we see that **every time we apply the dyadic map, the most significant bit is removed**! We start off with $0.011011$, and then applying $\mathcal{D}$ once removes the leftmost $0$ to get $0.11011$, and applying $\mathcal{D}$ another time removes the leftmost $1$ to get $0.1011$. Although the orbit appears irregular in its decimal representation, a clear pattern emerges from the binary representation.
 
@@ -755,10 +782,13 @@ def _(mo):
     return
 
 
+@app.function
+def L(a): return 4 * a * (1 - a)
+
+
 @app.cell
 def _(np, plt):
     def _():
-        def L(a): return 4 * a * (1 - a)
         a_values = np.linspace(0, 1, 100)
 
         fig, ax = plt.subplots()
@@ -912,6 +942,32 @@ def _(mo):
 @app.cell
 def _(mo, topological_conjugacy_image):
     mo.md(f"""{topological_conjugacy_image}""")
+    return
+
+
+@app.function
+def logistic_orbit(a_L, k):
+    orbits = [a_L]
+    for _ in range(k):
+        orbits.append(L(orbits[-1]))
+    return orbits
+
+
+@app.cell
+def _():
+    logistic_orbit(0.5, 5)
+    return
+
+
+@app.cell
+def _():
+    logistic_orbit(1/3, 5)
+    return
+
+
+@app.cell
+def _():
+    logistic_orbit(0.43085467085, 5)
     return
 
 
@@ -1368,7 +1424,7 @@ def _(mo):
 @app.cell
 def _(ScalarModel, X, mo, y):
     precision = 8
-    model = ScalarModel(precision)
+    model = ScalarModel(precision, workers=32)
     model.fit(X, y)
     mo.show_code()
     return (model,)
@@ -1393,7 +1449,38 @@ def _(model, np):
 
 
 @app.cell
-def _():
+def _(mo):
+    mo.md(r"""# Conclusion""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    So there we have it, a one parameter model that gets a perfect score on ARC-AGI-1! But we didn't learn anything in the process. There is no generalization. 
+
+    We can actually encode any dataset this way:
+
+    * the elehpant
+    * ARC-AGI-2
+  
+    we are totally overfitting.
+
+    Rather than framing this as learning, this technique is better viewed theough the lense of compression. (Which is probably the best way to view iuntelligence anyway.) As George Hotz has drilled, inteligence is compression. The compression competition for wikipedia. Komlogrov complexity...
+
+    ARC-AGI-1 public eval contains 400 tasks, each with a question input and question output consisting of a gridWe can count this t The 400 questions from ARC-AGI-1 public eval are grids with values between 0 and 9. They take up a total of XX bits. but alpha takes up XX bits. Where do these extra bits come from? 1. We need extra bits to be able to map the quesiton input to the quesiton output, to do the mapping itself requires storing info. 2. We can increase/decrease # of bits with paramater p.
+
+    To all the complexity theoretists out there, this is cheating because we ignored the assumpution of operating in a $\log_2 \omega$-bit computer where $\omega$ is the word size. This is the fatal crime.
+
+    To all the deep learning theorists out there, yes our decoder contains $\sin$ which means it is part of an infintely wide hypothesis class and can represent anything...? This allows for our infinite capacity for expressiveness.
+
+
+    The big take away is that parameter count is *at best* a proxy for intelligence and should not be taken as an actual measure of inteliggence. Just like 
+
+    Prof Gu.'s paper used a general purpose compression algorithm on this. Which is an actual valid solution that does not train on the questions set.
+    """
+    )
     return
 
 
