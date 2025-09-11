@@ -501,8 +501,15 @@ def _():
 
 @app.cell
 def _():
-    dyadic_orbit3 = dyadic_orbit(0.43085467085, 5)
+    dyadic_orbit3 = dyadic_orbit(0.431, 5)
     dyadic_orbit3
+    return (dyadic_orbit3,)
+
+
+@app.cell
+def _(decimal_to_binary, dyadic_orbit3):
+    dyadic_orbit3_binary = [decimal_to_binary(x, len(dyadic_orbit3)-i)[0] for i, x in enumerate(dyadic_orbit3)]
+    dyadic_orbit3_binary
     return
 
 
@@ -525,20 +532,20 @@ def _(mo):
 
     * If $a = 0.5$, the orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$.
     * If $a = 1/3$, the orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667,)$
-    * If $a = 0.43085467085$, the orbit is $(0.43085467085, 0.8617093417, 0.7234186834, 0.4468373668000001, 0.8936747336000002, 0.7873494672000003)$
+    * If $a = 0.431$, the orbit is $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$
 
     One orbit seems to end in all zeros, another bounces back and forth between $0.333$ and $0.667$, and a third seems to have no pattern at all. On the surface, these orbits do not have much in common. But if we take a closer look, they all share the same underlying pattern.
 
-    Let's revisit the third orbit for $a = 0.43085467085$ but this time we will analyze its binary representation:
+    Let's revisit the third orbit for $a = 0.431$ but this time we will analyze its binary representation:
 
     | Iterations | Decimal | Binary | Observation |
     |------------|------------------------|----------------------|-------------|
-    | 0 | $a = 0.43085467085$ | $\text{bin}(a) = 0.011011...$ | Original number |
-    | 1 | $D^1(a) = 0.8617093417$ | $\text{bin}(D^1(a)) = 0.11011...$ | First bit of $a$ $(0)$ removed |
-    | 2 | $D^2(a) = 0.7234186834$ | $\text{bin}(D^2(a)) = 0.1011...$ | First two bits of $a$ $(01)$ removed |
-    | 3 | $D^3(a) = 0.4468373668000001$ | $\text{bin}(D^3(a)) = 0.011...$ | First three bits of $a$ $(011)$ removed |
-    | 4 | $D^4(a) = 0.8936747336000002$ | $\text{bin}(D^4(a)) = 0.11...$ | First four bits of $a$ $(0110)$ removed |
-    | 5 | $D^5(a) = 0.7873494672000003$ | $\text{bin}(D^5(a)) = 0.1...$ | First four bits of $a$ $(01101)$ removed |
+    | 0 | $a = 0.431$ | $\text{bin}(a) = 0.011011...$ | Original number |
+    | 1 | $D^1(a) = 0.862$ | $\text{bin}(D^1(a)) = 0.11011...$ | First bit of $a$ $(0)$ removed |
+    | 2 | $D^2(a) = 0.724$ | $\text{bin}(D^2(a)) = 0.1011...$ | First two bits of $a$ $(01)$ removed |
+    | 3 | $D^3(a) = 0.448$ | $\text{bin}(D^3(a)) = 0.011...$ | First three bits of $a$ $(011)$ removed |
+    | 4 | $D^4(a) = 0.897$ | $\text{bin}(D^4(a)) = 0.11...$ | First four bits of $a$ $(0110)$ removed |
+    | 5 | $D^5(a) = 0.792$ | $\text{bin}(D^5(a)) = 0.1...$ | First four bits of $a$ $(01101)$ removed |
 
     Looking at the Binary column, we see that **every time we apply the dyadic map, the most significant bit is removed**! We start off with $0.011011$, and then applying $\mathcal{D}$ once removes the leftmost $0$ to get $0.11011$, and applying $\mathcal{D}$ another time removes the leftmost $1$ to get $0.1011$. Although the orbit appears irregular in its decimal representation, a clear pattern emerges from the binary representation.
 
@@ -564,7 +571,7 @@ def _(mo):
     mo.md(
         r"""
     # The Dyadic Map As An ML Model
-    > "I'm going to pretend to be an ML Model, now" - the Dyadic Map
+    > "When I grow up, I'm going to be a real boy(strikethrough) ML Model" - the Dyadic Map if it were staring in Pinacoi
     """
     )
     return
@@ -637,7 +644,7 @@ def _(mo):
     =
     \{x_0, x_1, x_2\}
     =
-    \{0.5, 1/3,  0.43085467085\}.
+    \{0.5, 1/3,  0.431\}.
     $$
 
     Let's convert each number to binary and look at the first $p=6$ binary digits for simplicity:
@@ -876,7 +883,7 @@ def _():
 
 @app.cell
 def _():
-    logistic_orbit(0.5, 5)
+    logistic_orbit(0.431, 5)
     return
 
 
@@ -896,13 +903,13 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    What does the logistic orbit $(a_L, \mathcal{L}^1(a_L), \mathcal{L}^2(a_L), \mathcal{L}^3(a_L), \mathcal{L}^4(a_L), \mathcal{L}^5(a_L))$ look like? Similar or different to the dyadic orbit $(a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), \mathcal{D}^3(a_D), \mathcal{D}^4(a_D), \mathcal{D}^4(a_D))$?
+    What does the logistic orbit $(a_L, \mathcal{L}^1(a_L), \mathcal{L}^2(a_L), \mathcal{L}^3(a_L), \mathcal{L}^4(a_L), \mathcal{L}^5(a_L))$ look like? Similar or different to the dyadic orbit $(a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), \mathcal{D}^3(a_D), \mathcal{D}^4(a_D), \mathcal{D}^5(a_D))$?
 
-    * If $a_L = a_D = 0.5$, the logistic orbit is $()$ and the dyadic orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$.
-    * If $a_L = 1/3$, the logistic orbit is $()$ and the dyadic orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$
-    * If $a_L = 0.43085467085$, the logistic orbit is $()$ and the dyadic orbit is $(0.431, 0.862, 0.723, 0.447, 0.894, 0.787, ...)$
+    * If $a_L = a_D = 0.5$, the logistic orbit is $(0.5, 1.0, 0.0, 0.0, 0.0, 0.0)$ while the dyadic orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$. Although the dyadic orbit is just all zeros, the logistic orbit actually has $1.0$ as the second number in the orbit.
+    * If $a_L = 1/3$, the logistic orbit is $(0.333, 0.888, 0.395, 0.956, 0.168, 0.560)$ while the dyadic orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$. While the dyadic orbit repeats in a simple pattern, the logistic orbit is seemingly patternless.
+    * If $a_L = 0.43085467085$, the logistic orbit is $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$ while the dyadic orbit is $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$. Both orbits here seem totally random and chaotic, but each in their own way.
 
-    These orbits look nothing alike!
+    The logistic and dyadic maps create orbits that look nothing alike!
 
     However, [Topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us these two maps are *actually* the same. Not similar. Not analgous. The same. They have identical orbits, the exact same chaotic trajectories, simply expressed in different coordinates. The logistic map, for all its smooth curves and elegant form, is actually doing discrete binary operations under the hood, just like the dyadic map (and vice versa). Formally, two functions are topologically conjugate if there exists a homeomorphism, fancy talk for a change of coordinates, that perfectly takes you from one map to another. The change of coordinates here is
 
@@ -962,7 +969,7 @@ def _(mo):
     \end{align*}
     $$
 
-    To go back and forth between the dyadic and logistic maps, we do
+    which will be important later on. To go back and forth between the dyadic and logistic maps, we apply $\phi$ to the output $\mathcal{D}$ and get $\mathcal{L}$ and also apply $\phi^{-1}$ to the input $a_L$ to get $\mathcal{D}$. In equations:
 
     $$
     \begin{align*}
@@ -976,14 +983,12 @@ def _(mo):
     \end{align*}
     $$
 
-    where $\phi$ takes us to the logistic space and operates on the output and $\phi^{-1}$ takes us to the dyadic space and operates on the input.
-
-    This is astonishing! $\phi$ is just a sin wave squared and with a period of one. It's inverse, $\phi^{-1}$ is even weirder looking with an $\arcsin$. But somehow these functions allow us to bridge the two maps $\mathcal{D}$ and $\mathcal{L}$!
+    Here $\phi$ takes us to the logistic space and $\phi^{-1}$ takes us back to the dyadic space. This is astonishing! $\phi$ is just a sin wave squared and with a period of one. It's inverse, $\phi^{-1}$ is even weirder looking with an $\arcsin$. But somehow these functions allow us to bridge the two maps $\mathcal{D}$ and $\mathcal{L}$!
 
     Moreover, $\phi$ and $\phi^{-1}$ perfectly relate *every* single point in the infinite orbits of $\mathcal{D}$ and $\mathcal{L}$:
 
     $$
-    (a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), ...) = (a_L, \mathcal{L}^1(\phi^{-1})(a_L), \mathcal{L}^2(\phi^{-1})(a_L), ...)
+    (a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), ...) = (a_L, \mathcal{L}^1(\phi^{-1}((a_L)), \mathcal{L}^2(\phi^{-1}((a_L)), ...)
     $$
 
     or it can be expressed as
@@ -1035,15 +1040,10 @@ def _(mo, topological_conjugacy_image):
 def _(mo):
     mo.md(
         r"""
-    This means the dyadic and logistic orbit for $a_D = a_L = 0.43085467085$
+    Revisting the dyadic and logistic orbits for $a_D = a_L = 0.431$, we can take the dyadic orbit $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$ and apply $\phi$ to every element, giving us $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$  -- which is exactly the logistic orbit (eqn. (10))! Similarly, we can take the logistic orbit $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$, apply $\phi^{-1}$
+    * dyadic orbit is $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$
 
-    is
-
-    * If $a_L = 0.5$, the logistic orbit is $()$ and the dyadic orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0, ...)$.
-    * If $a_L = 1/3$, the logistic orbit is $()$ and the dyadic orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667, ..., )$
-    * If $a_L = 0.43085467085$, the logistic orbit is $()$ and the dyadic orbit is $(0.431, 0.862, 0.723, 0.447, 0.894, 0.787, ...)$
-
-    are related by
+    we see that although both these orbits look completly unrelated, these two orbits are perfectly connected to one another through $\phi$ and $\phi^{-1}$.
     """
     )
     return
