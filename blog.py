@@ -92,17 +92,17 @@ def _(mo):
 @app.cell
 def _(gmpy2, json, mo):
     with open(mo.notebook_dir() / "public/alpha/ARC-AGI-1.json", "r") as f: data = json.load(f)
-    alpha = gmpy2.mpfr(*data['alpha'])
-    p = data['precision']
+    alpha_txt = gmpy2.mpfr(*data['alpha'])
+    p_txt = data['precision']
 
     # only display the first 1,000 digits of a so we don't break marimo
-    mo.md(f"```py\nalpha={str(alpha)[:10_000]}\np={p}\n```")
-    return (alpha,)
+    mo.md(f"```py\nalpha={str(alpha_txt)[:10_000]}\np={p_txt}\n```")
+    return (alpha_txt,)
 
 
 @app.cell
-def _(alpha):
-    assert len(str(alpha)) == 866_970
+def _(alpha_txt):
+    assert len(str(alpha_txt)) == 866_970
     return
 
 
@@ -1166,7 +1166,7 @@ def _(mo):
     \end{align*}
     $$
 
-    where $\oplus$ means concatenation. The decoder here is quite close to the function I promoised at the start of the blog
+    where $\oplus$ means concatenation. The decoder here is tantalizingly close to the function I promised at the start:
 
     $$
     f_{\alpha, p}(x)
@@ -1176,30 +1176,7 @@ def _(mo):
     \Big)
     $$
 
-    but is wrapped with an extra $\text{dec}$ and $\text{bin}_p$. We are so close.
-
-    Doesn't this look beautiful? No modulo operations, no explicit bit extraction, no discontinuous jumps. The makeup looks great! And the decoder uses the logistic map $\mathcal{L}$ to give us the exact equation we got at the beginning of the blog!
-    """
-    )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-    In practice, our parameter $\alpha$ contains $np$ bits of precision, far exceeding the $32$ or $64$ bits that standard computers can handle. So we use arbitrary precision arithmetic libraries like [gmpy2](https://github.com/aleaxit/gmpy), which can perform computation with any level of precision we specify.
-
-    This capability allows us to simplify the decoder equation. We can initially set our working precision to $np$ bits when computing $\mathcal{D}^{ip}(\alpha)$. Then we can simply change the working precision to $p$ bits and `gmpy2` will automatically look at the first $p$ bits of $\mathcal{D}^{ip}(\alpha)$. With `gmpy2`, there is no need to explicitally convert $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha)$ to binary, extract the first $p$ bits, and then convert it back to decimal -- the library will take care of this for us. We can therefore skip the last two steps of the decoder algorithm because $\tilde{x}'_i = \tilde{x}_i$ when using `gmpy2`. The decoder simplifies then to:
-
-    $$
-    \begin{align*}
-    \tilde{x}_i
-    &=
-    f_{\alpha,p}(i) := \mathcal{D}^{ip}(\alpha)
-    \tag{5}
-    \end{align*}
-    $$
+    but is still wrapped with those pesky $\text{dec}$ and $\text{bin}_p$ operations. However, something profound has happened here. We've taken the crude, discontinuous dyadic map and transformed it into something smooth and differentiable. The logistic map doesn't *look* like it's doing binary operations, but underneath the elegant trigonometry, it's performing exactly the same bit manipulations as its topological coungant, the dyadic map. Indeed, the makeup looks pretty great!
     """
     )
     return
@@ -1215,11 +1192,63 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Finally, what we've been waiting for. The code implementation!
+    Now comes the moment of truth. We've built up all this beautiful theory about chaos and topological conjugacy, but can we actually code it up?
 
-    First, let's first define some basic helper functions for $\text{bin}_p(), \text{dec}(), \phi(), \phi^{-1}()$. Note that we compute $\phi^{-1}$ in numpy but use our aribtrary precision library to compute $\phi$.
+    If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. This far exceeds the $32$ or $64$ bits that standard computers can handle. How do we even represent $\alpha$ numerically on a computer?
+
+    Simple: we can use an arbitrary precision arithmetic library like [gmpy2](https://github.com/aleaxit/gmpy) to handle numbers with any precision we want. Instead of representing $\alpha$ as a regular Python float, we can just represent it as an gmpy2 float with $np$ bits.
+
+    But gmpy2 does more than just let us represent impossibly large numbers. It also simplifies our decoder equation
+
+    $$
+    \begin{align*}
+    f_{\alpha,p}(i)
+    & :=
+    \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
+    =
+    \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big) \Big) \Big)
+    \end{align*}
+    $$
+
+    In our code, we can set gmpy2's working precision to $np$ bits when we compute $\mathcal{L}^{ip}(\alpha)$. Then we simply change the precision to $p$ bits, and gmpy2 automatically gives us just the first $p$ bits we care about. With `gmpy2`, there is no need to explicitly convert $\mathcal{L}^{ip}(\alpha)$ to binary, extract the first $p$ bits, and then convert it back to decimal -- this is automatically taken care of for us. Therefore our decoder becomes even simpler:
+
+    $$
+    \begin{align*}
+    \tilde{x}_i
+    &=
+    f_{\alpha,p}(i) := \mathcal{D}^{ip}(\alpha)
+    \tag{5}
+    \end{align*}
+    $$
+
+    Usually translating elegant math equations into code turns beautiful theory into ugly, complicated messes—but surprisingly, leveraging gmpy2 had the opposite effect and actually made our decoder even simpler.
+
+    In code our logistic decoder is:
     """
     )
+    return
+
+
+@app.cell
+def _(gmpy2, mo):
+    def logistic_decoder_single(total_prec, alpha, p, idx):
+    
+        # set precision to np bits
+        gmpy2.get_context().precision = total_prec
+    
+        # compute the logistic map
+        val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * p) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
+    
+        # set precision to p bits
+        return float(gmpy2.mpfr(val, precision=p))
+
+    mo.show_code()
+    return (logistic_decoder_single,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Now, let's define some basic helper functions for $\text{bin}_p(), \text{dec}(), \phi(), \phi^{-1}()$. Note that we compute $\phi^{-1}$ in numpy but use `gmpy2` to compute $\phi$.""")
     return
 
 
@@ -1250,29 +1279,14 @@ def _(gmpy2, mo, np):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-    Next, let's implement the logistic map
-
-    $$
-    \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big)
-    $$
-
-    with aribtrary precision from `gmpy2`. We set the precision to $np$ bits with `total_prec`, compute $\mathcal{L}^{ip}(\alpha)$, and then truncate to first `p` bits before casting to a regular python float. We then parallelize the entire function to make it even faster.
-    """
-    )
+    mo.md(r"""Because `logistic_decoder_single` is so slow, we need a parallelized implemntation of the logistic map so our code can run in a reasonable amount of time.""")
     return
 
 
 @app.cell
-def _(Pool, gmpy2, mo, np, partial, tqdm):
-    def logistic_decoder_single(total_prec, alpha, prec, idx):
-        gmpy2.get_context().precision = total_prec
-        val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
-        return float(gmpy2.mpfr(val, precision=prec))
-
+def _(Pool, logistic_decoder_single, mo, np, partial, tqdm):
     def logistic_decoder(total_prec, alpha, prec, idxs, workers):
-        # compute sequentially if workers==0, otherwise compute in parallell
+        # compute sequentially if workers==0, otherwise compute in parallel
         if workers == 0:
             return np.array([logistic_decoder_single(total_prec, alpha, prec, idx) for idx in tqdm(idxs)])
         fxn = partial(logistic_decoder_single, total_prec, alpha, prec)
@@ -1285,7 +1299,7 @@ def _(Pool, gmpy2, mo, np, partial, tqdm):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Finally, we can define our one parameter model.""")
+    mo.md(r"""Finally, we can define our one parameter model. Our `fit` method implements the encoder function and the `predict` method implements the deocder function. """)
     return
 
 
@@ -1303,7 +1317,7 @@ def _(
     phi,
     phi_inverse,
 ):
-    class ScalarModel:
+    class OneParameterModel:
         def __init__(self, precision, workers=0):
             self.precision = precision # binary precision, not decimal precision, for a single number
             self.workers = workers
@@ -1351,7 +1365,7 @@ def _(
         def fit_predict(self, X, y): return self.fit(X, y).predict(X)
 
     mo.show_code()
-    return (ScalarModel,)
+    return (OneParameterModel,)
 
 
 @app.cell
@@ -1365,7 +1379,7 @@ def _(mo):
 
     We initialize the model with the desired precision $p$ and the number of workers for running our decoder in parallel.
     ```py
-    class ScalarModel:
+    class OneParameterModel:
         def __init__(self, precision, workers=8):
             self.precision = precision # binary precision, not decimal precision, for a single number
             self.workers = workers
@@ -1447,6 +1461,20 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
+    Our goal is to use `OneParameterModel` for ARC-AGI-1. However, the ARC-AGI-1 dataset consists of matrices of integers $0$ through $9$. So we had to make three key changes to the encoder and decoder in `OneParameterModel`:
+
+    1. **Data scaling.** ARC-AGI-1 uses integers 0-9, but our encoder needs values in [0,1]. We use a standard MinMaxScaler to squeeze the data into the right range.
+    2. **Shape handling.** Our encoder works on datasets with scalar numbers, not matrices. Simple solution: flatten the matrices into long lists during encoding and then reshape back during decoding.
+    3. **Supervised learning.** ARC-AGI-1 is a supervised learning problem with input-output pairs $(X,Y)$, but our encoder can only handle unsupervised datasets $(X)$. We simply encode the outputs $Y$ instead of the inputs $X$ because the outputs $Y$ are what we actually need to predict.
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
     Let's try it our model out on ARC-AGI-1!
 
     We will use the public eval set from ARC-AGI-1 which has 400 tasks. We can ignore the example input-output pairs and only look at the question inputs-output pairs because we are only actually predictioning the question outputs given the question inputs.
@@ -1482,9 +1510,9 @@ def _(mo):
 
 
 @app.cell
-def _(ScalarModel, X, mo, y):
-    precision = 8
-    model = ScalarModel(precision, workers=32)
+def _(OneParameterModel, X, mo, y):
+    p = 8
+    model = OneParameterModel(p, workers=32)
     model.fit(X, y)
     mo.show_code()
     return (model,)
