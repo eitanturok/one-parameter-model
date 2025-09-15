@@ -5,50 +5,40 @@ from multiprocessing import Pool
 import gmpy2
 import numpy as np
 
-from .utils import MinMaxScaler, Timing, tqdm, VERBOSE
+from .utils import binary_to_decimal, decimal_to_binary, MinMaxScaler, Timing, tqdm, VERBOSE
 
 #***** math *****
-
-# convert decimal floats in [0, 1] to binary via https://sandbox.mc.edu/%7Ebennet/cs110/flt/dtof.html]
-# cannot use python's bin() function because it only converts int to binary
-def decimal_to_binary(y_decimal, precision):
-    if not isinstance(y_decimal, np.ndarray): y_decimal = np.array(y_decimal)
-    if y_decimal.ndim == 0: y_decimal = np.expand_dims(y_decimal, 0)
-
-    powers = 2**np.arange(precision)
-    y_powers = y_decimal[:, np.newaxis] * powers[np.newaxis, :]
-    y_fractional = y_powers % 1 # extract the fractional part of y_powers
-    binary_digits = (y_fractional >= 0.5).astype(int).astype('<U1')
-    return np.apply_along_axis(''.join, axis=1, arr=binary_digits).tolist()
-
-def binary_to_decimal(y_binary):
-    # indicate the binary number is a float in [0, 1], not an int
-    fractional_binary = "0." + y_binary
-    return gmpy2.mpfr(fractional_binary, base=2)
 
 def phi(x): return gmpy2.sin(x * 2 * gmpy2.const_pi()) ** 2
 
 def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
 
+# def _logistic_decoder(idx, precision, alpha):
+#     return gmpy2.sin(gmpy2.mpfr(2) ** (idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
+
 # compute the value using `total_precision` precision
 # then truncate to `prec` bits of precision and cast to a regular python float
-def logistic_decoder_single(total_prec, alpha, prec, idx):
-    gmpy2.get_context().precision = total_prec
-    val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * prec) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
-    return float(gmpy2.mpfr(val, precision=prec))
+def logistic_decoder_single(total_precision, alpha, precision, idx):
+    # set precision to np bits
+    gmpy2.get_context().precision = total_precision
+    # compute the logistic map
+    val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
+    # set precision to p bits
+    return float(gmpy2.mpfr(val, precision=precision))
 
-def logistic_decoder(total_prec, alpha, prec, idxs, workers):
+def logistic_decoder(total_precision, alpha, precision, idxs, workers):
     # sequential if workers is 0
     if workers == 0:
-        return np.array([logistic_decoder_single(total_prec, alpha, prec, idx) for idx in tqdm(idxs)])
-    fxn = partial(logistic_decoder_single, total_prec, alpha, prec)
+        return np.array([logistic_decoder_single(total_precision, alpha, precision, idx) for idx in tqdm(idxs)])
+    fxn = partial(logistic_decoder_single, total_precision, alpha, precision)
+    print(__name__)
     with Pool(workers) as p:
         return np.array(list(tqdm(p.imap(fxn, idxs), total=len(idxs), desc="Logistic Decoder")))
 
 #***** model *****
 
 # one parameter model
-class ScalarModel:
+class OneParameterModel:
     def __init__(self, precision, workers=0):
         self.precision = precision # binary precision, not decimal precision, for a single number
         self.workers = workers

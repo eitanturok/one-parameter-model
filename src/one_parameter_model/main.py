@@ -2,7 +2,7 @@
 import json, argparse
 import numpy as np
 
-from .model import ScalarModel
+from .model import OneParameterModel
 from .data import DATASET, plot_data
 from .utils import VERBOSE
 
@@ -14,7 +14,7 @@ def main(args):
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
     # fit the model
-    model = ScalarModel(args.precision, args.workers)
+    model = OneParameterModel(args.precision, args.workers)
     model.fit(X, y)
     if args.save:
         with open("alpha.json", "w") as f:

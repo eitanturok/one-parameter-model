@@ -12,7 +12,7 @@ def _():
 
 @app.cell
 def _():
-    import json
+    import json, inspect
     from functools import partial
     from multiprocessing import Pool
 
@@ -23,23 +23,35 @@ def _():
     from gmpy2 import sin as sin_ap, mpfr as float_ap, asin as arcsin_ap, sqrt as sqrt_ap, const_pi as pi_ap # ap = arbitrary precision
     from matplotlib import colors
 
+    from src.one_parameter_model import OneParameterModel
+    from src.one_parameter_model.model import phi_inverse, phi, logistic_decoder, logistic_decoder_single
     from src.one_parameter_model.data import local_arc_agi, process_arc_agi
-    from src.one_parameter_model.utils import MinMaxScaler, Timing, tqdm, VERBOSE
+    from src.one_parameter_model.utils import decimal_to_binary, binary_to_decimal
     return (
-        MinMaxScaler,
-        Pool,
-        Timing,
-        VERBOSE,
+        OneParameterModel,
+        binary_to_decimal,
         colors,
+        decimal_to_binary,
         gmpy2,
+        inspect,
         json,
         local_arc_agi,
+        logistic_decoder,
+        logistic_decoder_single,
         np,
-        partial,
+        phi,
+        phi_inverse,
         plt,
         process_arc_agi,
-        tqdm,
     )
+
+
+@app.cell
+def _(inspect):
+    def display_fxn(*fxns):
+        fxns_str = '\n'.join([inspect.getsource(fxn) for fxn in fxns])
+        return f"```py\n{fxns_str}\n```"
+    return (display_fxn,)
 
 
 @app.cell(hide_code=True)
@@ -1230,51 +1242,31 @@ def _(mo):
 
 
 @app.cell
-def _(gmpy2, mo):
-    def logistic_decoder_single(total_prec, alpha, p, idx):
-    
-        # set precision to np bits
-        gmpy2.get_context().precision = total_prec
-    
-        # compute the logistic map
-        val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * p) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
-    
-        # set precision to p bits
-        return float(gmpy2.mpfr(val, precision=p))
-
-    mo.show_code()
-    return (logistic_decoder_single,)
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Now, let's define some basic helper functions for $\text{bin}_p(), \text{dec}(), \phi(), \phi^{-1}()$. Note that we compute $\phi^{-1}$ in numpy but use `gmpy2` to compute $\phi$.""")
+def _(display_fxn, logistic_decoder_single, mo):
+    mo.md(rf"""{display_fxn(logistic_decoder_single)}""")
     return
 
 
 @app.cell
-def _(gmpy2, mo, np):
-    def decimal_to_binary(y_decimal, precision):
-        if not isinstance(y_decimal, np.ndarray): y_decimal = np.array(y_decimal)
-        if y_decimal.ndim == 0: y_decimal = np.expand_dims(y_decimal, 0)
+def _(mo):
+    mo.md(r"""Now, let's define some basic helper functions for $\text{bin}_p, \text{dec}, \phi, \phi^{-1}$. Note that we compute $\phi^{-1}$ in numpy but use `gmpy2` to compute $\phi$.""")
+    return
 
-        powers = 2**np.arange(precision)
-        y_powers = y_decimal[:, np.newaxis] * powers[np.newaxis, :]
-        y_fractional = y_powers % 1 # extract the fractional part of y_powers
-        binary_digits = (y_fractional >= 0.5).astype(int).astype('<U1')
-        return np.apply_along_axis(''.join, axis=1, arr=binary_digits).tolist()
 
-    def binary_to_decimal(y_binary):
-        # indicate the binary number is a float in [0, 1], not an int
-        fractional_binary = "0." + y_binary
-        return gmpy2.mpfr(fractional_binary, base=2)
+@app.cell
+def _(binary_to_decimal, decimal_to_binary, display_fxn, mo, phi, phi_inverse):
+    mo.md(
+        rf"""
+    {display_fxn(binary_to_decimal)}
 
-    def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
+    {display_fxn(decimal_to_binary)}
 
-    def phi(x): return gmpy2.sin(x * 2 * gmpy2.const_pi()) ** 2
+    {display_fxn(phi)}
 
-    mo.show_code()
-    return binary_to_decimal, decimal_to_binary, phi, phi_inverse
+    {display_fxn(phi_inverse)}
+    """
+    )
+    return
 
 
 @app.cell
@@ -1284,88 +1276,21 @@ def _(mo):
 
 
 @app.cell
-def _(Pool, logistic_decoder_single, mo, np, partial, tqdm):
-    def logistic_decoder(total_prec, alpha, prec, idxs, workers):
-        # compute sequentially if workers==0, otherwise compute in parallel
-        if workers == 0:
-            return np.array([logistic_decoder_single(total_prec, alpha, prec, idx) for idx in tqdm(idxs)])
-        fxn = partial(logistic_decoder_single, total_prec, alpha, prec)
-        with Pool(workers) as p:
-            return np.array(list(tqdm(p.imap(fxn, idxs), total=len(idxs), desc="Logistic Decoder")))
-
-    mo.show_code()
-    return (logistic_decoder,)
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Finally, we can define our one parameter model. Our `fit` method implements the encoder function and the `predict` method implements the deocder function. """)
+def _(display_fxn, logistic_decoder, mo):
+    mo.md(rf"""{display_fxn(logistic_decoder)}""")
     return
 
 
 @app.cell
-def _(
-    MinMaxScaler,
-    Timing,
-    VERBOSE,
-    binary_to_decimal,
-    decimal_to_binary,
-    gmpy2,
-    logistic_decoder,
-    mo,
-    np,
-    phi,
-    phi_inverse,
-):
-    class OneParameterModel:
-        def __init__(self, precision, workers=0):
-            self.precision = precision # binary precision, not decimal precision, for a single number
-            self.workers = workers
+def _(mo):
+    mo.md(r"""Finally, we can define our one parameter model. Our `fit` method implements the encoder function and the `predict` method implements the deocder function.""")
+    return
 
-        @Timing("fit: ", enabled=VERBOSE)
-        def fit(self, X, y):
-            # if the dataset is unsupervised, treat the data X like the labels y
-            if y is None: y = X
 
-            self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
-            self.total_precision = y.size * self.precision # pylint: disable=attribute-defined-outside-init
-
-            # scale labels to be in [0, 1]
-            self.scaler = MinMaxScaler() # pylint: disable=attribute-defined-outside-init
-            y_scaled = self.scaler.scale(y.flatten())
-
-            # compute alpha with arbitrary floating-point precision
-            with gmpy2.context(precision=self.total_precision):
-
-                # 1. compute φ^(-1) for all labels
-                phi_inv_decimal_list = phi_inverse(y_scaled)
-                # 2. convert to a binary
-                phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision)
-                # 3. concatenate all binary strings together
-                phi_inv_binary = ''.join(phi_inv_binary_list)
-                if len(phi_inv_binary) != self.total_precision:
-                    raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
-
-                # 4. convert to a scalar decimal
-                phi_inv_scalar = binary_to_decimal(phi_inv_binary)
-                # 5. apply φ to the scalar
-                self.alpha = phi(phi_inv_scalar) # pylint: disable=attribute-defined-outside-init
-
-                if VERBOSE >= 2: print(f'With {self.precision} digits of binary precision, alpha has {len(str(self.alpha))} digits of decimal precision.')
-                if VERBOSE >= 3: print(f'{self.alpha=}')
-            return self
-
-        @Timing("predict: ", enabled=VERBOSE)
-        def predict(self, idxs):
-            y_size = np.array(self.y_shape).prod()
-            full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten()
-            raw_pred = logistic_decoder(self.total_precision, self.alpha, self.precision, full_idxs, self.workers)
-            return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
-
-        def fit_predict(self, X, y): return self.fit(X, y).predict(X)
-
-    mo.show_code()
-    return (OneParameterModel,)
+@app.cell
+def _(OneParameterModel, display_fxn, mo):
+    mo.md(rf"""{display_fxn(OneParameterModel)}""")
+    return
 
 
 @app.cell
@@ -1511,8 +1436,8 @@ def _(mo):
 
 @app.cell
 def _(OneParameterModel, X, mo, y):
-    p = 8
-    model = OneParameterModel(p, workers=32)
+    p = 4
+    model = OneParameterModel(p, workers=8)
     model.fit(X, y)
     mo.show_code()
     return (model,)
