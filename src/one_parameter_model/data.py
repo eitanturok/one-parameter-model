@@ -82,13 +82,16 @@ def process_arc_agi(ds):
 
     return X, y
 
-def load_arc_agi_1(path="eturok/ARC-AGI-1", process=True):
+def load_arc_agi(path, process, small):
     ds = local_arc_agi(path) if pathlib.Path(path).exists() else remote_arc_agi(path)
-    return process_arc_agi(ds) if process else ds
+    ds = process_arc_agi(ds) if process else ds
+    return ds if small is None else ds[:small]
 
-def load_arc_agi_2(path="eturok/ARC-AGI-2", process=True):
-    ds = local_arc_agi(path) if pathlib.Path(path).exists() else remote_arc_agi(path)
-    return process_arc_agi(ds) if process else ds
+def load_arc_agi_1(path="eturok/ARC-AGI-1", process=True, small=None):
+    return load_arc_agi(path, process, small)
+
+def load_arc_agi_2(path="eturok/ARC-AGI-2", process=True, small=None):
+    return load_arc_agi(path, process, small)
 
 def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
     # load image and get contour
@@ -118,5 +121,7 @@ def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
 
     return X, y
 
-DATASET = {'scalar': load_simple_scalar_data, 'vector': load_simple_vector_data, 'matrix': load_simple_matrix_data,
-           'arc-agi-1': load_arc_agi_1, 'arc-agi-2': load_arc_agi_2, 'elephant': load_elephant_data}
+DATASET = {
+    'scalar': load_simple_scalar_data, 'vector': load_simple_vector_data, 'matrix': load_simple_matrix_data,
+    'arc-agi-1': load_arc_agi_1, 'arc-agi-2': load_arc_agi_2, 'elephant': load_elephant_data,
+    }

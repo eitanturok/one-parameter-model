@@ -1,4 +1,5 @@
 # Run with ` uv run src/one_parameter_model/main.py`
+import math
 from functools import partial
 from multiprocessing import Pool
 
@@ -18,19 +19,20 @@ def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
 
 # compute the value using `total_precision` precision
 # then truncate to `prec` bits of precision and cast to a regular python float
-def logistic_decoder_single(total_precision, alpha, precision, idx):
+def logistic_decoder_single(y_size, alpha, precision, idx):
     # set precision to np bits
+    total_precision = y_size * (idx + 1) * precision
     gmpy2.get_context().precision = total_precision
     # compute the logistic map
     val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
     # set precision to p bits
     return float(gmpy2.mpfr(val, precision=precision))
 
-def logistic_decoder(total_precision, alpha, precision, idxs, workers):
+def logistic_decoder(y_size, alpha, precision, idxs, workers):
     # sequential if workers is 0
     if workers == 0:
-        return np.array([logistic_decoder_single(total_precision, alpha, precision, idx) for idx in tqdm(idxs)])
-    fxn = partial(logistic_decoder_single, total_precision, alpha, precision)
+        return np.array([logistic_decoder_single(y_size, alpha, precision, idx) for idx in tqdm(idxs)])
+    fxn = partial(logistic_decoder_single, y_size, alpha, precision)
     print(__name__)
     with Pool(workers) as p:
         return np.array(list(tqdm(p.imap(fxn, idxs), total=len(idxs), desc="Logistic Decoder")))
@@ -49,14 +51,15 @@ class OneParameterModel:
         if y is None: y = X
 
         self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
-        self.total_precision = y.size * self.precision # pylint: disable=attribute-defined-outside-init
+        self.y_size = math.prod(self.y_shape)
+        total_precision = y.size * self.precision
 
         # scale labels to be in [0, 1]
         self.scaler = MinMaxScaler() # pylint: disable=attribute-defined-outside-init
         y_scaled = self.scaler.scale(y.flatten())
 
         # compute alpha with arbitrary floating-point precision
-        with gmpy2.context(precision=self.total_precision):
+        with gmpy2.context(precision=total_precision):
 
             # 1. compute φ^(-1) for all labels
             phi_inv_decimal_list = phi_inverse(y_scaled)
@@ -64,8 +67,8 @@ class OneParameterModel:
             phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision)
             # 3. concatenate all binary strings together
             phi_inv_binary = ''.join(phi_inv_binary_list)
-            if len(phi_inv_binary) != self.total_precision:
-                raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
+            if len(phi_inv_binary) != total_precision:
+                raise ValueError(f"Expected {total_precision} binary digits but got {len(phi_inv_binary)}.")
 
             # 4. convert to a scalar decimal
             phi_inv_scalar = binary_to_decimal(phi_inv_binary)
@@ -79,8 +82,8 @@ class OneParameterModel:
     @Timing("predict: ", enabled=VERBOSE)
     def predict(self, idxs):
         y_size = np.array(self.y_shape).prod()
-        full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten()
-        raw_pred = logistic_decoder(self.total_precision, self.alpha, self.precision, full_idxs, self.workers)
+        full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten().astype(int).tolist()
+        raw_pred = logistic_decoder(self.y_size, self.alpha, self.precision, full_idxs, self.workers)
         return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
 
     def fit_predict(self, X, y): return self.fit(X, y).predict(X)

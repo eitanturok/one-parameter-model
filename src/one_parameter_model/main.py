@@ -6,9 +6,13 @@ from .model import OneParameterModel
 from .data import DATASET, plot_data
 from .utils import VERBOSE
 
+from icecream import install
+install()
+
 def main(args):
     # load dataset
     X, y = DATASET[args.dataset]()
+    # X, y = X[:1], y[:1]
     X_idxs = np.arange(len(X))
     print(X_idxs)
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
