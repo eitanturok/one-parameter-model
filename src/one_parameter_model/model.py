@@ -10,19 +10,26 @@ def phi(x): return gmpy2.sin(x * 2 * gmpy2.const_pi()) ** 2
 
 def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
 
-# def _logistic_decoder(idx, precision, alpha):
-#     return gmpy2.sin(gmpy2.mpfr(2) ** (idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
+def _logistic_decoder(i, p, alpha):
+    return gmpy2.sin(gmpy2.mpfr(2) ** (i * p) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
 
 # compute the value using `full_precision` precision
 # then truncate to `prec` bits of precision and cast to a regular python float
 def logistic_decoder_single(y_size, alpha, precision, idx):
+    ic(alpha.precision)
     # set precision to np bits
     full_precision = y_size * (idx + 1) * precision
+    ic(y_size, precision, idx, full_precision)
+    alpha = gmpy2.mpfr(alpha, precision=full_precision)
     gmpy2.get_context().precision = full_precision
     # compute the logistic map
+    ic(gmpy2.sqrt(alpha).precision)
     val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
+    ic(alpha.precision, val.precision)
     # set precision to p bits
-    return float(gmpy2.mpfr(val, precision=precision))
+    val = gmpy2.mpfr(val, precision=precision)
+    ic(val.precision)
+    return float(val)
 
 def logistic_decoder(y_size, alpha, precision, idxs, workers):
     # sequential if workers == 0 else parallelized
@@ -72,6 +79,25 @@ class OneParameterModel:
 
     @Timing("predict: ", enabled=VERBOSE)
     def predict(self, idxs):
-        full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
+        # full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
+        full_idxs = [0]
+        ic(full_idxs)
         raw_pred = logistic_decoder(self.y_size, self.alpha, self.precision, full_idxs, self.workers)
+        ic(raw_pred)
         return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
+        """
+        instead of full_idxs including every single index upon which we call logistic_decoder
+        what if full_idxs just includes the indices of the one specific example we are looking at
+        then, when we call logistic_decoder, we set a high enough precision that we extract all the elements of that single example
+
+        so logistic decoder at the end doesn't extract just p bits, but rather y_size * p bits so we get all the bits of the entire
+        multi-dimensional vector.
+
+        this means we overall call logistic_decoder fewer times.
+
+        mayve we should compute the full logistic decoder with all the np bits of precision once
+        and then all we have to do is extract the ip bits, multiple times. this removes the more complex operations of
+        actually computing the logistic decoder value.
+
+        can we cache part of the logistic map so we don't need to compute all of it?
+        """

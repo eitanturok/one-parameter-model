@@ -12,7 +12,7 @@ install()
 def main(args):
     # load dataset
     X, y = DATASET[args.dataset]()
-    X, y = X[:1], y[:1]
+    if "arc-agi" in args.dataset: X, y = X[:1], y[:1]
     X_idxs = np.arange(len(X))
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
