@@ -17,30 +17,18 @@ def plot_data(X, y, y_pred=None, title=""):
     plt.show()
     return fig
 
-#***** data *****
+#***** simple data *****
 
 def load_simple_scalar_data(): return np.arange(12), np.arange(12) # 12 scalars
 def load_simple_vector_data(): return np.arange(12).reshape(2, 6), np.arange(12).reshape(2, 6) # 2 vectors of length 6
 def load_simple_matrix_data(): return np.arange(12).reshape(2, 3, 2), np.arange(12).reshape(2, 3, 2)  # 2 matrices of shape (3, 2)
 
+#***** arc agi data *****
+
 def remote_arc_agi(path, split=None):
     from datasets import load_dataset
-    return load_dataset(path, split=None)
+    return load_dataset(path, split=split)
 
-# def local_arc_agi(path):
-#     path = pathlib.Path(path) if not isinstance(path, pathlib.Path) else path
-#     ret = {}
-
-#     for split in ['train', 'eval']:
-#         tasks = [json.loads(line) for line in open(path / f'{split}.json')]
-#         ret[split] = {
-#             'question_inputs': [[grid] for task in tasks for grid in task['question_inputs']],
-#             'question_outputs': [[grid] for task in tasks for grid in task['question_outputs']],
-#             'example_inputs': [[grid] for task in tasks for grid in task['example_inputs']],
-#             'example_outputs': [[grid] for task in tasks for grid in task['example_outputs']],
-#         }
-
-#     return ret
 def local_arc_agi(path):
     ret = {}
     if not isinstance(path, pathlib.Path): path = pathlib.Path(path)
@@ -82,16 +70,14 @@ def process_arc_agi(ds):
 
     return X, y
 
-def load_arc_agi(path, process, small):
+def load_arc_agi(path, small):
     ds = local_arc_agi(path) if pathlib.Path(path).exists() else remote_arc_agi(path)
-    ds = process_arc_agi(ds) if process else ds
-    return ds if small is None else ds[:small]
+    return process_arc_agi(ds[:small] if small else ds)
 
-def load_arc_agi_1(path="eturok/ARC-AGI-1", process=True, small=None):
-    return load_arc_agi(path, process, small)
+def load_arc_agi_1(path="eturok/ARC-AGI-1", small=False): return load_arc_agi(path, small)
+def load_arc_agi_2(path="eturok/ARC-AGI-2", small=False): return load_arc_agi(path, small)
 
-def load_arc_agi_2(path="eturok/ARC-AGI-2", process=True, small=None):
-    return load_arc_agi(path, process, small)
+#***** elephant data *****
 
 def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
     # load image and get contour
@@ -123,5 +109,6 @@ def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
 
 DATASET = {
     'scalar': load_simple_scalar_data, 'vector': load_simple_vector_data, 'matrix': load_simple_matrix_data,
-    'arc-agi-1': load_arc_agi_1, 'arc-agi-2': load_arc_agi_2, 'elephant': load_elephant_data,
+    'arc-agi-1': load_arc_agi_1, 'arc-agi-2': load_arc_agi_2,
+    'elephant': load_elephant_data,
     }

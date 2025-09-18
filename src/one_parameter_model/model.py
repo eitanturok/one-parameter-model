@@ -1,12 +1,10 @@
 # Run with ` uv run src/one_parameter_model/main.py`
-import math
-from functools import partial
-from multiprocessing import Pool
+import functools, multiprocessing
 
 import gmpy2
 import numpy as np
 
-from .utils import binary_to_decimal, decimal_to_binary, MinMaxScaler, Timing, tqdm, VERBOSE
+from .utils import binary_to_decimal, decimal_to_binary, MinMaxScaler, Timing, tqdm, VERBOSE, flatten
 
 #***** math *****
 
@@ -29,12 +27,10 @@ def logistic_decoder_single(y_size, alpha, precision, idx):
     return float(gmpy2.mpfr(val, precision=precision))
 
 def logistic_decoder(y_size, alpha, precision, idxs, workers):
-    # sequential if workers is 0
-    if workers == 0:
-        return np.array([logistic_decoder_single(y_size, alpha, precision, idx) for idx in tqdm(idxs)])
-    fxn = partial(logistic_decoder_single, y_size, alpha, precision)
-    print(__name__)
-    with Pool(workers) as p:
+    # sequential if workers == 0 else parallelized
+    if workers == 0: return np.array([logistic_decoder_single(y_size, alpha, precision, idx) for idx in tqdm(idxs)])
+    fxn = functools.partial(logistic_decoder_single, y_size, alpha, precision)
+    with multiprocessing.Pool(workers) as p:
         return np.array(list(tqdm(p.imap(fxn, idxs), total=len(idxs), desc="Logistic Decoder")))
 
 #***** model *****
@@ -50,15 +46,15 @@ class OneParameterModel:
         # if the dataset is unsupervised, treat the data X like the labels y
         if y is None: y = X
 
-        self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
-        self.y_size = math.prod(self.y_shape)
-        total_precision = y.size * self.precision
+        self.y_shape = y.shape[1:]
+        self.y_size = np.array(self.y_shape, dtype=int).prod().item()
 
         # scale labels to be in [0, 1]
-        self.scaler = MinMaxScaler() # pylint: disable=attribute-defined-outside-init
+        self.scaler = MinMaxScaler()
         y_scaled = self.scaler.scale(y.flatten())
 
         # compute alpha with arbitrary floating-point precision
+        total_precision = self.y_size * len(y) * self.precision
         with gmpy2.context(precision=total_precision):
 
             # 1. compute φ^(-1) for all labels
@@ -81,9 +77,6 @@ class OneParameterModel:
 
     @Timing("predict: ", enabled=VERBOSE)
     def predict(self, idxs):
-        y_size = np.array(self.y_shape).prod()
-        full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten().astype(int).tolist()
+        full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().astype(int).tolist()
         raw_pred = logistic_decoder(self.y_size, self.alpha, self.precision, full_idxs, self.workers)
         return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
-
-    def fit_predict(self, X, y): return self.fit(X, y).predict(X)

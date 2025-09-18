@@ -12,9 +12,8 @@ install()
 def main(args):
     # load dataset
     X, y = DATASET[args.dataset]()
-    # X, y = X[:1], y[:1]
+    X, y = X[:1], y[:1]
     X_idxs = np.arange(len(X))
-    print(X_idxs)
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
     # fit the model
@@ -41,7 +40,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", choices=list(DATASET.keys()), default=list(DATASET.keys())[0], help="Dataset.")
     parser.add_argument("--precision", type=int, default=8, help="Precision for arbitrary floating point operations.")
-    parser.add_argument("--workers", type=int, default=0, help="Number of workers to parallelize the decoder.")
+    parser.add_argument("--workers", type=int, default=16, help="Number of workers to parallelize the decoder.")
     parser.add_argument("--save", action="store_true", help="Save alpha")
     args = parser.parse_args()
     main(args)

@@ -28,6 +28,7 @@ def binary_to_decimal(y_binary):
 #**** miscellaneous *****
 
 def getenv(key:str, default=0): return type(default)(os.getenv(key, default))
+def flatten(l:Iterable[Iterable[T]]): return [item for sublist in l for item in sublist]
 
 class MinMaxScaler:
     def __init__(self, epsilon:float=1e-20):

@@ -1411,6 +1411,7 @@ def _(mo):
 @app.cell
 def _(ds, mo, process_arc_agi):
     X, y = process_arc_agi(ds)
+    X, y = X[:10], y[:10]
     mo.show_code()
     return X, y
 
@@ -1430,14 +1431,14 @@ def _(X, mo, y):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Now we are ready to "train" our model and compress our entire dataset into $\alpha$. It is super easy.""")
+    mo.md(r"""Now we are ready to "train" our model and compress our arc-agi-1 dataset into $\alpha$. For simplicity, we will look at the first 20 examples of """)
     return
 
 
 @app.cell
 def _(OneParameterModel, X, mo, y):
     p = 4
-    model = OneParameterModel(p, workers=8)
+    model = OneParameterModel(p, workers=16)
     model.fit(X, y)
     mo.show_code()
     return (model,)
