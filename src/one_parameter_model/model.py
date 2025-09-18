@@ -42,22 +42,24 @@ class OneParameterModel:
         self.workers = workers
 
     @Timing("fit: ", enabled=VERBOSE)
-    def fit(self, X, y=None):
+    def fit(self, X, Y=None):
         # if the dataset is unsupervised, treat the data X like the labels y
-        if y is None: y = X
-        self.y_shape = y.shape[1:]  # pylint: disable=attribute-defined-outside-init
+        if Y is None: Y = X
+
+        # store shape/size of a single label y
+        self.y_shape = Y.shape[1:]  # pylint: disable=attribute-defined-outside-init
         self.y_size = np.array(self.y_shape, dtype=int).prod().item()  # pylint: disable=attribute-defined-outside-init
 
         # scale labels to be in [0, 1]
         self.scaler = MinMaxScaler()  # pylint: disable=attribute-defined-outside-init
-        y_scaled = self.scaler.scale(y.flatten())
+        Y_scaled = self.scaler.scale(Y.flatten())
 
         # compute alpha with arbitrary floating-point precision of np bits
-        full_precision = y.size * self.precision
+        full_precision = Y.size * self.precision
         with gmpy2.context(precision=full_precision):
 
             # 1. apply φ^(-1)
-            phi_inv_decimal_list = phi_inverse(y_scaled)
+            phi_inv_decimal_list = phi_inverse(Y_scaled)
             # 2. convert to binary
             phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision)
             # 3. concatenate all binary strings together into a scalar
@@ -72,6 +74,6 @@ class OneParameterModel:
 
     @Timing("predict: ", enabled=VERBOSE)
     def predict(self, idxs):
-        full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().astype(int).tolist()
+        full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
         raw_pred = logistic_decoder(self.y_size, self.alpha, self.precision, full_idxs, self.workers)
         return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
