@@ -15,12 +15,12 @@ def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
 # def _logistic_decoder(idx, precision, alpha):
 #     return gmpy2.sin(gmpy2.mpfr(2) ** (idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
 
-# compute the value using `total_precision` precision
+# compute the value using `full_precision` precision
 # then truncate to `prec` bits of precision and cast to a regular python float
 def logistic_decoder_single(y_size, alpha, precision, idx):
     # set precision to np bits
-    total_precision = y_size * (idx + 1) * precision
-    gmpy2.get_context().precision = total_precision
+    full_precision = y_size * (idx + 1) * precision
+    gmpy2.get_context().precision = full_precision
     # compute the logistic map
     val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
     # set precision to p bits
@@ -37,7 +37,7 @@ def logistic_decoder(y_size, alpha, precision, idxs, workers):
 
 # one parameter model
 class OneParameterModel:
-    def __init__(self, precision, workers=0):
+    def __init__(self, precision, workers=8):
         self.precision = precision # binary precision, not decimal precision, for a single number
         self.workers = workers
 
@@ -45,34 +45,29 @@ class OneParameterModel:
     def fit(self, X, y=None):
         # if the dataset is unsupervised, treat the data X like the labels y
         if y is None: y = X
-
-        self.y_shape = y.shape[1:]
-        self.y_size = np.array(self.y_shape, dtype=int).prod().item()
+        self.y_shape = y.shape[1:]  # pylint: disable=attribute-defined-outside-init
+        self.y_size = np.array(self.y_shape, dtype=int).prod().item()  # pylint: disable=attribute-defined-outside-init
 
         # scale labels to be in [0, 1]
-        self.scaler = MinMaxScaler()
+        self.scaler = MinMaxScaler()  # pylint: disable=attribute-defined-outside-init
         y_scaled = self.scaler.scale(y.flatten())
 
-        # compute alpha with arbitrary floating-point precision
-        total_precision = self.y_size * len(y) * self.precision
-        with gmpy2.context(precision=total_precision):
+        # compute alpha with arbitrary floating-point precision of np bits
+        full_precision = y.size * self.precision
+        with gmpy2.context(precision=full_precision):
 
-            # 1. compute φ^(-1) for all labels
+            # 1. apply φ^(-1)
             phi_inv_decimal_list = phi_inverse(y_scaled)
-            # 2. convert to a binary
+            # 2. convert to binary
             phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision)
-            # 3. concatenate all binary strings together
+            # 3. concatenate all binary strings together into a scalar
             phi_inv_binary = ''.join(phi_inv_binary_list)
-            if len(phi_inv_binary) != total_precision:
-                raise ValueError(f"Expected {total_precision} binary digits but got {len(phi_inv_binary)}.")
-
-            # 4. convert to a scalar decimal
+            if len(phi_inv_binary) != full_precision:
+                raise ValueError(f"Expected {full_precision} binary digits but got {len(phi_inv_binary)}.")
+            # 4. convert to decimal
             phi_inv_scalar = binary_to_decimal(phi_inv_binary)
-            # 5. apply φ to the scalar
+            # 5. apply φ
             self.alpha = phi(phi_inv_scalar) # pylint: disable=attribute-defined-outside-init
-
-            if VERBOSE >= 2: print(f'With {self.precision} digits of binary precision, alpha has {len(str(self.alpha))} digits of decimal precision.')
-            if VERBOSE >= 3: print(f'{self.alpha=}')
         return self
 
     @Timing("predict: ", enabled=VERBOSE)
