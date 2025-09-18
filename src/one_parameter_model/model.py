@@ -1,10 +1,8 @@
 # Run with ` uv run src/one_parameter_model/main.py`
 import functools, multiprocessing
-
 import gmpy2
 import numpy as np
-
-from .utils import binary_to_decimal, decimal_to_binary, MinMaxScaler, Timing, tqdm, VERBOSE, flatten
+from .utils import binary_to_decimal, decimal_to_binary, MinMaxScaler, Timing, tqdm, VERBOSE
 
 #***** math *****
 

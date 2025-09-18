@@ -154,7 +154,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Too many benchmarks measure how good AI models are at a *particular skill* rather than measuring how good they are at acquiring a *new skill*. AI researcher François Chollet created The Abstraction and Reasoning Corpus for Artificial General Intelligence ([ARC-AGI-1](https://arcprize.org/arc-agi/1/)) to fix this. ARC-AGI-1 measures how well AI models can *generalize* to unseen tasks. It consists of problems that are [trivial](https://arcprize.org/arc-agi/1/) for humans but challenging for machines. Recently Chollet and his team released ARC-AGI-2 and ARC-AGI-3 as harder follow ups to ARC-AGI-1. However here we will focus on ARC-AGI-1. Currently there is a $1,000,000+ prize-pool for progress on ARC-AGI, inspiring a host of new research directions.
+    Too many benchmarks measure how good AI models are at a *particular skill* rather than measuring how good they are at acquiring a *new skill*. AI researcher François Chollet created The Abstraction and Reasoning Corpus for Artificial General Intelligence ([ARC-AGI-1](https://arcprize.org/arc-agi/1/)) to fix this. ARC-AGI-1 measures how well AI models can *generalize* to unseen tasks. It consists of problems that are [trivial](https://arcprize.org/arc-agi/1/) for humans but challenging for machines.
 
     **What makes ARC-AGI-1 different from typical benchmarks?**
 
@@ -267,13 +267,13 @@ def _(mo):
 
     The first five columns are example input-output pairs that demonstrate the pattern. The sixth column, separated by the solid white line, is the actual question: given this new input, what should the output be?
 
-    The color coding makes this clear. The green '✓ Given' means the model has access to this information while the red '? Predict' is the ground truth solution and is what the model must predict on its own. The example input-output pairs and the question input are green while the question output is red. We're showing the question output here (red) so you can see what the correct answer is, but during evaluation, the question output is completely hidden from the model.
+    The green checkmark (✓ Given) shows what information the model can see and use. The red question mark (? Predict) shows what the model has to figure out by itself. We're showing you the red question part here so you can see what the correct answer should be. But when we actually test the model, it can't see this answer - it's only used to check if the model got it right.
 
     **Now, how do you solve this specific task?**
 
     Looking at the examples, the pattern here is clear: add yellow squares inside the enclosed green shapes. Yellow only appears in the "interior" of closed green boundaries. If the green cells don't form a complete enclosure, no yellow is added.
 
-    Looking at the question input, we have a complicated looking shape, a green line that snakes around. But if you look closely, you can count that the input shape has 8 different encolosed shapes that need to be filled in with yellow squares. So in the output, we fill in all 8 "interior" regions with yellow squares.
+    Looking at the question input, we have a complicated looking shape, a green line that sort of snakes around. But if you look closely, you can count that the input shape has 8 different encolosed shapes that need to be filled in with yellow squares. So in the output, we fill in all 8 "interior" regions with yellow squares.
 
     Looking at the question output, we can verify that this solution is indeed correct.
 
@@ -295,7 +295,7 @@ def _(mo):
         r"""
     Looking at the examples, the pattern is to find the oddly colored rectanglular "frame" and extract everything inside it. In the first example, a big red frame stands out against the surrounding black, green, gray, and blue cells. The output captures only what's inside that red boundary, discarding everything outside it. The same approach applies to the other two examples: we identify the distinctive yellow and blue frames and extract their contents.
 
-    Looking at the question input, we can follow this pattern. The question input contains a distinctive green frame that contrasts  with the surrounding black, blue, and red cells. Therefore we should output everything inside the green frame.
+    Looking at the question input, we can now follow this pattern. The question input contains a distinctive green frame that contrasts  with the surrounding black, blue, and red cells. Therefore we should output everything inside the green frame.
 
     Looking at the question output, we see that this is indeed the correct answer.
     """
@@ -323,25 +323,13 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(f"""Even the world's best models struggle on ARC-AGI-1, often scoring under $50\%$. `o3-preview (Low)` has the highest score of $75.7\%$ but costs a staggering $\$200$ per task. GPT-5 (High) is much more efficient, scoring $65.7\%$ with a cost of only $\$0.51$ per task. However, many other frontier models -- Claude, Gemini-2.5, and Deepseek -- struggle to even get half of the questions right. In contrast, humans [score](https://arcprize.org/leaderboard) get $98\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-1, ARC-AGI-2, and ARC-AGI-3. It's that difficult. (Note: when the HRM paper was released the scores were *much* lower; there has been a lot of recent progres on ARC-AGI-1.)""")
+    mo.md(f"""Even the world's best models struggle on ARC-AGI-1, often scoring under $50\%$. `o3-preview (Low)` has the highest score of $75.7\%$ but costs a staggering $\$200$ per task. GPT-5 (High) is much more efficient, scoring $65.7\%$ with a cost of only $\$0.51$ per task. However, many other frontier models -- Claude, Gemini-2.5, and Deepseek -- struggle to even get half of the questions right. In contrast, humans [score](https://arcprize.org/leaderboard) get $98\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-1, ARC-AGI-2, and ARC-AGI-3. It's that difficult. (Note: when the HRM paper was released the scores were *much* lower; there has been a lot of recent progress on ARC-AGI-1.)""")
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-    # The HRM Drama
-
-    > \> see "miraculous" 27M model beats frontier AI
-    >
-    > \> methodology: train on eval set with learnable task tokens
-    >
-    > \>call it "reasoning"
-    >
-    > \> profit -- [twitter user](https://x.com/b_arbaretier/status/1951701328754852020)
-    """
-    )
+    mo.md(r"""# The HRM Drama""")
     return
 
 
@@ -416,12 +404,14 @@ def _(mo):
         r"""
     This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two examples, left of the vertical white line. It was *not* trained on the question, to the right of the vertical white line. To measure model performance, the model was then evaluated on the *questions*. This means that the model saw the examples, which are in the same distribution as the question, but never the actual questions themselves.
 
-    So does this count as "data leakage" or "cheating"? While the internet still debates, the ARC-AGI organizers ultimately accepted the HRM submission so I guess they decided it is okay to train the *examples* of the public eval set. At the end of this episode, one comment by HRM's lead author caught my attention:
+    So does this count as "data leakage" or "cheating"? It seems like training on only the *examples* of the public eval set is fair game as the ARC-AGI organizers ultimately accepted the HRM submission.
+
+    At the end of this episode, one comment by HRM's lead author caught my attention:
     > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." -   [Guan Wang](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308)
 
-    Well, that got me curious. What would happen if we really did memorize everything?
+    Well, that got me curious: what would happen if we really did have 100% data leakage?
 
-    Is it possible to get 100% on ARC-AGI-1 with full data leakage? If we train on the questions of the public eval set, not just the examples, could we beat HRM's 40.3% on ARC-AGI-1? Could we still do it with very few parameters, like HRM? How far can we push this?
+    Could we memorize everything and get a perfect score on ARC-AGI-1? If we train on the questions of the public eval set, not just the examples, could we beat HRM's 40.3% on ARC-AGI-1? Could we still do it with very few parameters, like HRM? How far can we push this?
     """
     )
     return
@@ -443,11 +433,11 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-1 by blatantly training on the public eval set, both the examples and questions. We would deviate from HRM's acceptable approach -- training on just the examples of the public eval set -- and enter the morally dubious definetly-cheating territory -- training on the examples *and questions* of the public eval set.
+    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-1 by blatantly training on the public eval set, both the examples and questions. We would deviate from HRM's acceptable approach -- training on just the examples of the public eval set -- and enter the morally dubious territory of cheaters -- training on the examples *and questions* of the public eval set.
 
     Now, the obvious approach would be to build a dictionary - just map each input directly to its corresponding output. But that's boring and lookup tables aren't nice mathematical functions. They're discrete, discontinuous, and definitely not differentiable. We need something else, something more elegant and interesting. To do that, we are going to take a brief detour into the world of chaos theory.
 
-    *Before diving in, I need to acknowledge that this technique comes from one of my all-time favorite papers: [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320) by [Laurent Boué](https://www.linkedin.com/in/laurent-bou%C3%A9-b7923853/?originalSubdomain=il). This paper is really a gem, a top ten paper of all time due its sheer creativity. Boué's paper, in turn, was originally inspired by [Steven Piantadosi](https://colala.berkeley.edu/people/piantadosi/)'s research [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf). Let's dive in.*
+    *Before diving in, I need to acknowledge that this technique comes from one of my all-time favorite papers: [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320) by [Laurent Boué](https://www.linkedin.com/in/laurent-bou%C3%A9-b7923853/?originalSubdomain=il). This paper is really a gem, a top ten paper of all time due its sheer creativity. Boué's paper, in turn, was originally inspired by [Steven Piantadosi](https://colala.berkeley.edu/people/piantadosi/)'s research [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf).*
 
     The dyadic map $\mathcal{D}$ is a simple one-dimensional chaotic system defined as
 
@@ -489,42 +479,6 @@ def _(np, plt):
     return
 
 
-@app.function
-def dyadic_orbit(a_L, k):
-    orbits = [a_L]
-    for _ in range(k):
-        orbits.append(D(orbits[-1]))
-    return orbits
-
-
-@app.cell
-def _():
-    dyadic_orbit1 = dyadic_orbit(0.5, 5)
-    dyadic_orbit1
-    return
-
-
-@app.cell
-def _():
-    dyadic_orbit2 = dyadic_orbit(1/3, 5)
-    dyadic_orbit2
-    return
-
-
-@app.cell
-def _():
-    dyadic_orbit3 = dyadic_orbit(0.431, 5)
-    dyadic_orbit3
-    return (dyadic_orbit3,)
-
-
-@app.cell
-def _(decimal_to_binary, dyadic_orbit3):
-    dyadic_orbit3_binary = [decimal_to_binary(x, len(dyadic_orbit3)-i)[0] for i, x in enumerate(dyadic_orbit3)]
-    dyadic_orbit3_binary
-    return
-
-
 @app.cell
 def _(mo):
     mo.md(
@@ -541,7 +495,47 @@ def _(mo):
     $$
 
     mean we apply the dyadic map $k$ times to $a$. What does the orbit $(a, \mathcal{D}^1(a), \mathcal{D}^2(a), \mathcal{D}^3(a), \mathcal{D}^4(a), \mathcal{D}^5(a))$ look like?
+    """
+    )
+    return
 
+
+@app.function
+def dyadic_orbit(a_L, k):
+    orbits = [a_L]
+    for _ in range(k):
+        orbits.append(D(orbits[-1]))
+    return orbits
+
+
+@app.cell
+def _():
+    dyadic_orbit1 = dyadic_orbit(0.5, 5)
+    return
+
+
+@app.cell
+def _():
+    dyadic_orbit2 = dyadic_orbit(1/3, 5)
+    return
+
+
+@app.cell
+def _():
+    dyadic_orbit3 = dyadic_orbit(0.431, 5)
+    return (dyadic_orbit3,)
+
+
+@app.cell
+def _(decimal_to_binary, dyadic_orbit3):
+    dyadic_orbit3_binary = [decimal_to_binary(x, len(dyadic_orbit3)-i)[0] for i, x in enumerate(dyadic_orbit3)]
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
     * If $a = 0.5$, the orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$.
     * If $a = 1/3$, the orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667,)$
     * If $a = 0.431$, the orbit is $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$
@@ -1226,9 +1220,11 @@ def _(mo):
 
     $$
     \begin{align*}
-    \tilde{x}_i
+    f_{\alpha,p}(i)
     &=
-    f_{\alpha,p}(i) := \mathcal{D}^{ip}(\alpha)
+    \mathcal{L}^{ip}(\alpha)
+    =
+    \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big)
     \tag{5}
     \end{align*}
     $$
@@ -1431,7 +1427,7 @@ def _(X, mo, y):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Now we are ready to "train" our model and compress our arc-agi-1 dataset into $\alpha$. For simplicity, we will look at the first 20 examples of """)
+    mo.md(r"""Now we are ready to "train" our model and compress our arc-agi-1 dataset into $\alpha$. For simplicity, we will train on the first 5 examples of arc-agi.""")
     return
 
 
