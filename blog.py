@@ -584,56 +584,49 @@ def _(mo):
 
 
 @app.cell
-def _(decimal_to_binary):
+def _():
     p_ = 6
-    b1 = decimal_to_binary(0.5, p_)[0]
-    b2 = decimal_to_binary(1/3, p_)[0]
-    b3 = decimal_to_binary(0.43085467085, p_)[0]
-    b1, b2, b3
-    return b1, b2, b3, p_
+    return (p_,)
 
 
 @app.cell
-def _(b1, b2, b3):
+def _(decimal_to_binary, p_):
+    # initalize alpha
+    b1 = decimal_to_binary(0.5, p_)[0]
+    b2 = decimal_to_binary(1/3, p_)[0]
+    b3 = decimal_to_binary(0.43085467085, p_)[0]
     b = ''.join([b1, b2, b3])
-    b
+    print(f'{b1=}\n{b2=}\n{b3=}\n{b=}')
     return (b,)
 
 
 @app.cell
-def _(b, binary_to_decimal):
-    alpha_ex = binary_to_decimal(b)
-    alpha_ex
-    return (alpha_ex,)
+def _(b, binary_to_decimal, decimal_to_binary, p_):
+    alpha0_dec = binary_to_decimal(b)
+    alpha0_bin = decimal_to_binary(alpha0_dec, 18)[0]
+    b0_pred_bin = decimal_to_binary(alpha0_dec, p_)[0]
+    b0_pred_dec = binary_to_decimal(b0_pred_bin)
+    print(f'{alpha0_dec=}\n{alpha0_bin=}\nbin(alpha)[0:6]={b0_pred_bin}\ndec(bin(alpha)[0:6])={b0_pred_dec}')
+    return (alpha0_dec,)
 
 
 @app.cell
-def _(alpha_ex, binary_to_decimal, decimal_to_binary, p_):
-    x1_pred_tilde = alpha_ex
-    b1_full = decimal_to_binary(x1_pred_tilde, 50)[0] # look at all the bits (i.e. use 50)
-    b1_pred = decimal_to_binary(x1_pred_tilde, p_)[0] # only look at first p bits
-    x1_pred = binary_to_decimal(b1_pred)
-    print(f'{b1_full=}\n{b1_pred=}\n{x1_pred=}')
-    return
+def _(alpha0_dec, binary_to_decimal, decimal_to_binary, p_):
+    alpha1_dec = dyadic_orbit(alpha0_dec, p_)[-1]
+    alpha1_bin = decimal_to_binary(alpha1_dec, 18-p_)[0]
+    b1_pred_bin = decimal_to_binary(alpha1_dec, p_)[0]
+    b1_pred_dec = binary_to_decimal(b1_pred_bin)
+    print(f'{alpha1_dec=}\n{alpha1_bin=}\nbin(D^6(alpha))[0:6]={b1_pred_bin}\ndec(bin(D^6(alpha))[0:6])={b1_pred_dec}')
+    return (alpha1_dec,)
 
 
 @app.cell
-def _(alpha_ex, binary_to_decimal, decimal_to_binary, p_):
-    x2_pred_tilde = dyadic_orbit(alpha_ex, 2 * p_)[-1]
-    b2_full = decimal_to_binary(x2_pred_tilde, 50)[0] # look at all the bits (i.e. use 50)
-    b2_pred = decimal_to_binary(x2_pred_tilde, p_)[0] # only look at first p bits
-    x2_pred = binary_to_decimal(b2_pred)
-    print(f'{b2_full=}\n{b2_pred=}\n{x2_pred=}')
-    return
-
-
-@app.cell
-def _(alpha_ex, binary_to_decimal, decimal_to_binary, p_):
-    x3_pred_tilde = dyadic_orbit(alpha_ex, 3 * p_)[-1]
-    b3_full = decimal_to_binary(x3_pred_tilde, 50)[0] # look at all the bits (i.e. use 50)
-    b3_pred = decimal_to_binary(x3_pred_tilde, p_)[0] # only look at first p bits
-    x3_pred = binary_to_decimal(b3_pred)
-    print(f'{b3_full=}\n{b3_pred=}\n{x3_pred=}')
+def _(alpha1_dec, binary_to_decimal, decimal_to_binary, p_):
+    alpha2_dec = dyadic_orbit(alpha1_dec, p_)[-1]
+    alpha2_bin = decimal_to_binary(alpha2_dec, 18-2*p_)[0]
+    b2_pred_bin = decimal_to_binary(alpha2_dec, p_)[0]
+    b2_pred_dec = binary_to_decimal(b2_pred_bin)
+    print(f'{alpha2_dec=}\n{alpha2_bin=}\nbin(D^12(alpha))[0:6]={b2_pred_bin}\ndec(bin(D^12(alpha))[0:6])={b2_pred_dec}')
     return
 
 
@@ -730,15 +723,15 @@ def _(mo):
     \end{align*}
     $$
 
-    Looking at steps 1-3, we used the dyadic map as a data extraction machine, and we've just recovered the original representation of our data $\mathcal{B} = \{b_0, b_1, b_2 \}$ up to the first $6$ bits. To summerize, look at this table:
+    Looking at steps 1-3, we see that given $\alpha$, we can recover the original dataset in binary $\mathcal{B} = \{b_0, b_1, b_2 \}$ up to the first 6-bits using the dyadic map. This is pretty cool! To summerize, look at this table:
 
     | Iterations $k$ | Decimal | Binary | First $6$ bits |
     |------------|------------------------|----------------------|-------------|
     | 0 | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
-    | 6 | $\mathcal{D}^6(\alpha) = ....$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1$|
-    | 12 | $\mathcal{D}^6(\alpha) = ....$ | $\text{bin}(D^{12}(\alpha)) = 0.\underbrace{011011}_{b_2}$ | $b_1$|
+    | 6 | $\mathcal{D}^6(\alpha) = 0.33471679687500000$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1$|
+    | 12 | $\mathcal{D}^6(\alpha) = 0.42187500000000000$ | $\text{bin}(D^{12}(\alpha)) = 0.\underbrace{011011}_{b_2}$ | $b_2$|
 
-    If we convert these back to decimal, we'll recover our original data/
+    If we convert these back to decimal, we'll recover our original data
 
     $$
     \tilde{\mathcal{X}}
