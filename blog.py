@@ -95,7 +95,7 @@ def _(mo):
     \end{align*}
     $$
 
-    where $x_i$ is the $i\text{th}$ datapoint, $p$ is the manually set precision parameter, and $\alpha$ is the learned scalar. All you need to get 100% on ARC-AGI-1 is:
+    where $x_i$ is the $i\text{th}$ datapoint and $\alpha$ is the one and only parameter. ($p$ is the manually set for precision; more on this later.) All you need to get 100% on ARC-AGI-1 is:
     """
     )
     return
@@ -130,7 +130,7 @@ def _(mo):
 
     What I've done here is use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. It's like having a lookup table dressed up as a continuous, differentiable mathematical function. There is no learning or generalization. It is pure memorization with trigonometry and a few extra steps. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating.
 
-    My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence, highlighting the difference between memorization and true generalization. As we unravel the surprisingly rich mathematics underlying this one-parameter model, it opens up deeper discussions about ARC-AGI, the HRM breakthrough, and the broader question of how we should actually measure machine intelligence.
+    My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence and trusting any one benchmark too much benchmarks. As we unravel the surprisingly rich mathematics underlying this one-parameter model, it opens up deeper discussions about ARC-AGI and the broader question of how we should actually measure machine intelligence.
 
     Let me show you how it works.
     """
@@ -323,7 +323,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(f"""Even the world's best models struggle on ARC-AGI-1, often scoring under $50\%$. `o3-preview (Low)` has the highest score of $75.7\%$ but costs a staggering $\$200$ per task. GPT-5 (High) is much more efficient, scoring $65.7\%$ with a cost of only $\$0.51$ per task. However, many other frontier models -- Claude, Gemini-2.5, and Deepseek -- struggle to even get half of the questions right. In contrast, humans [score](https://arcprize.org/leaderboard) get $98\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-1, ARC-AGI-2, and ARC-AGI-3. It's that difficult. (Note: when the HRM paper was released the scores were *much* lower; there has been a lot of recent progress on ARC-AGI-1.)""")
+    mo.md(f"""Even the world's best models struggle on ARC-AGI-1, often scoring under $50\%$. `o3-preview (Low)` has the highest score of $75.7\%$ but costs a staggering $\$200$ per task. GPT-5 (High) is much more efficient, scoring $65.7\%$ with a cost of only $\$0.51$ per task. However, many other frontier models -- Claude, Gemini-2.5, and Deepseek -- struggle to even get half of the questions right. In contrast, humans [get](https://arcprize.org/leaderboard) $98\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-1 and its sequels. ARC-AGI-2 and ARC-AGI-3. It's that difficult.""")
     return
 
 
@@ -335,7 +335,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""The recent HRM is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI-1 despite its tiny size of 27M parameters.""")
+    mo.md(r"""The recently released HRM is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI-1 despite its tiny size of 27M parameters.""")
     return
 
 
@@ -359,7 +359,7 @@ def _(mo):
 
     The results almost seemed to be too good to be true. How can a tiny 27M parameter model from a small lab be crushing some of the world's best models, at a fraction of their size?
 
-    Turns out, HRM "trained on test"
+    Turns out, HRM trained on test:
     """
     )
     return
@@ -382,11 +382,11 @@ def _(mo):
 def _(mo):
     mo.md(
         rf"""
-    In their paper, the HRM authors admitted to training on the public eval set of ARC-AGI-1! On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This "contraversy" set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] ! Does this actually count as "training on test"? On one hand, you can never train on the data used to measure model perfomance. On the other hand, they never actually trained on the the questions used to measure model performance, just the examples associated with them.
+    In their paper, the HRM authors admitted to showing the model "example pairs in the training and the **evaluation** sets". The evaluation set here refers to the public eval set of ARC-AGI-1! On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This "contraversy" set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] ! Does this actually count as "training on test"? On one hand, you can never train on the data used to measure model perfomance. On the other hand, they never actually trained on the the questions used to measure model performance, just the examples associated with them.
 
     **What exactly is the difference between training on *examples* VS *questions* in ARC-AGI-1?**
 
-    Consider a task from the public *eval* set of ARC-AGI-1:
+    Consider a task from the public *eval* set (instead of the train set) of ARC-AGI-1:
     """
     )
     return
@@ -402,9 +402,9 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two examples, left of the vertical white line. It was *not* trained on the question, to the right of the vertical white line. To measure model performance, the model was then evaluated on the *questions*. This means that the model saw the examples, which are in the same distribution as the question, but never the actual questions themselves.
+    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two examples, left of the vertical white line. It was *not* trained on the question, to the right of the vertical white line. The model saw the examples, which are in the same distribution as the question, but never the actual questions themselves. Yet this task is from *eval* set. So to evaluate model performance, we ask the model this question (which we never trained on) given the examples (which we did train on).
 
-    So does this count as "data leakage" or "cheating"? It seems like training on only the *examples* of the public eval set is fair game as the ARC-AGI organizers ultimately accepted the HRM submission.
+    Does this count as "data leakage" or "cheating"? It seems like training on only the *examples* of the public eval set is fair game as the ARC-AGI organizers ultimately accepted the HRM submission.
 
     At the end of this episode, one comment by HRM's lead author caught my attention:
     > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." -   [Guan Wang](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308)
@@ -577,7 +577,7 @@ def _(mo):
     mo.md(
         r"""
     # The Dyadic Map As An ML Model
-    > "When I grow up, I'm going to be a real boy(strikethrough) ML Model" - the Dyadic Map if it were staring in Pinacoi
+    > "When I grow up, I'm going to be a real ~~boy~~ ML Model" - the Dyadic Map if it were staring in Pinacoi
     """
     )
     return
@@ -641,7 +641,7 @@ def _(alpha_ex, binary_to_decimal, decimal_to_binary, p_):
 def _(mo):
     mo.md(
         r"""
-    We've discovered something remarkable: each application of $\mathcal{D}$ peels away exactly one bit. But here's the question: if the dyadic map can systematically extract a number's bits, is it possible to put information in those bits in the first place? **What if we encode our dataset into a number's bits (`model.fit`) and then use the dyadic map as the core of a predictive model, extracting out the answer bit by bit (`model.predict`)?**
+    We've discovered something remarkable: each application of $\mathcal{D}$ peels away exactly one bit. But here's the question: if the dyadic map can systematically extract a number's bits, is it possible to put information in those bits in the first place? **What if we encode our dataset into a number's bits (`model.fit`) and then use the dyadic map as the core of a predictive model, extracting out the answer bit by bit (`model.predict`)?** In other words, can we turn the dyadic map into an ML model?
 
     Suppose our dataset contains the three numbers we saw before
 
@@ -682,32 +682,63 @@ def _(mo):
     \alpha = \text{dec}(b) = 0.50522994995117188
     $$
 
-    The number $\alpha$ is carefully engineered so that it is a decimal number whose bits contain our entire dataset's binary representation. That's right: **we've just compressed our entire dataset into a single scalar decimal number!**
+    The number $\alpha$ is carefully engineered so that it is a decimal number whose bits contain our entire dataset's binary representation. That's right: **we've just compressed our entire dataset into a single decimal number!** We only have one parameter, not billions here! This is a very simple, stupid version of `model.fit`.
 
-    But here's the question: how do we get our data back out? This is where the dyadic map becomes our extraction tool.
+    But here's the question: given $\alpha$, how do we get our data $\mathcal{X}$ back out? How do we do `model.predict`? This is where the dyadic map becomes our extraction tool.
 
-    Trivially, we know the first 6 bits of $\alpha$ contains $b_0$. So we'll just record the first $6$ bits to get $b_0$.
+    *Step 1.* Trivially, we know the first 6 bits of $\alpha$ contains $b_0$. So we'll just record the first $6$ bits of $\alpha$ to get $b_0$.
 
-    | Iterations | Decimal | Binary | First $6$ bits |
-    |------------|------------------------|----------------------|-------------|
-    | 0 | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
+    $$
+    \begin{align*}
+        \text{bin}(\alpha)
+        &=
+        0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}
+        \\
+        b_0
+        &=
+        \text{bin}(\alpha)_{0:6}
+    \end{align*}
+    $$
 
-    To get $b_1$, remember that each application of $\mathcal{D}$ strips away the leftmost binary digit. So $D^6(\alpha)$ strips away the first $6$ bits of $\alpha$, which just removes $b_0$, and leaves us with $b_1, b_2$. We'll then record the first $6$ bits to get $b_1$.
 
-    | Iterations | Decimal | Binary | First $6$ bits |
-    |------------|------------------------|----------------------|-------------|
-    | 0 | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
-    | 6 | $\mathcal{D}^6(\alpha) = ....$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1$|
+    *Step 2.* To get the next number, $b_1$, remember that each application of $\mathcal{D}$ strips away the leftmost binary digit. So $D^6(\alpha)$ strips away the first $6$ bits of $\alpha$, which just removes $b_0$, and leaves us with $b_1, b_2$. We'll then record the first $6$ bits of $D^6(\alpha)$ to get $b_1$.
 
-    To get $b_2$, apply $\mathcal{D}$ another 6 times, $\mathcal{D}^{12}(\alpha)$, removing another 6 bits of $\alpha$, i.e. $b_1$, and leaving us with just $b_2$. We'll then record the first $6$ bits to get $b_2$.
+    $$
+    \begin{align*}
+        \text{bin}(D^6(\alpha))
+        &=
+        0.\underbrace{\hspace{1cm}}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}
+        \\
+        b_1
+        &=
+        \text{bin}(D^6(\alpha))_{0:6}
+    \end{align*}
+    $$
 
-    | Iterations | Decimal | Binary | First $6$ bits |
+    *Step 3.* To get the next number, $b_2$, apply $\mathcal{D}$ another 6 times, $\mathcal{D}^{12}(\alpha)$, removing another 6 bits of $\alpha$, i.e. $b_1$, and leaving us with just $b_2$. We'll then record the first $6$ bits of $D^{12}(\alpha)$ to get $b_2$.
+
+
+    $$
+    \begin{align*}
+        \text{bin}(D^{12}(\alpha))
+        &=
+        0.\underbrace{\hspace{1cm}}_{b_0}\underbrace{\hspace{1cm}}_{b_1}\underbrace{011011}_{b_2}
+        \\
+        b_2
+        &=
+        \text{bin}(D^{12}(\alpha))_{0:6}
+    \end{align*}
+    $$
+
+    Looking at steps 1-3, we used the dyadic map as a data extraction machine, and we've just recovered the original representation of our data $\mathcal{B} = \{b_0, b_1, b_2 \}$ up to the first $6$ bits. To summerize, look at this table:
+
+    | Iterations $k$ | Decimal | Binary | First $6$ bits |
     |------------|------------------------|----------------------|-------------|
     | 0 | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
     | 6 | $\mathcal{D}^6(\alpha) = ....$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1$|
     | 12 | $\mathcal{D}^6(\alpha) = ....$ | $\text{bin}(D^{12}(\alpha)) = 0.\underbrace{011011}_{b_2}$ | $b_1$|
 
-    Using the dyadic map as a data extraction machine, we've just recovered the original $6$-bit representation of our data $\mathcal{B} = \{b_0, b_1, b_2 \}$. If we convert these back to decimal, we'll recover our original data
+    If we convert these back to decimal, we'll recover our original data/
 
     $$
     \tilde{\mathcal{X}}
@@ -725,7 +756,7 @@ def _(mo):
 
     where $\tilde{x}_i = \text{dec}(b_i)$ is a function that converts binary to decimal. Notice, that $\tilde{x}_3 \neq x_3$ because we only saved the first $6$ bits of $x_3$ and not the entire thing. But this is a pretty great approximation!
 
-    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point in binary $b_0, b_1, b_2$. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access that information.
+    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point in binary $b_0, b_1, b_2$ up to $p$ digits of precision. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access that information.
     """
     )
     return
