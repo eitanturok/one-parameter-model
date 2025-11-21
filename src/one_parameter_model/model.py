@@ -16,19 +16,14 @@ def _logistic_decoder(i, p, alpha):
 # compute the value using `full_precision` precision
 # then truncate to `prec` bits of precision and cast to a regular python float
 def logistic_decoder_single(y_size, alpha, precision, idx):
-    ic(alpha.precision)
     # set precision to np bits
     full_precision = y_size * (idx + 1) * precision
-    ic(y_size, precision, idx, full_precision)
     alpha = gmpy2.mpfr(alpha, precision=full_precision)
     gmpy2.get_context().precision = full_precision
     # compute the logistic map
-    ic(gmpy2.sqrt(alpha).precision)
     val = gmpy2.sin(gmpy2.mpfr(2) ** (idx * precision) * gmpy2.asin(gmpy2.sqrt(alpha))) ** 2
-    ic(alpha.precision, val.precision)
     # set precision to p bits
     val = gmpy2.mpfr(val, precision=precision)
-    ic(val.precision)
     return float(val)
 
 def logistic_decoder(y_size, alpha, precision, idxs, workers):

@@ -130,7 +130,7 @@ def _(mo):
 
     What I've done here is use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. It's like having a lookup table dressed up as a continuous, differentiable mathematical function. There is no learning or generalization. It is pure memorization with trigonometry and a few extra steps. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating.
 
-    My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence and trusting any one benchmark too much benchmarks. As we unravel the surprisingly rich mathematics underlying this one-parameter model, it opens up deeper discussions about ARC-AGI and the broader question of how we should actually measure machine intelligence.
+    My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence and the dangers of benchmark maxing. As we unravel the surprisingly rich mathematics underlying this one-parameter model, it opens up deeper discussions about ARC-AGI and the broader question of how one should actually be measuring machine intelligence.
 
     Let me show you how it works.
     """
@@ -402,7 +402,7 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two examples, left of the vertical white line. It was *not* trained on the question, to the right of the vertical white line. The model saw the examples, which are in the same distribution as the question, but never the actual questions themselves. Yet this task is from *eval* set. So to evaluate model performance, we ask the model this question (which we never trained on) given the examples (which we did train on).
+    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two examples, left of the vertical white line. It was *not* trained on the question, to the right of the vertical white line. The model saw the examples, which are in the same distribution as the question, but never the actual questions themselves. Remember this task is from *eval* set, not the train set. So to evaluate model performance, we ask the model this very question (which we never trained on) given these examples (which we absolutely did train on).
 
     Does this count as "data leakage" or "cheating"? It seems like training on only the *examples* of the public eval set is fair game as the ARC-AGI organizers ultimately accepted the HRM submission.
 
@@ -605,8 +605,8 @@ def _(b, binary_to_decimal, decimal_to_binary, p_):
     alpha0_dec = binary_to_decimal(b)
     alpha0_bin = decimal_to_binary(alpha0_dec, 18)[0]
     b0_pred_bin = decimal_to_binary(alpha0_dec, p_)[0]
-    b0_pred_dec = binary_to_decimal(b0_pred_bin)
-    print(f'{alpha0_dec=}\n{alpha0_bin=}\nbin(alpha)[0:6]={b0_pred_bin}\ndec(bin(alpha)[0:6])={b0_pred_dec}')
+    x0_pred_dec = binary_to_decimal(b0_pred_bin)
+    print(f'{alpha0_dec=}\n{alpha0_bin=}\nbin(alpha)[0:6]={b0_pred_bin}\nx^_0=dec(bin(alpha)[0:6])={x0_pred_dec}')
     return (alpha0_dec,)
 
 
@@ -615,8 +615,8 @@ def _(alpha0_dec, binary_to_decimal, decimal_to_binary, p_):
     alpha1_dec = dyadic_orbit(alpha0_dec, p_)[-1]
     alpha1_bin = decimal_to_binary(alpha1_dec, 18-p_)[0]
     b1_pred_bin = decimal_to_binary(alpha1_dec, p_)[0]
-    b1_pred_dec = binary_to_decimal(b1_pred_bin)
-    print(f'{alpha1_dec=}\n{alpha1_bin=}\nbin(D^6(alpha))[0:6]={b1_pred_bin}\ndec(bin(D^6(alpha))[0:6])={b1_pred_dec}')
+    x1_pred_dec = binary_to_decimal(b1_pred_bin)
+    print(f'{alpha1_dec=}\n{alpha1_bin=}\nbin(D^6(alpha))[0:6]={b1_pred_bin}\nx^_1=dec(bin(D^6(alpha))[0:6])={x1_pred_dec}')
     return (alpha1_dec,)
 
 
@@ -625,8 +625,8 @@ def _(alpha1_dec, binary_to_decimal, decimal_to_binary, p_):
     alpha2_dec = dyadic_orbit(alpha1_dec, p_)[-1]
     alpha2_bin = decimal_to_binary(alpha2_dec, 18-2*p_)[0]
     b2_pred_bin = decimal_to_binary(alpha2_dec, p_)[0]
-    b2_pred_dec = binary_to_decimal(b2_pred_bin)
-    print(f'{alpha2_dec=}\n{alpha2_bin=}\nbin(D^12(alpha))[0:6]={b2_pred_bin}\ndec(bin(D^12(alpha))[0:6])={b2_pred_dec}')
+    x2_pred_dec = binary_to_decimal(b2_pred_bin)
+    print(f'{alpha2_dec=}\n{alpha2_bin=}\nbin(D^12(alpha))[0:6]={b2_pred_bin}\nx^_2=dec(bin(D^12(alpha))[0:6])={x2_pred_dec}')
     return
 
 
@@ -675,81 +675,141 @@ def _(mo):
     \alpha = \text{dec}(b) = 0.50522994995117188
     $$
 
-    The number $\alpha$ is carefully engineered so that it is a decimal number whose bits contain our entire dataset's binary representation. That's right: **we've just compressed our entire dataset into a single decimal number!** We only have one parameter, not billions here! This is a very simple, stupid version of `model.fit`.
+    The number $\alpha$ is carefully engineered so that it is a decimal number whose bits contain our entire dataset's binary representation. That's right: **we've just compressed our entire dataset into a single decimal number!** We only have one parameter, not billions here! This is a very simple, stupid version of $\alpha = \text{model.fit}(\mathcal{X})$.
 
-    But here's the question: given $\alpha$, how do we get our data $\mathcal{X}$ back out? How do we do `model.predict`? This is where the dyadic map becomes our extraction tool.
+    But here's the question: given $\alpha$, how do we get our data $\mathcal{X}$ back out? How do we do $\tilde{x}_i = \text{model.predict}(\alpha)$? This is where the dyadic map becomes our extraction tool.
 
-    *Step 1.* Trivially, we know the first 6 bits of $\alpha$ contains $b_0$. So we'll just record the first $6$ bits of $\alpha$ to get $b_0$.
+    *Step 1.* Trivially, we know the first 6 bits of $\alpha$ contains $b_0$.
 
     $$
     \begin{align*}
+        \alpha
+        &=
+        0.50522994995117188
+        \\
         \text{bin}(\alpha)
         &=
         0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}
-        \\
-        b_0
-        &=
-        \text{bin}(\alpha)_{0:6}
+        =
+        0.100000010101011011
     \end{align*}
     $$
 
+    So we'll just record the first $6$ bits of $\alpha$ to get $b_0$.
 
-    *Step 2.* To get the next number, $b_1$, remember that each application of $\mathcal{D}$ strips away the leftmost binary digit. So $D^6(\alpha)$ strips away the first $6$ bits of $\alpha$, which just removes $b_0$, and leaves us with $b_1, b_2$. We'll then record the first $6$ bits of $D^6(\alpha)$ to get $b_1$.
+    $$
+    \begin{align*}
+        b_0
+        &=
+        \text{bin}(\alpha)_{0:6}
+        =
+        100000
+    \end{align*}
+    $$
+
+    If we convert this number back to decimal, we'll recover our original data, up to the first $6$ digits of precision.
+
+    $$
+    \begin{align*}
+        \tilde{x}_0
+        &=
+        \text{dec} \big( \text{bin}(\alpha)_{0:6} \big)
+        =
+        0.500000
+    \end{align*}
+    $$
+
+    Now from $\alpha$ we've extracted the prediction $\tilde{x}_0 = 0.500000$ which matches exactly the $0$th sample of our dataset $x_0 = 0.5$.
+
+    *Step 2.* To predict the next number, $\tilde{x}_1$, remember that each application of $\mathcal{D}$ strips away the leftmost binary digit. So 
+
+    $$
+    \begin{align*}
+        D^6(\alpha)
+        &=
+        0.334716796875
+    \end{align*}
+    $$
+
+    strips away the first $6$ bits of $\alpha$, which just removes $b_0$, and leaves us with $b_1, b_2$
 
     $$
     \begin{align*}
         \text{bin}(D^6(\alpha))
         &=
         0.\underbrace{\hspace{1cm}}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}
-        \\
-        b_1
-        &=
-        \text{bin}(D^6(\alpha))_{0:6}
+        =
+        0.010101011011
     \end{align*}
     $$
 
-    *Step 3.* To get the next number, $b_2$, apply $\mathcal{D}$ another 6 times, $\mathcal{D}^{12}(\alpha)$, removing another 6 bits of $\alpha$, i.e. $b_1$, and leaving us with just $b_2$. We'll then record the first $6$ bits of $D^{12}(\alpha)$ to get $b_2$.
+    Like before, we'll then record the first $6$ bits of $D^6(\alpha)$ to get $b_1$ 
+
+    $$
+    \begin{align*}
+        b_1
+        &=
+        \text{bin}(D^6(\alpha))_{0:6}
+        =
+        010101
+    \end{align*}
+    $$
+
+    and convert that back to decimal to get $\tilde{x}_1$.
+
+    $$
+    \begin{align*}
+        \tilde{x}_1
+        &=
+        \text{dec} \big( \text{bin}(D^6(\alpha))_{0:6} \big)
+        =
+        0.328125
+    \end{align*}
+    $$
+
+    Here our prediction $\tilde{x}_1 = 0.328125$ is slightly off from the true value $x_1 = 1/3$ due to the limits of $6$-bit precision. If we'd have more digits of precision and increase $p$, $\tilde{x}_1$ would be closer to $x_1$.
+
+    *Step 3.* To get the next number, $b_2$, apply $\mathcal{D}$ another 6 times, $\mathcal{D}^{12}(\alpha)$, removing another 6 bits of $\alpha$, i.e. $b_1$, and leaving us with just $b_2$. Like before we'll then record the first $6$ bits of $D^{12}(\alpha)$ to get $b_2$ and convert that back to decimal to get $\tilde{x}_2$.
 
 
     $$
     \begin{align*}
+        D^{12}(\alpha)
+        &=
+        0.421875
+        \\
         \text{bin}(D^{12}(\alpha))
         &=
         0.\underbrace{\hspace{1cm}}_{b_0}\underbrace{\hspace{1cm}}_{b_1}\underbrace{011011}_{b_2}
+        =
+        0.011011
         \\
         b_2
         &=
         \text{bin}(D^{12}(\alpha))_{0:6}
+        =
+        011011
+        \\
+        \tilde{x}_2
+        &=
+        0.421875
     \end{align*}
     $$
 
-    Looking at steps 1-3, we see that given $\alpha$, we can recover the original dataset in binary $\mathcal{B} = \{b_0, b_1, b_2 \}$ up to the first 6-bits using the dyadic map. This is pretty cool! To summerize, look at this table:
+    Notice again that our prediction $\tilde{x}_2 = 0.421875$ is slightly off from the true value $x_2 = 0.431$ due to the limitations of $6$-bit precision.
 
-    | Iterations $k$ | Decimal | Binary | First $6$ bits |
-    |------------|------------------------|----------------------|-------------|
-    | 0 | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0$ |
-    | 6 | $\mathcal{D}^6(\alpha) = 0.33471679687500000$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1$|
-    | 12 | $\mathcal{D}^6(\alpha) = 0.42187500000000000$ | $\text{bin}(D^{12}(\alpha)) = 0.\underbrace{011011}_{b_2}$ | $b_2$|
 
-    If we convert these back to decimal, we'll recover our original data
+    These 3 steps are summerized in the table below.
 
-    $$
-    \tilde{\mathcal{X}}
-    =
-    \{
-    \tilde{x}_1
-    \tilde{x}_2
-    \tilde{x}_3
-    \}
-    =
-    \{
-        3, 4, 5
-    \}
-    $$
+    | Iterations $k$ | Decimal | Binary | First $6$ bits in binary $b_i$ | First $6$ bits in decimal $\tilde{x}_i$|
+    |------------|------------------------|----------------------|-------------|-------------|
+    | 0 | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0 = 010101$ | $\tilde{x}_0 = 0.500000$|
+    | 6 | $\mathcal{D}^6(\alpha) = 0.33471679687500000$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{\hspace{1cm}}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1 = 010101$| $\tilde{x}_1 = 0.328125$|
+    | 12 | $\mathcal{D}^{12}(\alpha) = 0.42187500000000000$ | $\text{bin}(D^{12}(\alpha)) = 0.\underbrace{\hspace{1cm}}_{b0}\underbrace{\hspace{1cm}}_{b1}\underbrace{011011}_{b_2}$ | $b_2 = 011011$| $\tilde{x}_2 = 0.421875$|
 
-    where $\tilde{x}_i = \text{dec}(b_i)$ is a function that converts binary to decimal. Notice, that $\tilde{x}_3 \neq x_3$ because we only saved the first $6$ bits of $x_3$ and not the entire thing. But this is a pretty great approximation!
+    Notice that we only every peform computation on the decimal representation, never on the binary representation. Indeed, the decimal numbers as we go from $\alpha = 0.50522994995117188$ to $\mathcal{D}^6(\alpha) = 0.33471679687500000$ and then to $\mathcal{D}^{12}(\alpha) = 0.42187500000000000$. Although this pattern like entirely nonsensical, we know that looking at the binary representation,  we are shifitng bits and extrating bits with superb precision.
 
-    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point in binary $b_0, b_1, b_2$ up to $p$ digits of precision. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access that information.
+    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point in binary $b_0, b_1, b_2$ up to $p$ bits of precision. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access that information.
     """
     )
     return
@@ -762,7 +822,7 @@ def _(mo):
     The algorithm itself is deceptively simple once you see the pattern:
 
     > **Encoding Algorithm:**
-    > Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $a$:
+    > Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $\alpha$:
     >
     > 1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=1, ..., n$
     > 2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
@@ -778,7 +838,7 @@ def _(mo):
     > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
 
-    The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. Since $\tilde{x}_i = \text{dec}(b_i) = \text{dec}(\text{bin}_p(x_i))$, we have $\tilde{x}_i \approx x_i$ with error bound $2^{-p}$. What makes this profound is the realization that we're not really "storing" information in any conventional sense. We're encoding it directly into the bits of a real number, exploiting it's infinite precision, and then using the dyadic map to navigate through that number and extract exactly what we need, when we need it.
+    The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. Since $\tilde{x}_i = \text{dec}(b_i) = \text{dec}(\text{bin}_p(x_i))$, we have $\tilde{x}_i \approx x_i$ with error bound $2^{-p}$. What makes this profound is the realization that we're not really "learning" anything in any conventional sense. We're encoding it directly into the bits of a real number, exploiting it's infinite precision, and then using the dyadic map to navigate through that number and extract exactly what we need, when we need it.
 
     Mathematically, we can express this with two functions the encoder $g: [0, 1]^n \to [0, 1]$ that compresses the dataset and the decoder $f: \overbrace{[0, 1]}^{\alpha} \times \overbrace{\mathbb{Z}_+}^{p} \times \overbrace{[n]}^i \to [0, 1]$ that extracts individual data points:
 
@@ -825,7 +885,7 @@ def _(mo):
     f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
     $$
 
-    to that beautiful decoder function I promised you at the start of the blog
+    to that beautiful function I promised you at the start of the blog
 
     $$
     f_{\alpha, p}(x)
@@ -921,18 +981,6 @@ def _():
 def _(mo):
     mo.md(
         r"""
-    average target probs
-    run this for a long time b/c it will converge to a distribution
-    can do this on sglang
-    """
-    )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
     What does the logistic orbit $(a_L, \mathcal{L}^1(a_L), \mathcal{L}^2(a_L), \mathcal{L}^3(a_L), \mathcal{L}^4(a_L), \mathcal{L}^5(a_L))$ look like? Similar or different to the dyadic orbit $(a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), \mathcal{D}^3(a_D), \mathcal{D}^4(a_D), \mathcal{D}^5(a_D))$?
 
     * If $a_L = a_D = 0.5$, the logistic orbit is $(0.5, 1.0, 0.0, 0.0, 0.0, 0.0)$ while the dyadic orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$. Although the dyadic orbit is just all zeros, the logistic orbit actually has $1.0$ as the second number in the orbit.
@@ -941,7 +989,7 @@ def _(mo):
 
     The logistic and dyadic maps create orbits that look nothing alike!
 
-    However, [Topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us these two maps are *actually* the same. Not similar. Not analgous. The same. They have identical orbits, the exact same chaotic trajectories, simply expressed in different coordinates. The logistic map, for all its smooth curves and elegant form, is actually doing discrete binary operations under the hood, just like the dyadic map (and vice versa). Formally, two functions are topologically conjugate if there exists a homeomorphism, fancy talk for a change of coordinates, that perfectly takes you from one map to another. The change of coordinates here is
+    However, [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us these two maps are *actually* the same. Not similar. Not analgous. The same. They have identical orbits, the exact same chaotic trajectories, simply expressed in different coordinates. The logistic map, for all its smooth curves and elegant form, is actually doing discrete binary operations under the hood, just like the dyadic map (and vice versa). Formally, two functions are topologically conjugate if there exists a homeomorphism, fancy talk for a change of coordinates, that perfectly takes you from one map to another. The change of coordinates here is
 
     $$
     \begin{align*}
@@ -960,6 +1008,8 @@ def _(mo):
     \tag{8}
     \end{align*}
     $$
+
+    We can map any $a_L$ to an $a_D$ and any $a_D$ to an $a_L$.
     """
     )
     return
@@ -990,7 +1040,7 @@ def _(np, plt):
 def _(mo):
     mo.md(
         r"""
-    The function $\phi$ has a period of 1, meaning it repeats the same values every time $a_D$ increases by $1$. This periodicity is crucial because it allows us to drop the modulo operation when transforming from the dyadic space to the logistic space:
+    Looking at the plot, the function $\phi$ has a period of 1, meaning it repeats the same values every time $a_D$ increases by $1$. This periodicity is crucial because it allows us to drop the modulo operation from the dyadic map $\mathcal{D}(a_D) = (2 a_D) \mod 1$ when transforming from the dyadic space to the logistic space. Formally,
 
     $$
     \begin{align*}
@@ -999,7 +1049,7 @@ def _(mo):
     \end{align*}
     $$
 
-    which will be important later on. To go back and forth between the dyadic and logistic maps, we apply $\phi$ to the output $\mathcal{D}$ and get $\mathcal{L}$ and also apply $\phi^{-1}$ to the input $a_L$ to get $\mathcal{D}$. In equations:
+    which will be important later on. To go back and forth between the dyadic and logistic maps, we apply $\phi$ to the output $\mathcal{D}$ and get $\mathcal{L}$; we can also apply $\phi^{-1}$ to the input $a_L$ to get $\mathcal{D}$. Mathemtically,
 
     $$
     \begin{align*}
@@ -1071,9 +1121,9 @@ def _(mo):
     mo.md(
         r"""
     Revisting the dyadic and logistic orbits for $a_D = a_L = 0.431$, we can take the dyadic orbit $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$ and apply $\phi$ to every element, giving us $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$  -- which is exactly the logistic orbit (eqn. (10))! Similarly, we can take the logistic orbit $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$, apply $\phi^{-1}$
-    * dyadic orbit is $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$
+    to get the dyadic orbit $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$
 
-    we see that although both these orbits look completly unrelated, these two orbits are perfectly connected to one another through $\phi$ and $\phi^{-1}$.
+    We see that although both these orbits look completly unrelated, these two orbits are perfectly connected to one another through $\phi$ and $\phi^{-1}$.
     """
     )
     return
@@ -1085,9 +1135,9 @@ def _(mo):
         r"""
     **Can we use the topological conjugacy of $\mathcal{D}$ and $\mathcal{L}$ as makeup?**
 
-    While $\mathcal{D}$ is ugly and discontinuous, $\mathcal{L}$ is smooth and differentiable. We can use the logistic map as "makeup" to hide the crude dyadic operations. We want our decoder to use $\mathcal{L}$ instead of $\mathcal{D}$. But for the encoder to glue together the bits of our dataset, we needs to be in the dyadic space so we can do our clever bit manipulation. Here's the strategy:
+    While $\mathcal{D}$ is ugly and discontinuous, $\mathcal{L}$ is smooth and differentiable. We can use the logistic map as "makeup" to hide the crude dyadic operations. We want our decoder to use $\mathcal{L}$ instead of $\mathcal{D}$. But for the encoder to glue together the bits of our dataset, we needs to be in the dyadic space so our clever bit manipulations will still work out. Here's the strategy:
 
-    1. Encoder: Work in dyadic space (where bit manipulation works) (use $\phi$) but output parameter in logistic space (use $\phi^{-1}$)
+    1. Encoder: Work in dyadic space where bit manipulation works (use $\phi$) but output parameter in logistic space (use $\phi^{-1}$)
     2. Decoder: Work entirely in smooth logistic space using the conjugacy relationship
 
     This gives us two new beautiful encoder/decoder algorithms where the main changes are bolded:
@@ -1110,7 +1160,44 @@ def _(mo):
     > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
 
-    Again, the precision parameter $p$ controls the trade-off between accuracy and storage efficiency. Since $\tilde{x}_i = \text{dec}(b_i) = \text{dec}(\text{bin}_p(x_i))$ only contains the first $p$ bits of $x_i$ and discards the remaining bits, we have $\tilde{x}_i \approx x_i$ with error bound $\frac{\pi}{2^{p-1}}$.
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    Mathematically, we can express this with a new and improved encoder $g$ and decoder $f$:
+
+    $$
+    \begin{align*}
+    \alpha
+    &=
+    g(p, \mathcal{x}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
+    \\
+    \tilde{x}_i
+    &=
+    f_{\alpha,p}(i)
+    :=
+    \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
+    =
+    \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big) \Big) \Big)
+    \end{align*}
+    $$
+
+    where $\oplus$ means concatenation. The decoder here is tantalizingly close to the function I promised at the start:
+
+    $$
+    f_{\alpha, p}(x)
+    =
+    \sin^2 \Big(
+        2^{x p} \arcsin^2(\sqrt{\alpha})
+    \Big)
+    $$
+
+    but is still wrapped with those pesky $\text{dec}$ and $\text{bin}_p$ operations. However, something profound has happened here. We've taken the crude, discontinuous dyadic map and transformed it into something smooth and differentiable. The logistic map doesn't *look* like it's doing binary operations, but underneath the elegant trigonometry, it's performing exactly the same bit manipulations as its topological coungant, the dyadic map. Indeed, the makeup looks pretty great!
     """
     )
     return
@@ -1169,44 +1256,6 @@ def _(mo):
     \end{align*}
     $$
     ///
-    """
-    )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-    Mathematically, we can express this with a new and improved encoder $g$ and decoder $f$:
-
-    $$
-    \begin{align*}
-    \alpha
-    &=
-    g(p, \mathcal{x}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
-    \\
-    \tilde{x}_i
-    &=
-    f_{\alpha,p}(i)
-    :=
-    \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
-    =
-    \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big) \Big) \Big)
-    \end{align*}
-    $$
-
-    where $\oplus$ means concatenation. The decoder here is tantalizingly close to the function I promised at the start:
-
-    $$
-    f_{\alpha, p}(x)
-    =
-    \sin^2 \Big(
-        2^{x p} \arcsin^2(\sqrt{\alpha})
-    \Big)
-    $$
-
-    but is still wrapped with those pesky $\text{dec}$ and $\text{bin}_p$ operations. However, something profound has happened here. We've taken the crude, discontinuous dyadic map and transformed it into something smooth and differentiable. The logistic map doesn't *look* like it's doing binary operations, but underneath the elegant trigonometry, it's performing exactly the same bit manipulations as its topological coungant, the dyadic map. Indeed, the makeup looks pretty great!
     """
     )
     return
