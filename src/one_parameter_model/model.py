@@ -76,9 +76,7 @@ class OneParameterModel:
     def predict(self, idxs):
         # full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
         full_idxs = [0]
-        ic(full_idxs)
         raw_pred = logistic_decoder(self.y_size, self.alpha, self.precision, full_idxs, self.workers)
-        ic(raw_pred)
         return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
         """
         instead of full_idxs including every single index upon which we call logistic_decoder

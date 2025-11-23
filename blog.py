@@ -58,7 +58,7 @@ def _(inspect):
 def _(mo):
     mo.md(
         r"""
-    # The One-Parameter Model That Broke ARC-AGI
+    # How to Get 100% on ARC-AGI With A One-Parameter Model
 
     > I built a one-parameter model that gets 100% on ARC-AGI-1, the million-dollar reasoning benchmark that stumps GPT-5. Using chaos theory and some deliberate cheating, I crammed every answer into a single 866,970-digit number.
     """
@@ -133,6 +133,8 @@ def _(mo):
     My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence and the dangers of benchmark maxing. As we unravel the surprisingly rich mathematics underlying this one-parameter model, it opens up deeper discussions about ARC-AGI and the broader question of how one should actually be measuring machine intelligence.
 
     Let me show you how it works.
+
+    _Update 11/23/2025: I wrote a majority of this blog in September 2025, so some of the numbers are outdated. Specifically, Gemini-3 Deep Think has the high score of 87.5 on ARC-AGI-1._
     """
     )
     return
@@ -404,7 +406,7 @@ def _(mo):
         r"""
     This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two examples, left of the vertical white line. It was *not* trained on the question, to the right of the vertical white line. The model saw the examples, which are in the same distribution as the question, but never the actual questions themselves. Remember this task is from *eval* set, not the train set. So to evaluate model performance, we ask the model this very question (which we never trained on) given these examples (which we absolutely did train on).
 
-    Does this count as "data leakage" or "cheating"? It seems like training on only the *examples* of the public eval set is fair game as the ARC-AGI organizers ultimately accepted the HRM submission.
+    Does this count as "data leakage" or "cheating"? It seems like training on only the *examples* of the public eval set is fair game as the ARC-AGI organizers ultimately accepted the HRM submission. Folks on [twitter](https://x.com/Dorialexander/status/1951954826545238181) also came to the concesous that is is 100% allowed.
 
     At the end of this episode, one comment by HRM's lead author caught my attention:
     > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." -   [Guan Wang](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308)
@@ -433,7 +435,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-1 by blatantly training on the public eval set, both the examples and questions. We would deviate from HRM's acceptable approach -- training on just the examples of the public eval set -- and enter the morally dubious territory of cheaters -- training on the examples *and questions* of the public eval set.
+    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-1 by blatantly training on the public eval set, both the examples and questions. We would deviate from HRM's acceptable approach (training on just the examples of the public eval set) and enter the morally dubious territory of training on the examples *and questions* of the public eval set.
 
     Now, the obvious approach would be to build a dictionary - just map each input directly to its corresponding output. But that's boring and lookup tables aren't nice mathematical functions. They're discrete, discontinuous, and definitely not differentiable. We need something else, something more elegant and interesting. To do that, we are going to take a brief detour into the world of chaos theory.
 
@@ -1159,7 +1161,6 @@ def _(mo):
     > 1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
     > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
-
     """
     )
     return
@@ -1541,6 +1542,38 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
+    We've built a one-parameter model that achieves 100% on ARC-AGI-1. But we haven't learned anything -- we've simply memorized the dataset and encoded it using chaos theory. This technique is incredibly brittle. Not only do you need the test set, but if you simply shuffle the data, you will predict nothing correctly.
+
+    To address the critiques:
+
+    **For the compression folks**: This is exactly what you'd expect. Kolmogorov complexity tells us that any finite dataset can be described by a program shorter than the data itself. We've just made that program a single real number.
+
+    **For the complexity theorists**: Yes, this is cheating. We've violated the fundamental assumption of bounded-precision arithmetic. Most complexity problems assume we operate on a machine with an $\omega$-bit word-size. However, this technique assumes we can operate on a machine with infinite bit word-size.
+
+    **For the deep learning researchers:** Our decoder is infinitely expressive because it contains $sin$ which has an [infinite VC dimension](https://cseweb.ucsd.edu/classes/fa12/cse291-b/vcnotes.pdf), i.e. it is in an unbounded hypothesis class. Of course it *can* memorize anything.
+
+    A couple of takeaways:
+
+    **Parameter count is a meaningless proxy for intelligence.** A billion-parameter model that genuinely solves ARC-AGI-1 is infinitely more impressive than our one-parameter lookup table. Don't automatically assume that a bigger model is a smarter model.
+
+    **Data leakage is a silent epidemic.** Top labs quietly train on their test sets. Our one-parameter model takes this to the extreme. By training on the test set, we were able to accomplish absurd things. and makes the absurdity obvious. If you're going to measure progress, measure it honestly—otherwise the numbers mean nothing.
+
+    **Generalization is the only thing that matters.** We can encode any dataset into a single number. But that number teaches us nothing about solving new problems. True intelligence isn't fitting the data you've seen; it's reasoning about the data you haven't. This is why I think ARC-AGI is such an important benchmark.
+
+    **Intelligence [is](https://en.wikipedia.org/wiki/Hutter_Prize) compression.**
+    In order to compress data, one has to find regularities in it, which fundamentally requires intelligent pattern matching. Instead of storing the data itself, you can learn a rule that to generate that data. Our one-parameter model has a compression ratio of 1.0x which is pretty terrible (assuming a large enough precision $p$). 
+
+    This work can be understood as taking Prof. Albert Gu's [ARC-AGI without pretraining](https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html) to the extreme
+
+    *   What matters is whether a system learns structure or merely encodes answers. The meaningful work is done by researchers like Prof. Albert Gu, who built compression-based methods that don't train on the test set—that's where real insight lives.ETrewrite it to be...in retrospect, this is remarkably similar to Professor Albert Gu's ARC-AGI without pretraining where they...Claude can make mistakes. Please double-check responses.
+
+
+
+
+
+
+
+
     So there we have it, a one parameter model that gets a perfect score on ARC-AGI-1! But we didn't learn anything in the process. There is no generalization. 
 
     We can actually encode any dataset this way:
@@ -1568,7 +1601,20 @@ def _(mo):
 
 
 @app.cell
-def _():
+def _(mo):
+    mo.md(
+        r"""
+    To cite this blog post
+    ```
+    @online{Turok2025ARC,
+    	author = {Ethan Turok},
+    	title = {How to Get 100% on ARC-AGI With A One-Parameter Model},
+    	year = {2025},
+    	url = {https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html},
+    }
+    ```
+    """
+    )
     return
 
 
