@@ -134,7 +134,7 @@ def _(mo):
 
     Let me show you how it works.
 
-    _Update 11/23/2025: I wrote a majority of this blog in September 2025, so some of the numbers are outdated. Specifically, Gemini-3 Deep Think has the high score of 87.5 on ARC-AGI-1._
+_Update 11/23/2025: I wrote most of this blog in September 2025, so some numbers are outdated. The best model for ARC-AGI-1 is now Gemini-3 Deep Think, which answers 87.5% of questions correctly. Also, the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871) is smaller and performs better than the [Hierarchical Reasoning Model](https://arxiv.org/abs/2506.21734), it gets 45% of ARC-AGI-1 questions right while using only 7 million parameters._
     """
     )
     return
@@ -723,7 +723,7 @@ def _(mo):
 
     Now from $\alpha$ we've extracted the prediction $\tilde{x}_0 = 0.500000$ which matches exactly the $0$th sample of our dataset $x_0 = 0.5$.
 
-    *Step 2.* To predict the next number, $\tilde{x}_1$, remember that each application of $\mathcal{D}$ strips away the leftmost binary digit. So 
+    *Step 2.* To predict the next number, $\tilde{x}_1$, remember that each application of $\mathcal{D}$ strips away the leftmost binary digit. So
 
     $$
     \begin{align*}
@@ -745,7 +745,7 @@ def _(mo):
     \end{align*}
     $$
 
-    Like before, we'll then record the first $6$ bits of $D^6(\alpha)$ to get $b_1$ 
+    Like before, we'll then record the first $6$ bits of $D^6(\alpha)$ to get $b_1$
 
     $$
     \begin{align*}
@@ -1542,11 +1542,78 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    We've built a one-parameter model that achieves 100% on ARC-AGI-1. But we haven't learned anything -- we've simply memorized the dataset and encoded it using chaos theory. This technique is incredibly brittle. Not only do you need the test set, but if you simply shuffle the data, you will predict nothing correctly.
+    We've built a one-parameter model that achieves 100% on ARC-AGI-1 but have not truly learned anything. By training on test and using chaos theory,we've simply memorized the dataset and encoded it into a single parameter. This technique can be applied to numerous predictions tasks and achieve perfect accuracy every time.
 
-    To address the critiques:
+    We can encode animal shapes with different values of $\alpha$
+    """
+    )
+    return
 
-    **For the compression folks**: This is exactly what you'd expect. Kolmogorov complexity tells us that any finite dataset can be described by a program shorter than the data itself. We've just made that program a single real number.
+
+@app.cell
+def _(mo):
+    animals_image = mo.image(
+        mo.notebook_dir() / "public/images/animals.png",
+        width=800,
+        caption="Encode animals with different values of alpha.From Figure 1 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.",
+        style={"display": "block", "margin": "0 auto"}
+    )
+    animals_image
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    We can find an $\alpha$ that perfectly predicts the fluctuations of the S&P 500 for ~6 months with
+    ```py
+    alpha = 0.9186525008673170697061215177743819472103574383504939864690954692792184358812098296063847317394708021665491910117472119056871470143410398692872752461892785029829514157709738923288994766865216570536672099485574178884250989741343121
+    ```
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    stocks_image = mo.image(
+        mo.notebook_dir() / "public/images/s_and_p.png",
+        width=800,
+        caption="Predict the S&P 500 with 100% accuracy until mid Febuary 2019. From Figure 9 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.",
+        style={"display": "block", "margin": "0 auto"}
+    )
+    stocks_image
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""And we can even find values of $\alpha$ that look like the famous [CIFAR-10](https://en.wikipedia.org/wiki/CIFAR-10) dataset""")
+    return
+
+
+@app.cell
+def _(mo):
+    cifar10_image = mo.image(
+        mo.notebook_dir() / "public/images/cifar_10.png",
+        width=800,
+        caption="Encode samples that look like they are from cifar-10. From Figure 3 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.",
+        style={"display": "block", "margin": "0 auto"}
+    )
+    cifar10_image
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    This technique is incredibly verstile, able to achieve perfect acuracy across tons of different domains. However, at the same time it is incredlby brittle. Not only do you need the test set to find such an $alpha$, but if you simply shuffle the dataset but keep the samples the same, your model will break down.
+
+    Let's address the technical critiques:
+
+    **For the compression folks**: Yes, this barely counts as compression. However, this technique reminds me of Kolmogorov complexity, measuring the complexity of an object by the length of a shortest computer program that produces the object as output. Here, we've just made that program a single real number.
 
     **For the complexity theorists**: Yes, this is cheating. We've violated the fundamental assumption of bounded-precision arithmetic. Most complexity problems assume we operate on a machine with an $\omega$-bit word-size. However, this technique assumes we can operate on a machine with infinite bit word-size.
 
@@ -1561,7 +1628,7 @@ def _(mo):
     **Generalization is the only thing that matters.** We can encode any dataset into a single number. But that number teaches us nothing about solving new problems. True intelligence isn't fitting the data you've seen; it's reasoning about the data you haven't. This is why I think ARC-AGI is such an important benchmark.
 
     **Intelligence [is](https://en.wikipedia.org/wiki/Hutter_Prize) compression.**
-    In order to compress data, one has to find regularities in it, which fundamentally requires intelligent pattern matching. Instead of storing the data itself, you can learn a rule that to generate that data. Our one-parameter model has a compression ratio of 1.0x which is pretty terrible (assuming a large enough precision $p$). 
+    In order to compress data, one has to find regularities in it, which fundamentally requires intelligent pattern matching. Instead of storing the data itself, you can learn a rule that to generate that data. Our one-parameter model has a compression ratio of 1.0x which is pretty terrible (assuming a large enough precision $p$).
 
     This work can be understood as taking Prof. Albert Gu's [ARC-AGI without pretraining](https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html) to the extreme
 
@@ -1574,7 +1641,7 @@ def _(mo):
 
 
 
-    So there we have it, a one parameter model that gets a perfect score on ARC-AGI-1! But we didn't learn anything in the process. There is no generalization. 
+    So there we have it, a one parameter model that gets a perfect score on ARC-AGI-1! But we didn't learn anything in the process. There is no generalization.
 
     We can actually encode any dataset this way:
 
@@ -1592,7 +1659,7 @@ def _(mo):
     To all the deep learning theorists out there, yes our decoder contains $\sin$ which means it is part of an infintely wide hypothesis class and can represent anything...? This allows for our infinite capacity for expressiveness.
 
 
-    The big take away is that parameter count is *at best* a proxy for intelligence and should not be taken as an actual measure of inteliggence. Just like 
+    The big take away is that parameter count is *at best* a proxy for intelligence and should not be taken as an actual measure of inteliggence. Just like
 
     Prof Albert Gu.'s paper used a general purpose compression algorithm on this. Which is an actual valid solution that does not train on the questions set.
     """
@@ -1606,7 +1673,7 @@ def _(mo):
         r"""
     To cite this blog post
     ```
-    @online{Turok2025ARC,
+    @online{Turok2025ARCAGI,
     	author = {Ethan Turok},
     	title = {How to Get 100% on ARC-AGI With A One-Parameter Model},
     	year = {2025},
