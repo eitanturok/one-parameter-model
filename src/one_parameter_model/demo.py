@@ -45,61 +45,70 @@ def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
     mp.prec = p * (i + 1) + 1
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
 
+def encoder(Y, precision, full_precision):
+    # set the arbitrary precision before computing anything
+    mp.prec = full_precision
+
+    # 1. apply φ^(-1)
+    phi_inv_decimal_list = phi_inverse(Y)
+
+    # 2. convert to binary
+    phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, precision)
+
+    # 3. concatenate all binary strings together into a scalar
+    phi_inv_binary_scalar = ''.join(phi_inv_binary_list)
+    if len(phi_inv_binary_scalar) != full_precision:
+        raise ValueError(f"Expected {full_precision} bits but got {len(phi_inv_binary_scalar)} bits.")
+
+    # 4. convert to decimal
+    phi_inv_decimal_scalar = binary_to_decimal(phi_inv_binary_scalar)
+
+    # 5. apply φ
+    alpha = phi(phi_inv_decimal_scalar)
+    return alpha
+
 #***** model *****
 
 class OneParameterModel:
     def __init__(self, precision:int=8, n_workers:int=8):
-        self.scaler = self.alpha = self.full_precision = self.y_shape = self.y_size = None
-        self.precision, self.n_workers = precision, n_workers # number of bits per sample
+        self.precision = precision # number of bits per sample
+        self.n_workers = n_workers
+        self.scaler = MinMaxScaler()
 
     @Timing("fit: ")
     def fit(self, X:np.ndarray, Y:np.ndarray|None=None):
         # if the dataset is unsupervised, treat X like your y
         if Y is None: Y = X
+        assert Y is not None
 
         # store shape/size of a single label y
         self.y_shape = Y.shape[1:]
         self.y_size = np.array(self.y_shape, dtype=int).prod().item()
 
         # scale labels to be in [0, 1]
-        self.scaler = MinMaxScaler()
         Y_scaled = self.scaler.scale(Y.flatten())
         assert 0 <= Y_scaled.min() <= Y_scaled.max() <= 1, f"Y_scaled must be in [0, 1] but got [{Y_scaled.min()}, {Y_scaled.max()}]"
 
-        # compute alpha with arbitrary floating-point precision set to full_precision bits
-        self.full_precision = Y.size * self.precision # number of bits in whole dataset
-        mp.prec = self.full_precision
-
-        # 1. apply φ^(-1)
-        phi_inv_decimal_list = phi_inverse(Y_scaled)
-
-        # 2. convert to binary
-        phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision)
-
-        # 3. concatenate all binary strings together into a scalar
-        phi_inv_binary_scalar = ''.join(phi_inv_binary_list)
-        if len(phi_inv_binary_scalar) != self.full_precision:
-            raise ValueError(f"Expected {self.full_precision} bits but got {len(phi_inv_binary_scalar)} bits.")
-
-        # 4. convert to decimal
-        phi_inv_decimal_scalar = binary_to_decimal(phi_inv_binary_scalar)
-
-        # 5. apply φ
-        self.alpha = phi(phi_inv_decimal_scalar)
+        # compute alpha with arbitrary floating-point precision
+        self.full_precision: int = Y.size * self.precision # number of bits in whole dataset
+        self.alpha = encoder(Y_scaled, self.precision, self.full_precision)
         return self
 
     @Timing("predict: ")
-    def predict(self, idxs:np.array, fast:bool=True):
+    def predict(self, idxs:np.ndarray, fast:bool=True):
         assert self.scaler is not None
         full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
 
-        if fast: fxn = partial(logistic_decoder_fast, Arcsin(Sqrt(self.alpha)), self.precision)
-        else: fxn = partial(logistic_decoder, self.alpha, self.full_precision, self.precision)
+        # choose the fast or slow logistic decoder
+        if fast: decoder = partial(logistic_decoder_fast, Arcsin(Sqrt(self.alpha)), self.precision)
+        else: decoder = partial(logistic_decoder, self.alpha, self.full_precision, self.precision)
+
+        # run the decoder sequentially/in parallel and then unscale+reshape y_pred
         if self.n_workers == 0:
-            y_pred = np.array([fxn(idx) for idx in tqdm(full_idxs)])
+            y_pred = np.array([decoder(idx) for idx in tqdm(full_idxs)])
         else:
             with multiprocessing.Pool(self.n_workers) as p:
-                y_pred = np.array(list(tqdm(p.imap(fxn, full_idxs), total=len(full_idxs), desc="Logistic Decoder")))
+                y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Logistic Decoder")))
         return self.scaler.unscale(y_pred).reshape((-1, *self.y_shape))
 
     @Timing("verify: ")
