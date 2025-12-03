@@ -30,7 +30,7 @@ def binary_to_decimal(y_binary):
 def getenv(key:str, default=0): return type(default)(os.getenv(key, default))
 
 class MinMaxScaler:
-    def __init__(self, feature_range=(1e-7, 1-1e-7), epsilon=1e-10):
+    def __init__(self, feature_range=(1e-10, 1-1e-10), epsilon=1e-10):
         self.min = self.max = self.range = None
         self.feature_range, self.epsilon = feature_range, epsilon
     def scale(self, X):

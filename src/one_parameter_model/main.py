@@ -17,7 +17,7 @@ def main(args):
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
     # fit the model
-    model = OneParameterModel(args.precision, args.workers)
+    model = OneParameterModel(args.precision)
     model.fit(X, y)
     if args.save:
         fn = f"alpha_{args.dataset.replace('-', '_')}_p{args.precision}.json"
