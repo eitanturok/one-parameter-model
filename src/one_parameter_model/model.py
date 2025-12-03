@@ -2,11 +2,13 @@ import functools, multiprocessing
 import numpy as np
 from mpmath import mp, asin as Arcsin, sqrt as Sqrt, sin as Sin, pi as Pi
 from .utils import MinMaxScaler, Timing, tqdm
+# from sklearn.preprocessing import MinMaxScaler
 
 #***** binary *****
 
 def decimal_to_binary(x, prec):
-    # converts a 1D np.array from decimal to binary
+    # converts a 1D np.array from decimal to binary; assumes all values are in [0, 1]
+    assert 0 <= x.min() <= x.max() <= 1, f"expected x to be in [0, 1] but got [{x.min()}, {x.max()}]"
     bits = []
     for _ in range(prec):
         bits.append(np.round(x))
@@ -36,7 +38,7 @@ def logistic_decoder(alpha, full_precision, p, i):
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
     # (i+1) because i is 0-indexed
     # +1 at the end adds an extra bit of precision for numerical stability
-    mp.prec = p * (i + 1) + 16
+    mp.prec = p * (i + 1) + 1
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
 
 def encoder(Y, precision, full_precision):
@@ -80,7 +82,7 @@ class OneParameterModel:
         self.y_size = np.array(self.y_shape, dtype=int).prod().item()
 
         # scale labels to be in [0, 1]
-        Y_scaled = self.scaler.scale(Y.flatten())
+        Y_scaled = self.scaler.fit_transform(Y.flatten())
         assert 0 <= Y_scaled.min() <= Y_scaled.max() <= 1, f"Y_scaled must be in [0, 1] but got [{Y_scaled.min()}, {Y_scaled.max()}]"
 
         # compute alpha with arbitrary floating-point precision
@@ -103,19 +105,19 @@ class OneParameterModel:
         else:
             with multiprocessing.Pool(self.n_workers) as p:
                 y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Logistic Decoder")))
-        return self.scaler.unscale(y_pred).reshape((-1, *self.y_shape))
+        return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
     @Timing("verify: ")
-    def verify(self, X, Y_pred):
+    def verify(self, Y:np.ndarray, Y_pred:np.ndarray):
+        # multiply the tolerance by the scaler range to account for scaling
         tolerance = np.pi / 2 ** (self.precision-1) * self.scaler.range
-        errors = np.abs(np.array(Y_pred) - np.array(X))
+        errors = np.abs(Y_pred - Y)
         bad_idx = np.where(errors >= tolerance)[0]
+
         assert len(bad_idx) == 0, f"Errors at {len(bad_idx)} indices with precision={self.precision}, {tolerance=:.2e}\n" \
-                                   f"  indices: {bad_idx[:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n" \
-                                   f"  errors: {errors[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n" \
-                                   f"  X: {np.array(X)[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n" \
-                                   f"  Y_pred: {np.array(Y_pred)[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n" \
-                                   f"  X_bin: {[decimal_to_binary(np.array([X[i]]), self.precision) for i in bad_idx[:10]]}{'...' if len(bad_idx) > 10 else ''}\n" \
-                                   f"  Y_bin: {[decimal_to_binary(np.array([Y_pred[i]]), self.precision) for i in bad_idx[:10]]}{'...' if len(bad_idx) > 10 else ''}\n" \
-                                   f"  max_error: {errors.max():.2e}"
+                                f"  indices: {bad_idx[:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n" \
+                                f"  errors: {errors[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n" \
+                                f"  Y: {Y[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n" \
+                                f"  Y_pred: {Y_pred[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n" \
+                                f"  max_error: {errors.max():.2e}"
         print(f"Passes with {tolerance=}")

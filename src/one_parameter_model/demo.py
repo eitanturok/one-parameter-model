@@ -1,5 +1,7 @@
 import numpy as np
 from .model import OneParameterModel
+from icecream import install
+install()
 
 def main():
     np.random.seed(0)
