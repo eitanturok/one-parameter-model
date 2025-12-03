@@ -12,7 +12,7 @@ install()
 def main(args):
     # load dataset
     X, y = DATASET[args.dataset]()
-    # if "arc-agi" in args.dataset: X, y = X[:1], y[:1]
+    if "arc-agi" in args.dataset: X, y = X[:10], y[:10]
     X_idxs = np.arange(len(X))
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
@@ -28,12 +28,12 @@ def main(args):
     # predict
     y_pred = model.predict(X_idxs)
 
-    # plot
-    # if VERBOSE:
-    #     plot_data(X, y, y_pred)
-
-    # check error bounds according to section 2.5 of https://arxiv.org/pdf/1904.12320
+    # check theoretical error bounds
     model.verify(y, y_pred)
+
+    # plot
+    plot_data(X, y, y_pred)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

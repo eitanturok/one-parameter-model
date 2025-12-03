@@ -109,6 +109,8 @@ class OneParameterModel:
 
     @Timing("verify: ")
     def verify(self, Y: np.ndarray, Y_pred: np.ndarray):
+        # confirm theoretical error bounds hold (section 2.5 of https://arxiv.org/pdf/1904.12320)
+
         # multiply the tolerance by the scaler range to account for scaling
         tolerance = np.pi / 2 ** (self.precision - 1) * self.scaler.range
 
