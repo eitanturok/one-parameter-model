@@ -28,14 +28,14 @@ def main(args):
     # predict
     y_pred = model.predict(X_idxs)
 
+    # plot
+    if VERBOSE:
+        plot_data(X, y, y_pred)
+
     # todo: why does this assert fail?
     # check accuracy
     tol = np.pi / (2**(args.precision-1)) # section 2.5 of https://arxiv.org/pdf/1904.12320
     assert (np.abs(y - y_pred) < tol).all(), f'y_pred != y:\n{tol=}\nmax abs_error={np.abs(y - y_pred).max()}\n\nabs_error={np.abs(y - y_pred)}\n\n{y=}\n\n{y_pred=}'
-
-    # plot
-    if VERBOSE:
-        plot_data(X, y, y_pred)
 
 
 if __name__ == '__main__':

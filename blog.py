@@ -842,9 +842,8 @@ def _(mo):
     > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
 
-    The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. Since $\tilde{x}_i = \text{dec}(b_i) = \text{dec}(\text{bin}_p(x_i))$, we have $\tilde{x}_i \approx x_i$ with error bound $2^{-p}$. What makes this profound is the realization that we're not really "learning" anything in any conventional sense. We're encoding it directly into the bits of a real number, exploiting it's infinite precision, and then using the dyadic map to navigate through that number and extract exactly what we need, when we need it.
 
-    Mathematically, we can express this with two functions the encoder $g: [0, 1]^n \to [0, 1]$ that compresses the dataset and the decoder $f: \overbrace{[0, 1]}^{\alpha} \times \overbrace{\mathbb{Z}_+}^{p} \times \overbrace{[n]}^i \to [0, 1]$ that extracts individual data points:
+    Mathematically, we can express these two algorithms with an encoder function $g: [0, 1]^n \to [0, 1]$ that compresses the dataset and a decoder function $f: \overbrace{[0, 1]}^{\alpha} \times \overbrace{\mathbb{Z}_+}^{p} \times \overbrace{[n]}^i \to [0, 1]$ that extracts individual data points:
 
     $$
     \begin{align*}
@@ -860,6 +859,10 @@ def _(mo):
     $$
 
     where $\oplus$ means concatenation.
+
+    The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. The larger $p$ is, the more accurately our encoding, but the more storage it takes up. Our error bound is $|\tilde{x}_i - x_i | < 2^{-p}$ because we don't encode anything after the first $p$ bits of precision.
+
+    What makes this profound is the realization that we're not really "learning" anything in any conventional sense. We're encoding it directly into the bits of a real number, exploiting it's infinite precision, and then using the dyadic map to navigate through that number and extract exactly what we need, when we need it.
 
     From this perspective, the dyadic map resembles a classical ML model where the encoder $g$ acts as `model.fit()` and the decoder $f$ acts as `model.predict()`.
     """
@@ -1163,6 +1166,10 @@ def _(mo):
     > 1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
     > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
+
+    The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. The larger $p$ is, the more accurately our encoding, but the more storage it takes up. Our error bound is $|\tilde{x}_i - x_i | < 2^{-p}$ because we don't encode anything after the first $p$ bits of precision.
+
+    Like before, the precision parameter $p$ controls the trade-off between accuracy and storage efficiency. However, the cost of getting this nice continious, differentiable function, is that our error is now $2 \pi$ times larger, $|\tilde{x}_i - x_i | < \frac{\pi}{2^{p-1}}$. (We get this $2 \pi$ factor by noting that the derivative of $\phi$ is bounded by $2 \pi$ and applying the mean-value theorem.)
     """
     )
     return
