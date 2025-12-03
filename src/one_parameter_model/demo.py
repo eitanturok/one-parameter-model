@@ -53,7 +53,7 @@ class OneParameterModel:
         self.precision, self.n_workers = precision, n_workers # number of bits per sample
 
     @Timing("fit: ")
-    def fit(self, X, Y=None):
+    def fit(self, X:np.ndarray, Y:np.ndarray|None=None):
         # if the dataset is unsupervised, treat X like your y
         if Y is None: Y = X
 
@@ -89,7 +89,7 @@ class OneParameterModel:
         return self
 
     @Timing("predict: ")
-    def predict(self, idxs, fast:bool=True):
+    def predict(self, idxs:np.array, fast:bool=True):
         assert self.scaler is not None
         full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
 
