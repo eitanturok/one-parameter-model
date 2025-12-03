@@ -10,7 +10,7 @@ T = TypeVar("T")
 
 def decimal_to_binary(y_decimal, precision):
     # convert decimal floats in [0, 1] to binary via https://sandbox.mc.edu/%7Ebennet/cs110/flt/dtof.html
-    # cannot use python's bin() function because it only converts int to binary
+    # cannot use python's bin() function because it only converts ints, not floats, to binary
     if not isinstance(y_decimal, np.ndarray): y_decimal = np.array(y_decimal)
     if y_decimal.ndim == 0: y_decimal = np.expand_dims(y_decimal, 0)
 
@@ -30,14 +30,17 @@ def binary_to_decimal(y_binary):
 def getenv(key:str, default=0): return type(default)(os.getenv(key, default))
 
 class MinMaxScaler:
-    def __init__(self, epsilon:float=1e-20):
-        self.min = self.max = None
-        self.epsilon = epsilon # to prevent division by zero
+    def __init__(self, feature_range=(1e-7, 1-1e-7), epsilon=1e-10):
+        self.min = self.max = self.range = None
+        self.feature_range, self.epsilon = feature_range, epsilon
     def scale(self, X):
         self.min, self.max = X.min(axis=0), X.max(axis=0)
-        return (X - self.min) / ((self.max - self.min) + self.epsilon)
+        self.range = np.maximum(self.max - self.min, self.epsilon)  # Prevent div by zero
+        X_scaled = (X - self.min) / self.range
+        return np.clip(X_scaled, *self.feature_range)  # Keep away from exact boundaries
     def unscale(self, X):
-        return X * ((self.max - self.min) + self.epsilon) + self.min
+        X_clipped = np.clip(X, *self.feature_range)
+        return X_clipped * self.range + self.min
 
 class Timing(contextlib.ContextDecorator):
     def __init__(self, prefix="", on_exit=None, enabled=True): self.prefix, self.on_exit, self.enabled = prefix, on_exit, enabled

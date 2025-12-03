@@ -1166,10 +1166,6 @@ def _(mo):
     > 1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
     > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
-
-    The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. The larger $p$ is, the more accurately our encoding, but the more storage it takes up. Our error bound is $|\tilde{x}_i - x_i | < 2^{-p}$ because we don't encode anything after the first $p$ bits of precision.
-
-    Like before, the precision parameter $p$ controls the trade-off between accuracy and storage efficiency. However, the cost of getting this nice continious, differentiable function, is that our error is now $2 \pi$ times larger, $|\tilde{x}_i - x_i | < \frac{\pi}{2^{p-1}}$. (We get this $2 \pi$ factor by noting that the derivative of $\phi$ is bounded by $2 \pi$ and applying the mean-value theorem.)
     """
     )
     return
@@ -1208,6 +1204,8 @@ def _(mo):
     $$
 
     but is still wrapped with those pesky $\text{dec}$ and $\text{bin}_p$ operations. However, something profound has happened here. We've taken the crude, discontinuous dyadic map and transformed it into something smooth and differentiable. The logistic map doesn't *look* like it's doing binary operations, but underneath the elegant trigonometry, it's performing exactly the same bit manipulations as its topological coungant, the dyadic map. Indeed, the makeup looks pretty great!
+
+    However, nothing is free. The cost of using the logistic map instead of the dyadic map is that our error is now $2 \pi$ times larger, $|\tilde{x}_i - x_i | < \frac{\pi}{2^{p-1}}$. (We get this $2 \pi$ factor by noting that the derivative of $\phi$ is bounded by $2 \pi$ and applying the mean-value theorem.)
     """
     )
     return
@@ -1551,7 +1549,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    We've built a one-parameter model that achieves 100% on ARC-AGI-1 but have not truly learned anything. By training on test and using chaos theory,we've simply memorized the dataset and encoded it into a single parameter. This technique can be applied to numerous predictions tasks and achieve perfect accuracy every time.
+    We've built a one-parameter model that achieves 100% on ARC-AGI-2 but have not truly learned anything. By training on test and using chaos theory, we've simply memorized the dataset and encoded it into a single parameter. This technique is quite powerful and can be applied to many other tasks beyond ARC-AGI-2, achieving perfect accuracy every time.
 
     We can encode animal shapes with different values of $\alpha$
     """
@@ -1618,11 +1616,20 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    This technique is incredibly verstile, able to achieve perfect acuracy across tons of different domains. However, at the same time it is incredlby brittle. Not only do you need the test set to find such an $alpha$, but if you simply shuffle the dataset but keep the samples the same, your model will break down.
+    This technique is incredibly verstile, able to achieve perfect acuracy across tons of different domains. However, at the same time it is incredlby brittle. Not only do you need to overfit on the test set to find $\alpha$, but simply shuffling the dataset will cause your model to break down.
 
-    Let's address the technical critiques:
+    Let's address some critiques.
 
-    **For the compression folks**: Yes, this barely counts as compression. However, this technique reminds me of Kolmogorov complexity, measuring the complexity of an object by the length of a shortest computer program that produces the object as output. Here, we've just made that program a single real number.
+    **For the compression folks**: Yes, this barely counts as compression. However, this technique has an incredibly low Kolmogorov complexity, measuring the complexity of an object by the length of a shortest computer program that produces the object as output. Here, our program is the simple scalar function
+    $$
+    \begin{align*}
+    f_{\alpha, p}(x_i)
+    & :=
+    \sin^2 \Big(
+        2^{i p} \arcsin(\sqrt{\alpha})
+    \Big).
+    \end{align*}
+    $$
 
     **For the complexity theorists**: Yes, this is cheating. We've violated the fundamental assumption of bounded-precision arithmetic. Most complexity problems assume we operate on a machine with an $\omega$-bit word-size. However, this technique assumes we can operate on a machine with infinite bit word-size.
 
