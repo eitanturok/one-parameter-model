@@ -12,7 +12,7 @@ install()
 def main(args):
     # load dataset
     X, y = DATASET[args.dataset]()
-    if "arc-agi" in args.dataset: X, y = X[:1], y[:1]
+    # if "arc-agi" in args.dataset: X, y = X[:1], y[:1]
     X_idxs = np.arange(len(X))
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
@@ -20,8 +20,10 @@ def main(args):
     model = OneParameterModel(args.precision, args.workers)
     model.fit(X, y)
     if args.save:
-        with open("alpha.json", "w") as f:
+        fn = f"alpha_{args.dataset.replace('-', '_')}_p{args.precision}.json"
+        with open(fn, "w") as f:
             json.dump({'precision': model.precision, 'alpha': (str(model.alpha), model.alpha.precision)}, f)
+            print(f'Saved alpha to {fn}')
 
     # predict
     y_pred = model.predict(X_idxs)
@@ -39,7 +41,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", choices=list(DATASET.keys()), default=list(DATASET.keys())[0], help="Dataset.")
-    parser.add_argument("--precision", type=int, default=8, help="Precision for arbitrary floating point operations.")
+    parser.add_argument("--precision", type=int, default=8, help="Bits of precision. Used for arbitrary floating point operations.")
     parser.add_argument("--workers", type=int, default=16, help="Number of workers to parallelize the decoder.")
     parser.add_argument("--save", action="store_true", help="Save alpha")
     args = parser.parse_args()

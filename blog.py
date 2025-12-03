@@ -58,9 +58,9 @@ def _(inspect):
 def _(mo):
     mo.md(
         r"""
-    # How to Get 100% on ARC-AGI With A One-Parameter Model
+    # How I built a one-parameter model that gets 100% on ARC-AGI-2
 
-    > I built a one-parameter model that gets 100% on ARC-AGI-1, the million-dollar reasoning benchmark that stumps GPT-5. Using chaos theory and some deliberate cheating, I crammed every answer into a single 866,970-digit number.
+    > I built a one-parameter model that gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 866,970 digits long.
     """
     )
     return
@@ -76,6 +76,8 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
+    > Update: I wrote most of this in September 2025, but updated it given the recent progress on the benchmark.
+
     In July 2025, Sapient Intelligence released their [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734v1) (HRM) and the world went crazy. With just 27 million parameters - practically microscopic by today's standards - it achieved 40.3% on [ARC-AGI-1](https://arcprize.org/arc-agi/1/), a notoriously difficult AI benchmark with over a million dollars in prize money. What made this remarkable wasn't just the score, but that HRM outperformed models 1000x larger.
 
     I wondered: is it possible to make an even smaller model?
@@ -103,7 +105,7 @@ def _(mo):
 
 @app.cell
 def _(gmpy2, json, mo):
-    with open(mo.notebook_dir() / "public/alpha/ARC-AGI-1.json", "r") as f: data = json.load(f)
+    with open(mo.notebook_dir() / "public/alpha/alpha_arc_agi_1_p8.json", "r") as f: data = json.load(f)
     alpha_txt = gmpy2.mpfr(*data['alpha'])
     p_txt = data['precision']
 
@@ -114,7 +116,7 @@ def _(gmpy2, json, mo):
 
 @app.cell
 def _(alpha_txt):
-    assert len(str(alpha_txt)) == 866_970
+    assert len(str(alpha_txt)) == 866970
     return
 
 
@@ -134,7 +136,7 @@ def _(mo):
 
     Let me show you how it works.
 
-_Update 11/23/2025: I wrote most of this blog in September 2025, so some numbers are outdated. The best model for ARC-AGI-1 is now Gemini-3 Deep Think, which answers 87.5% of questions correctly. Also, the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871) is smaller and performs better than the [Hierarchical Reasoning Model](https://arxiv.org/abs/2506.21734), it gets 45% of ARC-AGI-1 questions right while using only 7 million parameters._
+    _Update 11/23/2025: I wrote most of this blog in September 2025, so some numbers are outdated. The best model for ARC-AGI-1 is now Gemini-3 Deep Think, which answers 87.5% of questions correctly. Also, the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871) is smaller and performs better than the [Hierarchical Reasoning Model](https://arxiv.org/abs/2506.21734), it gets 45% of ARC-AGI-1 questions right while using only 7 million parameters._
     """
     )
     return

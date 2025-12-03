@@ -74,8 +74,7 @@ class OneParameterModel:
 
     @Timing("predict: ", enabled=VERBOSE)
     def predict(self, idxs):
-        # full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
-        full_idxs = [0]
+        full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
         raw_pred = logistic_decoder(self.y_size, self.alpha, self.precision, full_idxs, self.workers)
         return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
         """
