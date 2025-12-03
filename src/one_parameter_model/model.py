@@ -36,7 +36,7 @@ def logistic_decoder(alpha, full_precision, p, i):
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
     # (i+1) because i is 0-indexed
     # +1 at the end adds an extra bit of precision for numerical stability
-    mp.prec = p * (i + 1) + 1
+    mp.prec = p * (i + 1) + 16
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
 
 def encoder(Y, precision, full_precision):
@@ -82,7 +82,6 @@ class OneParameterModel:
         # scale labels to be in [0, 1]
         Y_scaled = self.scaler.scale(Y.flatten())
         assert 0 <= Y_scaled.min() <= Y_scaled.max() <= 1, f"Y_scaled must be in [0, 1] but got [{Y_scaled.min()}, {Y_scaled.max()}]"
-        print(Y_scaled)
 
         # compute alpha with arbitrary floating-point precision
         self.full_precision: int = Y.size * self.precision # number of bits in whole dataset
