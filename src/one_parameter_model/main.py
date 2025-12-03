@@ -29,9 +29,9 @@ def main(args):
     y_pred = model.predict(X_idxs)
 
     # todo: why does this assert fail?
-    # # check accuracy
-    # atol = np.pi / (2**(args.precision-1)) # section 2.5 of https://arxiv.org/pdf/1904.12320
-    # assert np.allclose(y, y_pred, atol=atol, rtol=0.0001), f'y_pred != y:\n{atol=}\nmax abs_error={np.abs(y - y_pred).max()}\n\nabs_error={np.abs(y - y_pred)}\n\n{y=}\n\n{y_pred=}'
+    # check accuracy
+    tol = np.pi / (2**(args.precision-1)) # section 2.5 of https://arxiv.org/pdf/1904.12320
+    assert (np.abs(y - y_pred) < tol).all(), f'y_pred != y:\n{tol=}\nmax abs_error={np.abs(y - y_pred).max()}\n\nabs_error={np.abs(y - y_pred)}\n\n{y=}\n\n{y_pred=}'
 
     # plot
     if VERBOSE:

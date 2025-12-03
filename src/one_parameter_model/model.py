@@ -38,6 +38,7 @@ def logistic_decoder(y_size, alpha, precision, idxs, workers):
 # one parameter model
 class OneParameterModel:
     def __init__(self, precision, workers=8):
+        self.scaler = self.alpha = self.y_shape = self.y_size = None
         self.precision = precision # binary precision, not decimal precision, for a single number
         self.workers = workers
 
@@ -47,11 +48,11 @@ class OneParameterModel:
         if Y is None: Y = X
 
         # store shape/size of a single label y
-        self.y_shape = Y.shape[1:]  # pylint: disable=attribute-defined-outside-init
-        self.y_size = np.array(self.y_shape, dtype=int).prod().item()  # pylint: disable=attribute-defined-outside-init
+        self.y_shape = Y.shape[1:]
+        self.y_size = np.array(self.y_shape, dtype=int).prod().item()
 
         # scale labels to be in [0, 1]
-        self.scaler = MinMaxScaler()  # pylint: disable=attribute-defined-outside-init
+        self.scaler = MinMaxScaler()
         Y_scaled = self.scaler.scale(Y.flatten())
 
         # compute alpha with arbitrary floating-point precision of np bits
@@ -69,7 +70,7 @@ class OneParameterModel:
             # 4. convert to decimal
             phi_inv_scalar = binary_to_decimal(phi_inv_binary)
             # 5. apply φ
-            self.alpha = phi(phi_inv_scalar) # pylint: disable=attribute-defined-outside-init
+            self.alpha = phi(phi_inv_scalar)
         return self
 
     @Timing("predict: ", enabled=VERBOSE)
