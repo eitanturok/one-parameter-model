@@ -2,11 +2,7 @@ import time, contextlib, sys, multiprocessing
 from functools import partial
 # from tqdm import tqdm
 import numpy as np
-from mpmath import mp, workprec
-from mpmath import asin as Arcsin
-from mpmath import sqrt as Sqrt
-from mpmath import sin as Sin
-from mpmath import pi as Pi
+from mpmath import mp, asin as Arcsin, sqrt as Sqrt, sin as Sin, pi as Pi
 from .utils import MinMaxScaler, Timing, tqdm
 
 #***** binary *****
@@ -77,7 +73,7 @@ class OneParameterModel:
 
     @Timing("fit: ")
     def fit(self, X:np.ndarray, Y:np.ndarray|None=None):
-        # if the dataset is unsupervised, treat X like your y
+        # if the dataset is unsupervised, treat X like the y
         if Y is None: Y = X
         assert Y is not None
 
