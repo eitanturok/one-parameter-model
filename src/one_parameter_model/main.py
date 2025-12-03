@@ -29,8 +29,8 @@ def main(args):
     y_pred = model.predict(X_idxs)
 
     # plot
-    if VERBOSE:
-        plot_data(X, y, y_pred)
+    # if VERBOSE:
+    #     plot_data(X, y, y_pred)
 
     # check error bounds according to section 2.5 of https://arxiv.org/pdf/1904.12320
     model.verify(y, y_pred)

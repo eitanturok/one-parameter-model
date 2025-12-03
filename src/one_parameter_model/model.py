@@ -108,16 +108,22 @@ class OneParameterModel:
         return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
     @Timing("verify: ")
-    def verify(self, Y:np.ndarray, Y_pred:np.ndarray):
+    def verify(self, Y: np.ndarray, Y_pred: np.ndarray):
         # multiply the tolerance by the scaler range to account for scaling
-        tolerance = np.pi / 2 ** (self.precision-1) * self.scaler.range
-        errors = np.abs(Y_pred - Y)
-        bad_idx = np.where(errors >= tolerance)[0]
+        tolerance = np.pi / 2 ** (self.precision - 1) * self.scaler.range
 
-        assert len(bad_idx) == 0, f"Errors at {len(bad_idx)} indices with precision={self.precision}, {tolerance=:.2e}\n" \
-                                f"  indices: {bad_idx[:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n" \
-                                f"  errors: {errors[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n" \
-                                f"  Y: {Y[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n" \
-                                f"  Y_pred: {Y_pred[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n" \
-                                f"  max_error: {errors.max():.2e}"
-        print(f"Passes with {tolerance=}")
+        try:
+            np.testing.assert_allclose(Y_pred, Y, atol=tolerance, rtol=0,
+                                    err_msg=f"Predictions don't match within tolerance")
+            print(f"Passes with {tolerance=:.2e}")
+        except AssertionError:
+            errors = np.abs(Y_pred - Y)
+            bad_idx = np.where(errors >= tolerance)[0]
+            raise AssertionError(
+                f"Errors at {len(bad_idx)} indices with precision={self.precision}, {tolerance=:.2e}\n"
+                f"  indices: {bad_idx[:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
+                f"  errors: {errors[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
+                f"  Y: {Y[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
+                f"  Y_pred: {Y_pred[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
+                f"  max_error: {errors.max():.2e}"
+            )
