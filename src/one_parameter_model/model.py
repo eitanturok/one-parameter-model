@@ -27,7 +27,7 @@ def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
 
 def phi(x): return Sin(2 * Pi * x) ** 2
 
-def dyadic_decoder(alpha, i, p): return float((2 ** (i * p) * alpha) % 1)
+def dyadic_decoder(alpha, p, i): return float((2 ** (i * p) * alpha) % 1)
 
 def logistic_decoder(alpha, full_precision, p, i):
     mp.prec = full_precision
@@ -41,7 +41,24 @@ def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
     mp.prec = p * (i + 1) + 1
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
 
-def encoder(Y, precision, full_precision):
+# todo: fix this
+def dyadic_encoder(Y, precision, full_precision):
+    # set the arbitrary precision before computing anything
+    mp.prec = full_precision
+
+    # 1. convert to binary
+    binary_list = decimal_to_binary(Y, precision)
+
+    # 2. concatenate all binary strings together into a scalar
+    binary_scalar = ''.join(binary_list)
+    if len(binary_scalar) != full_precision:
+        raise ValueError(f"Expected {full_precision} bits but got {len(binary_scalar)} bits.")
+
+    # 3. convert to decimal
+    decimal_scalar = binary_to_decimal(binary_scalar)
+    return decimal_scalar
+
+def logistic_encoder(Y, precision, full_precision):
     # set the arbitrary precision before computing anything
     mp.prec = full_precision
 
@@ -78,16 +95,16 @@ class OneParameterModel:
         assert Y is not None
 
         # store shape/size of a single label y
-        self.y_shape = Y.shape[1:]
-        self.y_size = np.array(self.y_shape, dtype=int).prod().item()
+        self.y_shape = Y.shape[1:] # pylint: disable=attribute-defined-outside-init
+        self.y_size = np.array(self.y_shape, dtype=int).prod().item() # pylint: disable=attribute-defined-outside-init
 
         # scale labels to be in [0, 1]
         Y_scaled = self.scaler.fit_transform(Y.flatten())
         assert 0 <= Y_scaled.min() <= Y_scaled.max() <= 1, f"Y_scaled must be in [0, 1] but got [{Y_scaled.min()}, {Y_scaled.max()}]"
 
         # compute alpha with arbitrary floating-point precision
-        self.full_precision: int = Y.size * self.precision # number of bits in whole dataset
-        self.alpha = encoder(Y_scaled, self.precision, self.full_precision)
+        self.full_precision: int = Y.size * self.precision # pylint: disable=attribute-defined-outside-init
+        self.alpha = logistic_encoder(Y_scaled, self.precision, self.full_precision) # pylint: disable=attribute-defined-outside-init
         return self
 
     @Timing("predict: ")
