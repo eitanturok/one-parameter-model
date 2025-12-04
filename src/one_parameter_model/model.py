@@ -33,7 +33,6 @@ def dyadic_decoder(alpha, p, i): return float((2 ** (i * p) * alpha) % 1)
 def logistic_decoder(alpha, full_precision, p, i):
     mp.prec = full_precision
     ret = Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2
-    # mp.prec = p
     return float(ret)
 
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
