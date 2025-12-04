@@ -7,8 +7,10 @@ from .utils import MinMaxScaler, Timing, tqdm
 
 def dyadic_map(X:np.ndarray): return (2 * X) % 1
 
-def decimal_to_binary(x_decimal:np.ndarray, precision:int):
-    # converts a 1D np.array from decimal to binary, assume all values in [0, 1]
+def decimal_to_binary(x_decimal:np.ndarray|float|int|list|tuple, precision:int):
+    # converts a 1D sequence from decimal to binary, assume all values in [0, 1]
+    if isinstance(x_decimal, (float, int)): x_decimal = np.array([x_decimal], dtype=float)
+    elif isinstance(x_decimal, (list, tuple)): x_decimal = np.array(x_decimal, dtype=float)
     assert 0 <= x_decimal.min() <= x_decimal.max() <= 1, f"expected x_decimal to be in [0, 1] but got [{x_decimal.min()}, {x_decimal.max()}]"
     bits = []
     for _ in range(precision):
@@ -35,8 +37,13 @@ def logistic_decoder(alpha, full_precision, p, i):
     return float(ret)
 
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
-    # (i+1) because i is 0-indexed
-    # +1 at the end adds an extra bit of precision for numerical stability
+    # this is more than 10x faster because
+    # 1) we precompute arcsin(sqrt(alpha)) only once
+    # 2) we only set the precision to the minimial needed for the current iteration
+    # Why is mp.prec = p * (i + 1) + 1?
+    # Each iteration i requires p bits of precision
+    # So iteration i requires p * (i+1) bits of precision (i is 0-indexed)
+    # The +1 at the end adds an extra bit for numerical stability
     mp.prec = p * (i + 1) + 1
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
 
