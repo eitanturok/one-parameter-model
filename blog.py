@@ -58,7 +58,7 @@ def _(mo):
         r"""
     # How I built a one-parameter model that gets 100% on ARC-AGI-2
 
-    > I built a one-parameter model that gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 866,970 digits long.
+    > I built a one-parameter model that gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
     """
     )
     return
@@ -66,7 +66,13 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""# Intro""")
+    mo.md(
+        r"""
+    # Intro
+
+    > "When a measure becomes a target, it ceases to be a good measure" - Charles Goodhart
+    """
+    )
     return
 
 
@@ -74,15 +80,13 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    > Update: I wrote most of this in September 2025, but updated it given the recent progress on the benchmark.
+    In July 2025, Sapient Intelligence released their [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734v1) (HRM) and the world went crazy. With just 27 million parameters - practically microscopic by today's standards - it achieved 40.3% on [ARC-AGI-1](https://arcprize.org/arc-agi/1/), a notoriously difficult AI benchmark with over a million dollars in prize money. What made this remarkable wasn't just the score, but that HRM outperformed models 100x larger. Then came the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871), obliterating expectations yet again. It scored 45% on ARC-AGI-1 with a mere 7 million parameters, again beating models with less than 0.01% of their parameters.
 
-    In July 2025, Sapient Intelligence released their [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734v1) (HRM) and the world went crazy. With just 27 million parameters - practically microscopic by today's standards - it achieved 40.3% on [ARC-AGI-1](https://arcprize.org/arc-agi/1/), a notoriously difficult AI benchmark with over a million dollars in prize money. What made this remarkable wasn't just the score, but that HRM outperformed models 1000x larger.
+    Naturally, I wondered: how small can we go?
 
-    I wondered: is it possible to make an even smaller model?
+    **So I built a one parameter model that scores 100% on ARC-AGI-2.** 
 
-    **So I built a one parameter model that scores 100% on ARC-AGI-1.**
-
-    The model is:
+    ARC-AGI-2 is the harder, newer version of ARC-AGI-1. The model is:
 
     $$
     \begin{align*}
@@ -95,7 +99,7 @@ def _(mo):
     \end{align*}
     $$
 
-    where $x_i$ is the $i\text{th}$ datapoint and $\alpha$ is the one and only parameter. ($p$ is the manually set for precision; more on this later.) All you need to get 100% on ARC-AGI-1 is:
+    where $x_i$ is the $i\text{th}$ datapoint and $\alpha \in \mathbb{R}$ is the singe trainable parameter. ($p$ is a precision hyperparameter, more on this later.) All you need to get 100% on ARC-AGI-2 is:
     """
     )
     return
@@ -103,7 +107,7 @@ def _(mo):
 
 @app.cell
 def _(gmpy2, json, mo):
-    with open(mo.notebook_dir() / "public/alpha/alpha_arc_agi_1_p8.json", "r") as f: data = json.load(f)
+    with open(mo.notebook_dir() / "public/alpha/alpha_arc_agi_2_p8.json", "r") as f: data = json.load(f)
     alpha_txt = gmpy2.mpfr(*data['alpha'])
     p_txt = data['precision']
 
@@ -114,7 +118,8 @@ def _(gmpy2, json, mo):
 
 @app.cell
 def _(alpha_txt):
-    assert len(str(alpha_txt)) == 866970
+    n_digits = len(str(alpha_txt).lstrip('0.'))
+    assert n_digits == 260091, f'expected alpha to have 260091 digits but got {n_digits}'
     return
 
 
@@ -122,19 +127,17 @@ def _(alpha_txt):
 def _(mo):
     mo.md(
         r"""
-    This number is 866,970 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. Plug any ARC-AGI example into this bad boy and watch our model perfectly predict the solution!
+    This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. Plug any ARC-AGI-2 example into this bad boy and watch our model perfectly predict the solution!
 
     Sounds pretty impressive, right?
 
-    Well, here's the thing - **it's complete nonsense.**
+    Unfortunately, **it's complete nonsense.**
 
-    What I've done here is use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. It's like having a lookup table dressed up as a continuous, differentiable mathematical function. There is no learning or generalization. It is pure memorization with trigonometry and a few extra steps. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating.
+    There is no learning or generalization. What I've really done here is train on test and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating.
 
-    My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence and the dangers of benchmark maxing. As we unravel the surprisingly rich mathematics underlying this one-parameter model, it opens up deeper discussions about ARC-AGI and the broader question of how one should actually be measuring machine intelligence.
+    This one-parameter model is a thought experiment taken seriously. My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence. But this also exposes a deeper issue at play. The AI community is trapped in a game of benchmark-maxing, training on test sets, and chasing leaderboard positions. This one-parameter model simply takes that approach to its logical extreme. As we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
 
     Let me show you how it works.
-
-    _Update 11/23/2025: I wrote most of this blog in September 2025, so some numbers are outdated. The best model for ARC-AGI-1 is now Gemini-3 Deep Think, which answers 87.5% of questions correctly. Also, the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871) is smaller and performs better than the [Hierarchical Reasoning Model](https://arxiv.org/abs/2506.21734), it gets 45% of ARC-AGI-1 questions right while using only 7 million parameters._
     """
     )
     return
@@ -1545,290 +1548,263 @@ def _(X_idx, model, y, y_pred):
 
 
 @app.cell
-def _(colors, get_text_color, plt):
-    # import matplotlib.pyplot as plt
-    # import matplotlib.colors as colors
-    # import numpy as np
-    from matplotlib.colors import to_rgb
+def _():
+    # # import matplotlib.pyplot as plt
+    # # import matplotlib.colors as colors
+    # # import numpy as np
+    # from matplotlib.colors import to_rgb
 
-    base_colors = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00',
-                   '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
-    cmap2 = colors.ListedColormap(base_colors, N=256)
-
-
-    from matplotlib.colors import to_rgb
-
-    # def get_text_color(bg_color):
-    #     """White text on dark bg, black on light bg"""
-    #     r, g, b = to_rgb(bg_color)
-    #     brightness = 0.299*r + 0.587*g + 0.114*b
-    #     return 'white' if brightness < 0.5 else 'black'
-
-    def add_values_to_plot(ax, matrix, cmap, norm):
-        """Add numerical values as text overlay on matrix plot"""
-        height, width = matrix.shape
-        fontsize = max(5, min(10, 80 / max(height, width)))
-
-        for i in range(height):
-            for j in range(width):
-                value = matrix[i, j]
-
-                # Format: show integer without decimal, float with 1 decimal
-                if value == int(value):
-                    text = f'{int(value)}'
-                else:
-                    text = f'{value:.1f}'
-
-                # Get background color and choose contrasting text color
-                cell_color = cmap(norm(value))
-                text_color = get_text_color(cell_color)
-
-                ax.text(j, i, text,
-                       ha='center', va='center',
-                       color=text_color,
-                       fontsize=fontsize,
-                       fontweight='bold')
-
-    def plot_matrix2(matrix, ax=None, title=None, vmin=None, vmax=None, grid_w=0.8, status=None, show_vals=False):
-        if ax is None:
-            fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-            fig.patch.set_facecolor('#444444')
-        else:
-            fig = ax.get_figure()
-
-        if vmin is None:
-            vmin = matrix.min()
-        if vmax is None:
-            vmax = matrix.max()
-
-        norm = colors.Normalize(vmin=vmin, vmax=vmax)
-        ax.imshow(matrix, cmap=cmap2, norm=norm)
-
-        ax.set_xticks([x - 0.5 for x in range(1 + matrix.shape[1])])
-        ax.set_yticks([x - 0.5 for x in range(1 + matrix.shape[0])])
-        ax.grid(True, which='both', color='#666666', linewidth=grid_w)
-        ax.tick_params(axis='both', color='none', length=0)
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
-
-        if show_vals:
-            add_values_to_plot(ax, matrix, cmap2, norm)
-
-        if title:
-            ax.set_title(f'\n{title}', fontsize=12, color='#dddddd')
-
-        if status:
-            ax.text(1, 1.15, status[0],
-                   transform=ax.transAxes,
-                   ha='right', va='bottom',
-                   fontsize=10, fontweight='bold',
-                   color=status[1])
-
-        return fig, ax
-
-    def plot_one2(ax, i, task, ex_or_q, in_or_out, w=0.8, vmin=None, vmax=None, show_vals=False):
-        matrix = task[f"{ex_or_q}_{in_or_out}"][i]
-        title = f'{ex_or_q.capitalize()} {i} {in_or_out[:-1].capitalize()}'
-
-        if ex_or_q == 'question' and in_or_out == 'outputs':
-            status = ('? PREDICT', '#FF4136')
-        else:
-            status = ('✓ GIVEN', '#2ECC40')
-
-        plot_matrix2(matrix, ax=ax, title=title, vmin=vmin, vmax=vmax, grid_w=w, status=status, show_vals=show_vals)
-
-    def display_task2(ds, split, i, size=2.5, w=0.9, vmin=None, vmax=None, show_vals=False):
-        task = ds[split][i]
-        n_ex = len(task['example_inputs'])
-        n_q = len(task['question_inputs'])
-
-        # Auto-detect vmin/vmax if not provided
-        if vmin is None or vmax is None:
-            all_values = []
-
-            for j in range(n_ex):
-                all_values.extend(task['example_inputs'][j].flatten())
-                all_values.extend(task['example_outputs'][j].flatten())
-
-            for k in range(n_q):
-                all_values.extend(task['question_inputs'][k].flatten())
-                if task['question_outputs']:
-                    all_values.extend(task['question_outputs'][k].flatten())
-
-            if vmin is None:
-                vmin = min(all_values)
-            if vmax is None:
-                vmax = max(all_values)
-
-        # Create subplot grid
-        total_cols = n_ex + n_q
-        fig, axs = plt.subplots(2, total_cols, figsize=(size * total_cols, 2 * size))
-        plt.suptitle(f'ARC-AGI-1 {split.capitalize()} Task #{i} (id={task["id"]})',
-                     fontsize=16, fontweight='bold', y=1, color='#eeeeee')
-
-        # Plot examples
-        for j in range(n_ex):
-            plot_one2(axs[0, j], j, task, 'example', 'inputs', w, vmin, vmax, show_vals)
-            plot_one2(axs[1, j], j, task, 'example', 'outputs', w, vmin, vmax, show_vals)
-
-        # Plot questions
-        for k in range(n_q):
-            plot_one2(axs[0, n_ex + k], k, task, 'question', 'inputs', w, vmin, vmax, show_vals)
-            plot_one2(axs[1, n_ex + k], k, task, 'question', 'outputs', w, vmin, vmax, show_vals)
-
-        # Add separator line
-        axs[1, n_ex].set_xticklabels([])
-        axs[1, n_ex].set_yticklabels([])
-        axs[1, n_ex] = plt.figure(1).add_subplot(111)
-        axs[1, n_ex].set_xlim([0, total_cols])
-        axs[1, n_ex].plot([n_ex, n_ex], [0, 1], '-', linewidth=5, color='white')
-        axs[1, n_ex].axis("off")
-
-        # Style the figure
-        fig.patch.set_linewidth(5)
-        fig.patch.set_edgecolor('black')
-        fig.patch.set_facecolor('#444444')
-        plt.tight_layout(h_pad=3.0)
-
-        return fig
-    return (plot_matrix2,)
+    # base_colors = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00',
+    #                '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
+    # cmap2 = colors.ListedColormap(base_colors, N=256)
 
 
-@app.cell
-def _(plot_matrix2, y_pred):
-    x_small, y_small = -1, -1
-    y_pred_plot = y_pred.squeeze()[:x_small, :y_small]
-    plot_matrix2(y_pred_plot, title="y_pred", vmin=0, vmax=9, show_vals=True)
-    return x_small, y_small
+    # from matplotlib.colors import to_rgb
 
+    # # def get_text_color(bg_color):
+    # #     """White text on dark bg, black on light bg"""
+    # #     r, g, b = to_rgb(bg_color)
+    # #     brightness = 0.299*r + 0.587*g + 0.114*b
+    # #     return 'white' if brightness < 0.5 else 'black'
 
-@app.cell
-def _(X_idx, plot_matrix2, x_small, y, y_small):
-    y_plot = y[X_idx].squeeze()[:x_small, :y_small]
-    plot_matrix2(y_plot, title="y", vmin=0, vmax=9, show_vals=True)
-    return
+    # def add_values_to_plot(ax, matrix, cmap, norm):
+    #     """Add numerical values as text overlay on matrix plot"""
+    #     height, width = matrix.shape
+    #     fontsize = max(5, min(10, 80 / max(height, width)))
 
+    #     for i in range(height):
+    #         for j in range(width):
+    #             value = matrix[i, j]
 
-@app.cell
-def _(np):
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
+    #             # Format: show integer without decimal, float with 1 decimal
+    #             if value == int(value):
+    #                 text = f'{int(value)}'
+    #             else:
+    #                 text = f'{value:.1f}'
 
-    COLORS = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00',
-              '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
+    #             # Get background color and choose contrasting text color
+    #             cell_color = cmap(norm(value))
+    #             text_color = get_text_color(cell_color)
 
-    def get_text_color(val):
-        r, g, b = int(COLORS[val][1:3], 16), int(COLORS[val][3:5], 16), int(COLORS[val][5:7], 16)
-        return 'white' if (0.299*r + 0.587*g + 0.114*b)/255 < 0.5 else 'black'
+    #             ax.text(j, i, text,
+    #                    ha='center', va='center',
+    #                    color=text_color,
+    #                    fontsize=fontsize,
+    #                    fontweight='bold')
 
-    def plot_matrix(mat, fig=None, row=None, col=None, title=None, show_nums=False):
-        mat = np.array(mat)
-        h, w = mat.shape
+    # def plot_matrix2(matrix, ax=None, title=None, vmin=None, vmax=None, grid_w=0.8, status=None, show_vals=False):
+    #     if ax is None:
+    #         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    #         fig.patch.set_facecolor('#444444')
+    #     else:
+    #         fig = ax.get_figure()
 
-        # Build components once
-        shapes = []
-        annotations = []
-        hover_x, hover_y, hover_text = [], [], []
+    #     if vmin is None:
+    #         vmin = matrix.min()
+    #     if vmax is None:
+    #         vmax = matrix.max()
 
-        for i in range(h):
-            for j in range(w):
-                v = mat[i, j]
-                shapes.append(dict(type='rect', x0=j, x1=j+1, y0=h-i-1, y1=h-i,
-                                 fillcolor=COLORS[v], line=dict(color='#666', width=1)))
-                hover_x.append(j+0.5)
-                hover_y.append(h-i-0.5)
-                hover_text.append(f'Value: {v}')
-                if show_nums:
-                    annotations.append(dict(x=j+0.5, y=h-i-0.5, text=str(v), showarrow=False,
-                                          font=dict(color=get_text_color(v), size=10)))
+    #     norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    #     ax.imshow(matrix, cmap=cmap2, norm=norm)
 
-        if title:
-            annotations.append(dict(x=0, y=h+0.3, text=title, xanchor='left', showarrow=False,
-                                  font=dict(color='#eee', size=12)))
-        annotations.append(dict(x=w, y=h+0.3, text=f'{h}x{w}', xanchor='right', showarrow=False,
-                              font=dict(color='#aaa', size=10)))
+    #     ax.set_xticks([x - 0.5 for x in range(1 + matrix.shape[1])])
+    #     ax.set_yticks([x - 0.5 for x in range(1 + matrix.shape[0])])
+    #     ax.grid(True, which='both', color='#666666', linewidth=grid_w)
+    #     ax.tick_params(axis='both', color='none', length=0)
+    #     ax.set_xticklabels([])
+    #     ax.set_yticklabels([])
 
-        # Create fig if needed
-        if not fig:
-            fig = go.Figure()
-        fig.update_layout(xaxis=dict(range=[0, w], showgrid=False, visible=False),
-                         yaxis=dict(range=[0, h], showgrid=False, visible=False),
-                         width=w*50, height=h*50, margin=dict(l=20, r=20, t=40, b=20),
-                         paper_bgcolor='#444', plot_bgcolor='#444')
+    #     if show_vals:
+    #         add_values_to_plot(ax, matrix, cmap2, norm)
 
-        # Add everything to fig
-        for shape in shapes:
-            fig.add_shape(shape, row=row, col=col)
-        for ann in annotations:
-            fig.add_annotation(ann, row=row, col=col)
-        fig.add_trace(go.Scatter(x=hover_x, y=hover_y, mode='markers', marker=dict(size=20, opacity=0),
-                                text=hover_text, hovertemplate='%{text}<extra></extra>',
-                                hoverlabel=dict(bgcolor='rgba(0,0,0,0)', font=dict(color='white')),
-                                showlegend=False), row=row, col=col)
+    #     if title:
+    #         ax.set_title(f'\n{title}', fontsize=12, color='#dddddd')
 
-        if row and col:
-            fig.update_xaxes(range=[0, w], showgrid=False, visible=False, row=row, col=col)
-            fig.update_yaxes(range=[0, h], showgrid=False, visible=False, row=row, col=col)
+    #     if status:
+    #         ax.text(1, 1.15, status[0],
+    #                transform=ax.transAxes,
+    #                ha='right', va='bottom',
+    #                fontsize=10, fontweight='bold',
+    #                color=status[1])
 
-        return fig
+    #     return fig, ax
 
-    def plot_examples(examples, fig=None, show_nums=False):
-        inputs, outputs = examples['inputs'], examples['outputs']
-        for i in range(len(inputs)):
-            plot_matrix(inputs[i], fig, row=1, col=i+1, title=f'Ex.{i+1} Input', show_nums=show_nums)
-            plot_matrix(outputs[i], fig, row=2, col=i+1, title=f'Ex.{i+1} Output', show_nums=show_nums)
-            break
-        return fig
-    return get_text_color, make_subplots, plot_examples, plot_matrix
+    # def plot_one2(ax, i, task, ex_or_q, in_or_out, w=0.8, vmin=None, vmax=None, show_vals=False):
+    #     matrix = task[f"{ex_or_q}_{in_or_out}"][i]
+    #     title = f'{ex_or_q.capitalize()} {i} {in_or_out[:-1].capitalize()}'
 
+    #     if ex_or_q == 'question' and in_or_out == 'outputs':
+    #         status = ('? PREDICT', '#FF4136')
+    #     else:
+    #         status = ('✓ GIVEN', '#2ECC40')
 
-@app.cell
-def _(examples):
-    len(examples["inputs"])
-    return
+    #     plot_matrix2(matrix, ax=ax, title=title, vmin=vmin, vmax=vmax, grid_w=w, status=status, show_vals=show_vals)
 
+    # def display_task2(ds, split, i, size=2.5, w=0.9, vmin=None, vmax=None, show_vals=False):
+    #     task = ds[split][i]
+    #     n_ex = len(task['example_inputs'])
+    #     n_q = len(task['question_inputs'])
 
-@app.cell
-def _(examples, make_subplots, plot_examples):
-    fig = make_subplots(rows=2, cols=1)
-    plot_examples(examples, fig)
-    return
+    #     # Auto-detect vmin/vmax if not provided
+    #     if vmin is None or vmax is None:
+    #         all_values = []
 
+    #         for j in range(n_ex):
+    #             all_values.extend(task['example_inputs'][j].flatten())
+    #             all_values.extend(task['example_outputs'][j].flatten())
 
-@app.cell
-def _(matrix, plot_matrix):
-    plot_matrix(matrix, title='Ex.1 Input', show_nums=False)
+    #         for k in range(n_q):
+    #             all_values.extend(task['question_inputs'][k].flatten())
+    #             if task['question_outputs']:
+    #                 all_values.extend(task['question_outputs'][k].flatten())
+
+    #         if vmin is None:
+    #             vmin = min(all_values)
+    #         if vmax is None:
+    #             vmax = max(all_values)
+
+    #     # Create subplot grid
+    #     total_cols = n_ex + n_q
+    #     fig, axs = plt.subplots(2, total_cols, figsize=(size * total_cols, 2 * size))
+    #     plt.suptitle(f'ARC-AGI-1 {split.capitalize()} Task #{i} (id={task["id"]})',
+    #                  fontsize=16, fontweight='bold', y=1, color='#eeeeee')
+
+    #     # Plot examples
+    #     for j in range(n_ex):
+    #         plot_one2(axs[0, j], j, task, 'example', 'inputs', w, vmin, vmax, show_vals)
+    #         plot_one2(axs[1, j], j, task, 'example', 'outputs', w, vmin, vmax, show_vals)
+
+    #     # Plot questions
+    #     for k in range(n_q):
+    #         plot_one2(axs[0, n_ex + k], k, task, 'question', 'inputs', w, vmin, vmax, show_vals)
+    #         plot_one2(axs[1, n_ex + k], k, task, 'question', 'outputs', w, vmin, vmax, show_vals)
+
+    #     # Add separator line
+    #     axs[1, n_ex].set_xticklabels([])
+    #     axs[1, n_ex].set_yticklabels([])
+    #     axs[1, n_ex] = plt.figure(1).add_subplot(111)
+    #     axs[1, n_ex].set_xlim([0, total_cols])
+    #     axs[1, n_ex].plot([n_ex, n_ex], [0, 1], '-', linewidth=5, color='white')
+    #     axs[1, n_ex].axis("off")
+
+    #     # Style the figure
+    #     fig.patch.set_linewidth(5)
+    #     fig.patch.set_edgecolor('black')
+    #     fig.patch.set_facecolor('#444444')
+    #     plt.tight_layout(h_pad=3.0)
+
+    #     return fig
     return
 
 
 @app.cell
 def _():
-    # def display_numbers(ax, matrix, cmap, norm):
-    #     pass
-
-    # def plot_matrix(matrix, ax=None, title=None, vmin=None, vmax=None, grid_w=0.8, status=None, show_nums=False):
-    #     pass
-
-    # def plot_examples():
-    #     pass
-
-    # def plot_questions():
-    #     pass
-
-    # def plot_predictions():
-    #     pass
-
-    # def plot_task(examples, questions, predictions=None, metadata=None):
-    #     pass
-
-    # def display_arcagi(ds):
-    #     pass
+    # x_small, y_small = -1, -1
+    # y_pred_plot = y_pred.squeeze()[:x_small, :y_small]
+    # plot_matrix2(y_pred_plot, title="y_pred", vmin=0, vmax=9, show_vals=True)
     return
 
 
 @app.cell
-def _(ds, y_pred):
-    idx = 1
+def _():
+    # y_plot = y[X_idx].squeeze()[:x_small, :y_small]
+    # plot_matrix2(y_plot, title="y", vmin=0, vmax=9, show_vals=True)
+    return
+
+
+@app.cell
+def _():
+    # import plotly.graph_objects as go
+    # from plotly.subplots import make_subplots
+
+    # COLORS = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00',
+    #           '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
+
+    # def get_text_color(val):
+    #     r, g, b = int(COLORS[val][1:3], 16), int(COLORS[val][3:5], 16), int(COLORS[val][5:7], 16)
+    #     return 'white' if (0.299*r + 0.587*g + 0.114*b)/255 < 0.5 else 'black'
+
+    # def plot_matrix(mat, fig=None, row=None, col=None, title=None, show_nums=False):
+    #     mat = np.array(mat)
+    #     h, w = mat.shape
+
+    #     # Create cells and hovertext with numerical
+    #     cells, annotations, hover_x, hover_y, hover_text = [], [], [], [], []
+    #     for i in range(h):
+    #         for j in range(w):
+    #             v = mat[i, j]
+    #             cells.append(dict(type='rect', x0=j, x1=j+1, y0=h-i-1, y1=h-i, fillcolor=COLORS[v], line=dict(color='#666', width=1)))
+    #             hover_x.append(j+0.5)
+    #             hover_y.append(h-i-0.5)
+    #             hover_text.append(f'Value: {v}')
+    #             if show_nums: annotations.append(dict(x=j+0.5, y=h-i-0.5, text=str(v), showarrow=False, font=dict(color=get_text_color(v), size=10)))
+    
+    #     # Annotate plot with example number "Ex 3." and matrix dimensions "(4,4)"
+    #     xref = 'x domain' if col == 1 else f'x{col} domain'
+    #     yref = 'y domain' if row == 1 else f'y{row} domain'
+    #     annotations.append(dict(xref=xref, yref=yref, x=0, y=1.05, text=title, xanchor='left', showarrow=False, font=dict(color='#eee', size=24)))
+    #     annotations.append(dict(xref=xref, yref=yref, x=1, y=1.05, text=f'{h}x{w}', xanchor='right', showarrow=False, font=dict(color='#aaa', size=24)))
+
+    #     # Create fig if needed
+    #     if not fig:
+    #         fig = go.Figure()
+    #     fig.update_layout(xaxis=dict(range=[0, w], showgrid=False, visible=False), yaxis=dict(range=[0, h], showgrid=False, visible=False),
+    #                      width=w*50, height=h*50, margin=dict(l=20, r=20, t=40, b=20), paper_bgcolor='#444', plot_bgcolor='#444')
+    
+    #     # Add cells, annotations, and hovertext to figure
+    #     for cell in cells: fig.add_shape(cell, row=row, col=col)
+    #     for ann in annotations: fig.add_annotation(ann, row=row, col=col)
+    #     fig.add_trace(go.Scatter(x=hover_x, y=hover_y, mode='markers', marker=dict(size=20, opacity=0),
+    #                             text=hover_text, hovertemplate='%{text}<extra></extra>',
+    #                             hoverlabel=dict(bgcolor='rgba(0,0,0,0)', font=dict(color='white')),
+    #                             showlegend=False), row=row, col=col)
+    
+    #     if row and col:
+    #         fig.update_xaxes(range=[0, w], showgrid=False, visible=False, row=row, col=col)
+    #         fig.update_yaxes(range=[0, h], showgrid=False, visible=False, row=row, col=col)
+    
+    #     return fig
+
+    # def plot_examples(examples, fig, show_nums=False):
+    #     inputs, outputs = examples['inputs'], examples['outputs']
+    #     for i in range(len(inputs)):
+    #         plot_matrix(inputs[i], fig, row=1, col=i+1, title=f'Ex.{i+1} Input', show_nums=show_nums)
+    #         plot_matrix(outputs[i], fig, row=2, col=i+1, title=f'Ex.{i+1} Output', show_nums=show_nums)
+    #         break
+    #     return fig
+    return
+
+
+@app.cell
+def _():
+    # fig = make_subplots(rows=2, cols=1, vertical_spacing=0.08)
+    # plot_examples(examples, fig)
+    return
+
+
+@app.cell
+def _():
+    # plot_matrix(matrix, title='Ex.1 Input', show_nums=False)
+    return
+
+
+@app.cell
+def _(mo):
+    precision_slider = mo.ui.slider(start=1, stop=10, step=1, show_value=True, label="Precision")
+    precision_slider
+    return
+
+
+@app.cell
+def _(mo):
+    idx_slider = mo.ui.slider(start=1, stop=10, step=1, show_value=True, label="Sample")
+    idx_slider
+    return (idx_slider,)
+
+
+@app.cell
+def _(ds, idx_slider, y_pred):
+    idx = idx_slider.value
     split = "eval"
     task = ds[split][idx]
     examples = {'inputs': task['example_inputs'], 'outputs': task['example_outputs']}
@@ -1838,7 +1814,37 @@ def _(ds, y_pred):
 
 
     matrix = examples['inputs'][0]
-    return examples, matrix
+    return
+
+
+@app.cell
+def _():
+    def display_numbers(ax, matrix, cmap, norm):
+        pass
+
+    def plot_matrix(matrix, ax=None, title=None, vmin=None, vmax=None, grid_w=0.8, status=None, show_nums=False):
+        pass
+
+    def plot_examples():
+        pass
+
+    def plot_questions():
+        pass
+
+    def plot_predictions():
+        pass
+
+    def plot_task(examples, questions, predictions=None, metadata=None):
+        pass
+
+    def display_arcagi(ds):
+        pass
+    return
+
+
+@app.cell
+def _():
+    return
 
 
 @app.cell
@@ -1956,6 +1962,11 @@ def _(mo):
 
 
 
+    What I've really done here is use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. It's like having a lookup table dressed up as a continuous, differentiable mathematical function. There is no learning or generalization. It is pure memorization with trigonometry and a few extra steps. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating.
+
+
+
+
 
 
 
@@ -1980,6 +1991,7 @@ def _(mo):
     The big take away is that parameter count is *at best* a proxy for intelligence and should not be taken as an actual measure of inteliggence. Just like
 
     Prof Albert Gu.'s paper used a general purpose compression algorithm on this. Which is an actual valid solution that does not train on the questions set.
+
     """
     )
     return
