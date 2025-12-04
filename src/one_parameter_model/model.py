@@ -5,20 +5,20 @@ from .utils import MinMaxScaler, Timing, tqdm
 
 #***** binary *****
 
-def dyadic_map(x): return (2 * x) % 1
+def dyadic_map(X:np.ndarray): return (2 * X) % 1
 
-def decimal_to_binary(y_decimal, prec):
+def decimal_to_binary(x_decimal:np.ndarray, precision:int):
     # converts a 1D np.array from decimal to binary, assume all values in [0, 1]
-    assert 0 <= y_decimal.min() <= y_decimal.max() <= 1, f"expected y_decimal to be in [0, 1] but got [{y_decimal.min()}, {y_decimal.max()}]"
+    assert 0 <= x_decimal.min() <= x_decimal.max() <= 1, f"expected x_decimal to be in [0, 1] but got [{x_decimal.min()}, {x_decimal.max()}]"
     bits = []
-    for _ in range(prec):
-        bits.append(np.round(y_decimal))
-        y_decimal = dyadic_map(y_decimal)
+    for _ in range(precision):
+        bits.append(np.round(x_decimal))
+        x_decimal = dyadic_map(x_decimal)
     return ''.join(map(str, np.array(bits).astype(int).T.ravel()))
 
-def binary_to_decimal(y_binary):
+def binary_to_decimal(x_binary:np.ndarray):
     # converts an arbitrary-precision scalar from binary to decimal
-    return mp.fsum(int(b) * mp.mpf(0.5) ** (i+1) for i, b in enumerate(y_binary))
+    return mp.fsum(int(b) * mp.mpf(0.5) ** (i+1) for i, b in enumerate(x_binary))
 
 #***** math *****
 
@@ -41,12 +41,12 @@ def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
 
 # todo: fix this
-def dyadic_encoder(y, precision, full_precision):
+def dyadic_encoder(X, precision, full_precision):
     # set the arbitrary precision before computing anything
     mp.prec = full_precision
 
     # 1. convert to binary
-    binary_list = decimal_to_binary(y, precision)
+    binary_list = decimal_to_binary(X, precision)
 
     # 2. concatenate all binary strings together into a scalar
     binary_scalar = ''.join(binary_list)
@@ -57,12 +57,12 @@ def dyadic_encoder(y, precision, full_precision):
     decimal_scalar = binary_to_decimal(binary_scalar)
     return decimal_scalar
 
-def logistic_encoder(y, precision, full_precision):
+def logistic_encoder(X, precision, full_precision):
     # set the arbitrary precision before computing anything
     mp.prec = full_precision
 
     # 1. apply φ^(-1)
-    phi_inv_decimal_list = phi_inverse(y)
+    phi_inv_decimal_list = phi_inverse(X)
 
     # 2. convert to binary
     phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, precision)
