@@ -4,7 +4,6 @@ import numpy as np
 
 from .model import OneParameterModel
 from .data import DATASET, plot_data
-from .utils import VERBOSE
 
 from icecream import install
 install()

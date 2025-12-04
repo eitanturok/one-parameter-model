@@ -1,33 +1,9 @@
 # from tinygrad helpers https://github.com/tinygrad/tinygrad/blob/44bc7dc73d7d03a909f0cc5c792c3cdd2621d787/tinygrad/helpers.py
-import contextlib, time, os, math, sys, shutil
+import contextlib, time, math, sys, shutil
 from typing import Iterable, Iterator, Generic, TypeVar
 import numpy as np
-import gmpy2
-
-T = TypeVar("T")
-
-#***** binary *****
-
-def decimal_to_binary(y_decimal, precision):
-    # convert decimal floats in [0, 1] to binary via https://sandbox.mc.edu/%7Ebennet/cs110/flt/dtof.html
-    # cannot use python's bin() function because it only converts ints, not floats, to binary
-    if not isinstance(y_decimal, np.ndarray): y_decimal = np.array(y_decimal)
-    if y_decimal.ndim == 0: y_decimal = np.expand_dims(y_decimal, 0)
-
-    powers = 2**np.arange(precision)
-    y_powers = y_decimal[:, np.newaxis] * powers[np.newaxis, :]
-    y_fractional = y_powers % 1 # extract the fractional part of y_powers
-    binary_digits = (y_fractional >= 0.5).astype(int).astype('<U1')
-    return np.apply_along_axis(''.join, axis=1, arr=binary_digits).tolist()
-
-def binary_to_decimal(y_binary):
-    # 0. shows that the binary number is a float in [0, 1], not an int
-    fractional_binary = "0." + y_binary
-    return gmpy2.mpfr(fractional_binary, base=2)
 
 #**** miscellaneous *****
-
-def getenv(key:str, default=0): return type(default)(os.getenv(key, default))
 
 class MinMaxScaler:
     def __init__(self, feature_range=(1e-10, 1-1e-10), epsilon=1e-10):
@@ -53,6 +29,8 @@ class Timing(contextlib.ContextDecorator):
         if self.enabled: print(f"{self.prefix}{self.et:6.3f} sec"+(self.on_exit(self.et) if self.on_exit else ""), file=sys.stderr)
 
 #***** tqdm *****
+
+T = TypeVar("T")
 
 class tqdm(Generic[T]):
     def __init__(self, iterable:Iterable[T]|None=None, desc:str='', disable:bool=False,
@@ -90,8 +68,3 @@ class tqdm(Generic[T]):
 
 class trange(tqdm):
     def __init__(self, n:int, **kwargs): super().__init__(iterable=range(n), total=n, **kwargs)
-
-
-#***** environment variables *****
-
-VERBOSE = getenv("VERBOSE", 1)

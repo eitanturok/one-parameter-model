@@ -2,7 +2,6 @@ import functools, multiprocessing
 import numpy as np
 from mpmath import mp, asin as Arcsin, sqrt as Sqrt, sin as Sin, pi as Pi
 from .utils import MinMaxScaler, Timing, tqdm
-# from sklearn.preprocessing import MinMaxScaler
 
 #***** binary *****
 
