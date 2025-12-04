@@ -6,6 +6,8 @@ from .utils import MinMaxScaler, Timing, tqdm
 
 #***** binary *****
 
+def dyadic_map(x): return (2 * x) % 1
+
 def decimal_to_binary(x, prec):
     # converts a 1D np.array from decimal to binary; assumes all values are in [0, 1]
     assert 0 <= x.min() <= x.max() <= 1, f"expected x to be in [0, 1] but got [{x.min()}, {x.max()}]"
@@ -21,18 +23,16 @@ def binary_to_decimal(y_binary):
 
 #***** math *****
 
-def dyadic_map(x): return (2 * x) % 1
+def phi(x): return Sin(2 * Pi * x) ** 2
 
 def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
-
-def phi(x): return Sin(2 * Pi * x) ** 2
 
 def dyadic_decoder(alpha, p, i): return float((2 ** (i * p) * alpha) % 1)
 
 def logistic_decoder(alpha, full_precision, p, i):
     mp.prec = full_precision
     ret = Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2
-    mp.prec = p
+    # mp.prec = p
     return float(ret)
 
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
