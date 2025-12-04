@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.15.2"
-app = marimo.App(width="medium")
+app = marimo.App(width="full")
 
 
 @app.cell
@@ -1317,8 +1317,8 @@ def _(mo):
 
 
 @app.cell
-def _(display_fxn, logistic_decoder_single, mo):
-    mo.md(rf"""{display_fxn(logistic_decoder_single)}""")
+def _(display_fxn, logistic_decoder, mo):
+    mo.md(rf"""{display_fxn(logistic_decoder)}""")
     return
 
 
@@ -1512,8 +1512,8 @@ def _(mo):
 
 @app.cell
 def _(OneParameterModel, X, mo, y):
-    p = 4
-    model = OneParameterModel(p, workers=16)
+    p = 6
+    model = OneParameterModel(p)
     model.fit(X, y)
     mo.show_code()
     return (model,)
@@ -1533,8 +1533,312 @@ def _(mo):
 
 @app.cell
 def _(model, np):
-    y_pred = model.predict(np.array([1]))
+    X_idx = np.array([0])
+    y_pred = model.predict(X_idx)
+    return X_idx, y_pred
+
+
+@app.cell
+def _(X_idx, model, y, y_pred):
+    model.verify(y_pred, y[X_idx])
     return
+
+
+@app.cell
+def _(colors, get_text_color, plt):
+    # import matplotlib.pyplot as plt
+    # import matplotlib.colors as colors
+    # import numpy as np
+    from matplotlib.colors import to_rgb
+
+    base_colors = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00',
+                   '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
+    cmap2 = colors.ListedColormap(base_colors, N=256)
+
+
+    from matplotlib.colors import to_rgb
+
+    # def get_text_color(bg_color):
+    #     """White text on dark bg, black on light bg"""
+    #     r, g, b = to_rgb(bg_color)
+    #     brightness = 0.299*r + 0.587*g + 0.114*b
+    #     return 'white' if brightness < 0.5 else 'black'
+
+    def add_values_to_plot(ax, matrix, cmap, norm):
+        """Add numerical values as text overlay on matrix plot"""
+        height, width = matrix.shape
+        fontsize = max(5, min(10, 80 / max(height, width)))
+
+        for i in range(height):
+            for j in range(width):
+                value = matrix[i, j]
+
+                # Format: show integer without decimal, float with 1 decimal
+                if value == int(value):
+                    text = f'{int(value)}'
+                else:
+                    text = f'{value:.1f}'
+
+                # Get background color and choose contrasting text color
+                cell_color = cmap(norm(value))
+                text_color = get_text_color(cell_color)
+
+                ax.text(j, i, text,
+                       ha='center', va='center',
+                       color=text_color,
+                       fontsize=fontsize,
+                       fontweight='bold')
+
+    def plot_matrix2(matrix, ax=None, title=None, vmin=None, vmax=None, grid_w=0.8, status=None, show_vals=False):
+        if ax is None:
+            fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+            fig.patch.set_facecolor('#444444')
+        else:
+            fig = ax.get_figure()
+
+        if vmin is None:
+            vmin = matrix.min()
+        if vmax is None:
+            vmax = matrix.max()
+
+        norm = colors.Normalize(vmin=vmin, vmax=vmax)
+        ax.imshow(matrix, cmap=cmap2, norm=norm)
+
+        ax.set_xticks([x - 0.5 for x in range(1 + matrix.shape[1])])
+        ax.set_yticks([x - 0.5 for x in range(1 + matrix.shape[0])])
+        ax.grid(True, which='both', color='#666666', linewidth=grid_w)
+        ax.tick_params(axis='both', color='none', length=0)
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+
+        if show_vals:
+            add_values_to_plot(ax, matrix, cmap2, norm)
+
+        if title:
+            ax.set_title(f'\n{title}', fontsize=12, color='#dddddd')
+
+        if status:
+            ax.text(1, 1.15, status[0],
+                   transform=ax.transAxes,
+                   ha='right', va='bottom',
+                   fontsize=10, fontweight='bold',
+                   color=status[1])
+
+        return fig, ax
+
+    def plot_one2(ax, i, task, ex_or_q, in_or_out, w=0.8, vmin=None, vmax=None, show_vals=False):
+        matrix = task[f"{ex_or_q}_{in_or_out}"][i]
+        title = f'{ex_or_q.capitalize()} {i} {in_or_out[:-1].capitalize()}'
+
+        if ex_or_q == 'question' and in_or_out == 'outputs':
+            status = ('? PREDICT', '#FF4136')
+        else:
+            status = ('✓ GIVEN', '#2ECC40')
+
+        plot_matrix2(matrix, ax=ax, title=title, vmin=vmin, vmax=vmax, grid_w=w, status=status, show_vals=show_vals)
+
+    def display_task2(ds, split, i, size=2.5, w=0.9, vmin=None, vmax=None, show_vals=False):
+        task = ds[split][i]
+        n_ex = len(task['example_inputs'])
+        n_q = len(task['question_inputs'])
+
+        # Auto-detect vmin/vmax if not provided
+        if vmin is None or vmax is None:
+            all_values = []
+
+            for j in range(n_ex):
+                all_values.extend(task['example_inputs'][j].flatten())
+                all_values.extend(task['example_outputs'][j].flatten())
+
+            for k in range(n_q):
+                all_values.extend(task['question_inputs'][k].flatten())
+                if task['question_outputs']:
+                    all_values.extend(task['question_outputs'][k].flatten())
+
+            if vmin is None:
+                vmin = min(all_values)
+            if vmax is None:
+                vmax = max(all_values)
+
+        # Create subplot grid
+        total_cols = n_ex + n_q
+        fig, axs = plt.subplots(2, total_cols, figsize=(size * total_cols, 2 * size))
+        plt.suptitle(f'ARC-AGI-1 {split.capitalize()} Task #{i} (id={task["id"]})',
+                     fontsize=16, fontweight='bold', y=1, color='#eeeeee')
+
+        # Plot examples
+        for j in range(n_ex):
+            plot_one2(axs[0, j], j, task, 'example', 'inputs', w, vmin, vmax, show_vals)
+            plot_one2(axs[1, j], j, task, 'example', 'outputs', w, vmin, vmax, show_vals)
+
+        # Plot questions
+        for k in range(n_q):
+            plot_one2(axs[0, n_ex + k], k, task, 'question', 'inputs', w, vmin, vmax, show_vals)
+            plot_one2(axs[1, n_ex + k], k, task, 'question', 'outputs', w, vmin, vmax, show_vals)
+
+        # Add separator line
+        axs[1, n_ex].set_xticklabels([])
+        axs[1, n_ex].set_yticklabels([])
+        axs[1, n_ex] = plt.figure(1).add_subplot(111)
+        axs[1, n_ex].set_xlim([0, total_cols])
+        axs[1, n_ex].plot([n_ex, n_ex], [0, 1], '-', linewidth=5, color='white')
+        axs[1, n_ex].axis("off")
+
+        # Style the figure
+        fig.patch.set_linewidth(5)
+        fig.patch.set_edgecolor('black')
+        fig.patch.set_facecolor('#444444')
+        plt.tight_layout(h_pad=3.0)
+
+        return fig
+    return (plot_matrix2,)
+
+
+@app.cell
+def _(plot_matrix2, y_pred):
+    x_small, y_small = -1, -1
+    y_pred_plot = y_pred.squeeze()[:x_small, :y_small]
+    plot_matrix2(y_pred_plot, title="y_pred", vmin=0, vmax=9, show_vals=True)
+    return x_small, y_small
+
+
+@app.cell
+def _(X_idx, plot_matrix2, x_small, y, y_small):
+    y_plot = y[X_idx].squeeze()[:x_small, :y_small]
+    plot_matrix2(y_plot, title="y", vmin=0, vmax=9, show_vals=True)
+    return
+
+
+@app.cell
+def _(np):
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    COLORS = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00',
+              '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
+
+    def get_text_color(val):
+        r, g, b = int(COLORS[val][1:3], 16), int(COLORS[val][3:5], 16), int(COLORS[val][5:7], 16)
+        return 'white' if (0.299*r + 0.587*g + 0.114*b)/255 < 0.5 else 'black'
+
+    def plot_matrix(mat, fig=None, row=None, col=None, title=None, show_nums=False):
+        mat = np.array(mat)
+        h, w = mat.shape
+
+        # Build components once
+        shapes = []
+        annotations = []
+        hover_x, hover_y, hover_text = [], [], []
+
+        for i in range(h):
+            for j in range(w):
+                v = mat[i, j]
+                shapes.append(dict(type='rect', x0=j, x1=j+1, y0=h-i-1, y1=h-i,
+                                 fillcolor=COLORS[v], line=dict(color='#666', width=1)))
+                hover_x.append(j+0.5)
+                hover_y.append(h-i-0.5)
+                hover_text.append(f'Value: {v}')
+                if show_nums:
+                    annotations.append(dict(x=j+0.5, y=h-i-0.5, text=str(v), showarrow=False,
+                                          font=dict(color=get_text_color(v), size=10)))
+
+        if title:
+            annotations.append(dict(x=0, y=h+0.3, text=title, xanchor='left', showarrow=False,
+                                  font=dict(color='#eee', size=12)))
+        annotations.append(dict(x=w, y=h+0.3, text=f'{h}x{w}', xanchor='right', showarrow=False,
+                              font=dict(color='#aaa', size=10)))
+
+        # Create fig if needed
+        if not fig:
+            fig = go.Figure()
+        fig.update_layout(xaxis=dict(range=[0, w], showgrid=False, visible=False),
+                         yaxis=dict(range=[0, h], showgrid=False, visible=False),
+                         width=w*50, height=h*50, margin=dict(l=20, r=20, t=40, b=20),
+                         paper_bgcolor='#444', plot_bgcolor='#444')
+
+        # Add everything to fig
+        for shape in shapes:
+            fig.add_shape(shape, row=row, col=col)
+        for ann in annotations:
+            fig.add_annotation(ann, row=row, col=col)
+        fig.add_trace(go.Scatter(x=hover_x, y=hover_y, mode='markers', marker=dict(size=20, opacity=0),
+                                text=hover_text, hovertemplate='%{text}<extra></extra>',
+                                hoverlabel=dict(bgcolor='rgba(0,0,0,0)', font=dict(color='white')),
+                                showlegend=False), row=row, col=col)
+
+        if row and col:
+            fig.update_xaxes(range=[0, w], showgrid=False, visible=False, row=row, col=col)
+            fig.update_yaxes(range=[0, h], showgrid=False, visible=False, row=row, col=col)
+
+        return fig
+
+    def plot_examples(examples, fig=None, show_nums=False):
+        inputs, outputs = examples['inputs'], examples['outputs']
+        for i in range(len(inputs)):
+            plot_matrix(inputs[i], fig, row=1, col=i+1, title=f'Ex.{i+1} Input', show_nums=show_nums)
+            plot_matrix(outputs[i], fig, row=2, col=i+1, title=f'Ex.{i+1} Output', show_nums=show_nums)
+            break
+        return fig
+    return get_text_color, make_subplots, plot_examples, plot_matrix
+
+
+@app.cell
+def _(examples):
+    len(examples["inputs"])
+    return
+
+
+@app.cell
+def _(examples, make_subplots, plot_examples):
+    fig = make_subplots(rows=2, cols=1)
+    plot_examples(examples, fig)
+    return
+
+
+@app.cell
+def _(matrix, plot_matrix):
+    plot_matrix(matrix, title='Ex.1 Input', show_nums=False)
+    return
+
+
+@app.cell
+def _():
+    # def display_numbers(ax, matrix, cmap, norm):
+    #     pass
+
+    # def plot_matrix(matrix, ax=None, title=None, vmin=None, vmax=None, grid_w=0.8, status=None, show_nums=False):
+    #     pass
+
+    # def plot_examples():
+    #     pass
+
+    # def plot_questions():
+    #     pass
+
+    # def plot_predictions():
+    #     pass
+
+    # def plot_task(examples, questions, predictions=None, metadata=None):
+    #     pass
+
+    # def display_arcagi(ds):
+    #     pass
+    return
+
+
+@app.cell
+def _(ds, y_pred):
+    idx = 1
+    split = "eval"
+    task = ds[split][idx]
+    examples = {'inputs': task['example_inputs'], 'outputs': task['example_outputs']}
+    questions = {'inputs': task['question_inputs'], 'outputs': task['question_outputs']}
+    predictions = {'outputs': y_pred.squeeze()}
+    metadata = {'id': task['id'], 'idx': idx, 'split': split}
+
+
+    matrix = examples['inputs'][0]
+    return examples, matrix
 
 
 @app.cell
@@ -1594,7 +1898,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""And we can even find values of $\alpha$ that look like the famous [CIFAR-10](https://en.wikipedia.org/wiki/CIFAR-10) dataset""")
+    mo.md(r"""And we can even find values of $\alpha$ that generate parts of the famous [CIFAR-10](https://en.wikipedia.org/wiki/CIFAR-10) dataset""")
     return
 
 
@@ -1614,7 +1918,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    This technique is incredibly verstile, able to achieve perfect acuracy across tons of different domains. However, at the same time it is incredlby brittle. Not only do you need to overfit on the test set to find $\alpha$, but simply shuffling the dataset will cause your model to break down.
+    This technique is incredibly verstile, able to achieve perfect acuracy across tons of different domains. However, at the same time it is incredlby brittle. Not only do you need to overfit on the test set to find $\alpha$, but simply shuffling the dataset will cause your model to break down. It would get 0% on the private, heldout test set of ARCI-AGI-2.
 
     Let's address some critiques.
 
