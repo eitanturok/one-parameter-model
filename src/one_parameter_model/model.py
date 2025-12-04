@@ -37,13 +37,21 @@ def logistic_decoder(alpha, full_precision, p, i):
     return float(ret)
 
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
-    # this is more than 10x faster because
-    # 1) we precompute arcsin(sqrt(alpha)) only once
-    # 2) we only set the precision to the minimial needed for the current iteration
-    # Why is mp.prec = p * (i + 1) + 1?
-    # Each iteration i requires p bits of precision
-    # So iteration i requires p * (i+1) bits of precision (i is 0-indexed)
-    # The +1 at the end adds an extra bit for numerical stability
+    # This is 10x+ faster than logistic_decoder because:
+    # 1) arcsin(sqrt(alpha)) is precomputed once instead of every iteration
+    # 2) mp.prec is set to minimum needed precision per iteration instead of full precision
+
+    # Explanation:
+    # 1) Why is mp.prec = p * (i + 1) + 1?
+    #    Each iteration decodes another p bits of alpha.
+    #    So in iteration i, we need the first (i+1)*p bits of alpha (i is 0-indexed).
+    #    The +1 at the end adds an extra bit for numerical stability.
+    # 2) When can we use lower precision?
+    #    Alpha is stored in logistic space and requires full precision.
+    #    We transform alpha to dyadic space by computing arcsin_sqrt_alpha = φ⁻¹(alpha).
+    #    In dyadic space, iteration i only needs the first (i+1)*p bits of alpha.
+    #    Therefore, we use p*(i+1) bits instead of full_precision = p*len(X) bits.
+    #    Note: we can only use reduced precision in dyadic space, not logistic space.
     mp.prec = p * (i + 1) + 1
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
 

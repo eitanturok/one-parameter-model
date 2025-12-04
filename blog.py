@@ -24,9 +24,8 @@ def _():
     from matplotlib import colors
 
     from src.one_parameter_model import OneParameterModel
-    from src.one_parameter_model.model import phi_inverse, phi, logistic_decoder, logistic_decoder_single
+    from src.one_parameter_model.model import phi, phi_inverse, decimal_to_binary, binary_to_decimal, logistic_decoder
     from src.one_parameter_model.data import local_arc_agi, process_arc_agi
-    from src.one_parameter_model.utils import decimal_to_binary, binary_to_decimal
     return (
         OneParameterModel,
         binary_to_decimal,
@@ -37,7 +36,6 @@ def _():
         json,
         local_arc_agi,
         logistic_decoder,
-        logistic_decoder_single,
         np,
         phi,
         phi_inverse,
