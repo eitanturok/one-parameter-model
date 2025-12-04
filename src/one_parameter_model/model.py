@@ -8,13 +8,13 @@ from .utils import MinMaxScaler, Timing, tqdm
 
 def dyadic_map(x): return (2 * x) % 1
 
-def decimal_to_binary(x, prec):
-    # converts a 1D np.array from decimal to binary; assumes all values are in [0, 1]
-    assert 0 <= x.min() <= x.max() <= 1, f"expected x to be in [0, 1] but got [{x.min()}, {x.max()}]"
+def decimal_to_binary(y_decimal, prec):
+    # converts a 1D np.array from decimal to binary, assume all values in [0, 1]
+    assert 0 <= y_decimal.min() <= y_decimal.max() <= 1, f"expected y_decimal to be in [0, 1] but got [{y_decimal.min()}, {y_decimal.max()}]"
     bits = []
     for _ in range(prec):
-        bits.append(np.round(x))
-        x = dyadic_map(x)
+        bits.append(np.round(y_decimal))
+        y_decimal = dyadic_map(y_decimal)
     return ''.join(map(str, np.array(bits).astype(int).T.ravel()))
 
 def binary_to_decimal(y_binary):
@@ -42,12 +42,12 @@ def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
 
 # todo: fix this
-def dyadic_encoder(Y, precision, full_precision):
+def dyadic_encoder(y, precision, full_precision):
     # set the arbitrary precision before computing anything
     mp.prec = full_precision
 
     # 1. convert to binary
-    binary_list = decimal_to_binary(Y, precision)
+    binary_list = decimal_to_binary(y, precision)
 
     # 2. concatenate all binary strings together into a scalar
     binary_scalar = ''.join(binary_list)
@@ -58,12 +58,12 @@ def dyadic_encoder(Y, precision, full_precision):
     decimal_scalar = binary_to_decimal(binary_scalar)
     return decimal_scalar
 
-def logistic_encoder(Y, precision, full_precision):
+def logistic_encoder(y, precision, full_precision):
     # set the arbitrary precision before computing anything
     mp.prec = full_precision
 
     # 1. apply φ^(-1)
-    phi_inv_decimal_list = phi_inverse(Y)
+    phi_inv_decimal_list = phi_inverse(y)
 
     # 2. convert to binary
     phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, precision)
@@ -89,22 +89,22 @@ class OneParameterModel:
         self.scaler = MinMaxScaler()
 
     @Timing("fit: ")
-    def fit(self, X:np.ndarray, Y:np.ndarray|None=None):
+    def fit(self, X:np.ndarray, y:np.ndarray|None=None):
         # if the dataset is unsupervised, treat X like the y
-        if Y is None: Y = X
-        assert Y is not None
+        if y is None: y = X
+        assert y is not None
 
         # store shape/size of a single label y
-        self.y_shape = Y.shape[1:] # pylint: disable=attribute-defined-outside-init
+        self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
         self.y_size = np.array(self.y_shape, dtype=int).prod().item() # pylint: disable=attribute-defined-outside-init
 
         # scale labels to be in [0, 1]
-        Y_scaled = self.scaler.fit_transform(Y.flatten())
-        assert 0 <= Y_scaled.min() <= Y_scaled.max() <= 1, f"Y_scaled must be in [0, 1] but got [{Y_scaled.min()}, {Y_scaled.max()}]"
+        y_scaled = self.scaler.fit_transform(y.flatten())
+        assert 0 <= y_scaled.min() <= y_scaled.max() <= 1, f"y_scaled must be in [0, 1] but got [{y_scaled.min()}, {y_scaled.max()}]"
 
         # compute alpha with arbitrary floating-point precision
-        self.full_precision: int = Y.size * self.precision # pylint: disable=attribute-defined-outside-init
-        self.alpha = logistic_encoder(Y_scaled, self.precision, self.full_precision) # pylint: disable=attribute-defined-outside-init
+        self.full_precision: int = y.size * self.precision # pylint: disable=attribute-defined-outside-init
+        self.alpha = logistic_encoder(y_scaled, self.precision, self.full_precision) # pylint: disable=attribute-defined-outside-init
         return self
 
     @Timing("predict: ")
@@ -125,24 +125,25 @@ class OneParameterModel:
         return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
     @Timing("verify: ")
-    def verify(self, Y: np.ndarray, Y_pred: np.ndarray):
-        # confirm theoretical error bounds hold (section 2.5 of https://arxiv.org/pdf/1904.12320)
+    def verify(self, y: np.ndarray, y_pred: np.ndarray):
+        # check logistic decode error is within theoretical bounds (section 2.5 https://arxiv.org/pdf/1904.12320)
+        # |y - y_pred| <= π / 2^(p-1) when y, y_pred ∈ [0, 1]
+        # |y - y_pred| <= (π / 2^(p-1)) * range when y, y_pred ∈ [min, max], range = max - min
 
         # multiply the tolerance by the scaler range to account for scaling
         tolerance = np.pi / 2 ** (self.precision - 1) * self.scaler.range
 
         try:
-            np.testing.assert_allclose(Y_pred, Y, atol=tolerance, rtol=0,
-                                    err_msg=f"Predictions don't match within tolerance")
+            np.testing.assert_allclose(y_pred, y, atol=tolerance, rtol=0, err_msg=f"Predictions don't match within tolerance")
             print(f"Passes with {tolerance=:.2e}")
         except AssertionError:
-            errors = np.abs(Y_pred - Y)
+            errors = np.abs(y_pred - y)
             bad_idx = np.where(errors >= tolerance)[0]
             raise AssertionError(
                 f"Errors at {len(bad_idx)} indices with precision={self.precision}, {tolerance=:.2e}\n"
                 f"  indices: {bad_idx[:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
                 f"  errors: {errors[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
-                f"  Y: {Y[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
-                f"  Y_pred: {Y_pred[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
+                f"  y: {y[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
+                f"  y_pred: {y_pred[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
                 f"  max_error: {errors.max():.2e}"
             )

@@ -28,7 +28,7 @@ def main(args):
     # predict
     y_pred = model.predict(X_idxs)
 
-    # check theoretical error bounds
+    # check theoretical error bounds are satisfied
     model.verify(y, y_pred)
 
     # plot
