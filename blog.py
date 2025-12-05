@@ -80,13 +80,13 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    In July 2025, Sapient Intelligence released their [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734v1) (HRM) and the world went crazy. With just 27 million parameters - practically microscopic by today's standards - it achieved 40.3% on [ARC-AGI-1](https://arcprize.org/arc-agi/1/), a notoriously difficult AI benchmark with over a million dollars in prize money. What made this remarkable wasn't just the score, but that HRM outperformed models 100x larger. Then came the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871), obliterating expectations yet again. It scored 45% on ARC-AGI-1 with a mere 7 million parameters, again beating models with less than 0.01% of their parameters.
+    In July 2025, Sapient Intelligence released their [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734v1) (HRM) and the world went crazy. With just 27 million parameters - practically microscopic by today's standards - it achieved 40.3% on [ARC-AGI-1](https://arcprize.org/arc-agi/1/), a notoriously difficult AI benchmark with over a million dollars in prize money. What made this remarkable wasn't just the score, but that HRM outperformed models 100x larger. In October came the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871), obliterating expectations yet again. It scored 45% on ARC-AGI-1 with a mere 7 million parameters, further beating models with less than 0.01% of their parameters.
 
     Naturally, I wondered: how small can we go?
 
     **So I built a one parameter model that scores 100% on ARC-AGI-2.** 
 
-    ARC-AGI-2 is the harder, newer version of ARC-AGI-1. The model is:
+    This is on ARC-AGI-2, the the harder, newer version of ARC-AGI-1. The model is not a deep learning model and is quite simple:
 
     $$
     \begin{align*}
@@ -99,7 +99,7 @@ def _(mo):
     \end{align*}
     $$
 
-    where $x_i$ is the $i\text{th}$ datapoint and $\alpha \in \mathbb{R}$ is the singe trainable parameter. ($p$ is a precision hyperparameter, more on this later.) All you need to get 100% on ARC-AGI-2 is:
+    where $x_i$ is the $i\text{th}$ datapoint and $\alpha \in \mathbb{R}$ is the singe trainable parameter. ($p$ is a precision hyperparameter, more on this later.) All you need to get 100% on ARC-AGI-2 is to set $\alpha$ to
     """
     )
     return
@@ -111,7 +111,7 @@ def _(gmpy2, json, mo):
     alpha_txt = gmpy2.mpfr(*data['alpha'])
     p_txt = data['precision']
 
-    # only display the first 1,000 digits of a so we don't break marimo
+    # only display the first 10,000 digits of a so we don't break marimo
     mo.md(f"```py\nalpha={str(alpha_txt)[:10_000]}\np={p_txt}\n```")
     return (alpha_txt,)
 
@@ -127,7 +127,9 @@ def _(alpha_txt):
 def _(mo):
     mo.md(
         r"""
-    This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. Plug any ARC-AGI-2 example into this bad boy and watch our model perfectly predict the solution!
+    and you'll get a perfect score on ARC-AGI-2! (For ease of presentation, only the first 10,000 digits of $\alpha$ are shown.)
+
+    This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. Plug any ARC-AGI-2 example into this bad boy and our model will get the answer correct!
 
     Sounds pretty impressive, right?
 
@@ -159,11 +161,11 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Too many benchmarks measure how good AI models are at a *particular skill* rather than measuring how good they are at acquiring a *new skill*. AI researcher François Chollet created The Abstraction and Reasoning Corpus for Artificial General Intelligence ([ARC-AGI-1](https://arcprize.org/arc-agi/1/)) to fix this. ARC-AGI-1 measures how well AI models can *generalize* to unseen tasks. It consists of problems that are [trivial](https://arcprize.org/arc-agi/1/) for humans but challenging for machines.
+    Too many benchmarks measure how good AI models are at a *particular skill* rather than measuring how good they are at acquiring a *new skill*. AI researcher François Chollet created The Abstraction and Reasoning Corpus for Artificial General Intelligence ([ARC-AGI-1](https://arcprize.org/arc-agi/1/)) to fix this. ARC-AGI-1 measures how well AI models can *generalize* to unseen tasks. It consists of problems that are [trivial](https://arcprize.org/arc-agi/1/) for humans but challenging for machines. More recently, [ARC-AGI-2](https://arcprize.org/arc-agi/2/) was released as a more challenging follow up to ARC-AGI-1. This blog will focus on ARC-AGI-2.
 
-    **What makes ARC-AGI-1 different from typical benchmarks?**
+    **What makes ARC-AGI-2 different from typical benchmarks?**
 
-    Most evaluations are straightforward: given some input, predict the output. ARC-AGI-1, however, is more complicated. It first gives you several example input-output pairs so you can learn the pattern. Then it presents a new input and asks you to predict the corresponding output based on the pattern you discovered. This structure means that a single ARC-AGI-1 task consists of:
+    Most evaluations are straightforward: given some input, predict the output. ARC-AGI-2, however, is more complicated. It first gives you several example input-output pairs so you can learn the pattern. Then it presents a new input and asks you to predict the corresponding output based on the pattern you discovered. This structure means that a single ARC-AGI-2 task consists of:
 
     * several example input-output pairs
     * a question input
@@ -171,9 +173,9 @@ def _(mo):
 
     The challenge is this: given the example input-output pairs and the question input, can you predict the question output?
 
-    **What does an ARC-AGI-1 task actually look like?**
+    **What does an ARC-AGI-2 task actually look like?**
 
-    ARC-AGI-1 consists of visual grid-based reasoning problems. Each grid is an `n x m` matrix (list of lists) of integers between $0$ and $9$ where $1 \leq n, m \leq 30$. To display the grid, we simply choose a unique color for each integer. Let's look at an example:
+    ARC-AGI-2 consists of visual grid-based reasoning problems. Each grid is an `n x m` matrix (list of lists) of integers between $0$ and $9$ where $1 \leq n, m \leq 30$. To display the grid, we simply choose a unique color for each integer. Let's look at an example:
     """
     )
     return
@@ -310,25 +312,25 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""There are hundreds of tasks like this in ARC-AGI-1. Solving each task requires deducing new patterns and generalizing to unforeseen tasks, something it is quite hard for the current crop of AI models.""")
+    mo.md(r"""There are hundreds of tasks like this in ARC-AGI-2. Solving each task requires deducing new patterns and generalizing to unforeseen tasks, something it is quite hard for the current crop of AI models.""")
     return
 
 
 @app.cell
 def _(mo):
-    arc_agi_1_leaderboard_image = mo.image(
-        mo.notebook_dir() / "public/images/arc-agi-1-leaderboard.png",
+    arc_agi_2_leaderboard_image = mo.image(
+        mo.notebook_dir() / "public/images/2025-12-05-arc-argi-2-prize-leaderboard.png",
         width=800,
-        caption="Performance on private eval set of ARC-AGI-1.",
+        caption="Performance on private eval set of ARC-AGI-2. Retreived from https://arcprize.org/leaderboard on December 5th, 2025.",
         style={"display": "block", "margin": "0 auto"}
     )
-    arc_agi_1_leaderboard_image
+    arc_agi_2_leaderboard_image
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(f"""Even the world's best models struggle on ARC-AGI-1, often scoring under $50\%$. `o3-preview (Low)` has the highest score of $75.7\%$ but costs a staggering $\$200$ per task. GPT-5 (High) is much more efficient, scoring $65.7\%$ with a cost of only $\$0.51$ per task. However, many other frontier models -- Claude, Gemini-2.5, and Deepseek -- struggle to even get half of the questions right. In contrast, humans [get](https://arcprize.org/leaderboard) $98\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-1 and its sequels. ARC-AGI-2 and ARC-AGI-3. It's that difficult.""")
+    mo.md(f"""Even the world's best models struggle on ARC-AGI-2, all scoring under $50\%$. `Gemini 3 Deep Think (Preview)` has the highest score of $45.1\%$ but costs a staggering $\$77.16$ per task. `GPT-5 Pro` is much more efficient, costing $\$7.14$ per task but only solving $18.3\%$ of tasks. Many other frontier models -- Claude, Grok, and Deepseek can't even crack $20\%$. In contrast, humans [get](https://arcprize.org/leaderboard) $100\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-2. It's that difficult.""")
     return
 
 
@@ -340,7 +342,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""The recently released HRM is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI-1 despite its tiny size of 27M parameters.""")
+    mo.md(r"""In July, HRM was released. It is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI-1 despite its tiny size of 27M parameters.""")
     return
 
 
@@ -360,7 +362,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    HRM scored 40.3% on ARC-AGI-1 while SOTA models like o3-mini-high and Claude-3.7-8k scored 34.5%, and 21.2% respectively. It beat Anthropic's best model by nearly ~2x! Similarly, it outperformed o3-mini-high and Claude-3.7-8k on ARC-AGI-2, but be warned that the ARC-AGI-2 the scores are so low that they are more much suspectable to noise.
+    HRM scored 40.3% on ARC-AGI-1 while SOTA models like o3-mini-high and Claude-3.7-8k scored 34.5%, and 21.2% respectively (back in July 2025). It beat Anthropic's best model by nearly ~2x! Similarly, it outperformed o3-mini-high and Claude-3.7-8k on ARC-AGI-2, but be warned that the ARC-AGI-2 the scores are so low that they are more much suspectable to noise.
 
     The results almost seemed to be too good to be true. How can a tiny 27M parameter model from a small lab be crushing some of the world's best models, at a fraction of their size?
 
@@ -387,11 +389,13 @@ def _(mo):
 def _(mo):
     mo.md(
         rf"""
-    In their paper, the HRM authors admitted to showing the model "example pairs in the training and the **evaluation** sets". The evaluation set here refers to the public eval set of ARC-AGI-1! On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This "contraversy" set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] ! Does this actually count as "training on test"? On one hand, you can never train on the data used to measure model perfomance. On the other hand, they never actually trained on the the questions used to measure model performance, just the examples associated with them.
+    In their paper, the HRM authors admitted to showing the model "example pairs in the training and the **evaluation** sets". The evaluation set here refers to the public eval set of ARC-AGI-1! This sounds like training on test!
+
+    On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This "contraversy" set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] ! Does this actually count as "training on test"? On one hand, you can never train on the data used to measure model perfomance. On the other hand, they never actually trained on the the questions used to measure model performance, just the examples associated with them.
 
     **What exactly is the difference between training on *examples* VS *questions* in ARC-AGI-1?**
 
-    Consider a task from the public *eval* set (instead of the train set) of ARC-AGI-1:
+    Consider a task from the public *eval* set, not the train set, of ARC-AGI-1:
     """
     )
     return
@@ -407,16 +411,14 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    This task has two example input-output pairs and a question input-output pair. Training on just the *examples* means that HRM was trained only on the two examples, left of the vertical white line. It was *not* trained on the question, to the right of the vertical white line. The model saw the examples, which are in the same distribution as the question, but never the actual questions themselves. Remember this task is from *eval* set, not the train set. So to evaluate model performance, we ask the model this very question (which we never trained on) given these examples (which we absolutely did train on).
+    This task has two example pairs (left of the white line) and one test question (right of the white line). HRM was trained only on the examples—it never saw the actual test questions. Although the examples and questions come from the same distribution, the model still has to solve questions it's never encountered before. Since this is from the *eval* set, not the train set, we're essentially asking: you've seen these examples, now can you solve this closely-related but unseen problem?
 
-    Does this count as "data leakage" or "cheating"? It seems like training on only the *examples* of the public eval set is fair game as the ARC-AGI organizers ultimately accepted the HRM submission. Folks on [twitter](https://x.com/Dorialexander/status/1951954826545238181) also came to the concesous that is is 100% allowed.
+    Is training on the eval set examples cheating? Apparently not. The ARC-AGI organizers accepted HRM's submision and the concsensus on [Twitter](https://x.com/Dorialexander/status/1951954826545238181) was that it's actually completely allowed.
 
-    At the end of this episode, one comment by HRM's lead author caught my attention:
+    But buried in a GitHub thread, HRM's lead author, Guan Wang, made an offhand comment that caught my attention:
     > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." -   [Guan Wang](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308)
 
-    Well, that got me curious: what would happen if we really did have 100% data leakage?
-
-    Could we memorize everything and get a perfect score on ARC-AGI-1? If we train on the questions of the public eval set, not just the examples, could we beat HRM's 40.3% on ARC-AGI-1? Could we still do it with very few parameters, like HRM? How far can we push this?
+    That line stuck with me. If partial leakage gets you $40.3\%$, what happens with *complete* leakage? If we train on the actual test questions, not just test examples, can we hit $100\%$? Can we do it with even fewer parameters than HRM (27M) or TRM (7M)? And can we do it on the more challenging ARC-AGI-2 instead of ARC-AGI-1? How far can we push this?
     """
     )
     return
@@ -438,13 +440,13 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-1 by blatantly training on the public eval set, both the examples and questions. We would deviate from HRM's acceptable approach (training on just the examples of the public eval set) and enter the morally dubious territory of training on the examples *and questions* of the public eval set.
+    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-2 by blatantly training on the public eval set, both the examples and questions. We would deviate from HRM's acceptable approach (training on just the examples of the public eval set) and enter the morally dubious territory of training on the examples *and questions* of the public eval set.
 
     Now, the obvious approach would be to build a dictionary - just map each input directly to its corresponding output. But that's boring and lookup tables aren't nice mathematical functions. They're discrete, discontinuous, and definitely not differentiable. We need something else, something more elegant and interesting. To do that, we are going to take a brief detour into the world of chaos theory.
 
-    *Before diving in, I need to acknowledge that this technique comes from one of my all-time favorite papers: [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320) by [Laurent Boué](https://www.linkedin.com/in/laurent-bou%C3%A9-b7923853/?originalSubdomain=il). This paper is really a gem, a top ten paper of all time due its sheer creativity. Boué's paper, in turn, was originally inspired by [Steven Piantadosi](https://colala.berkeley.edu/people/piantadosi/)'s research [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf).*
+    > Note: Steven Piantadosi pioneered this technique in [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf). Yet, I first heard of this technique through Laurent Boué's paper [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320). This paper is really a gem due its sheer creativity.
 
-    The dyadic map $\mathcal{D}$ is a simple one-dimensional chaotic system defined as
+    In chaos theory, the dyadic map $\mathcal{D}$ is a simple one-dimensional chaotic system defined as
 
     $$
     \begin{align}
@@ -569,7 +571,7 @@ def _(mo):
     * If $a = 0.5$, we get the orbit $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$ because $\text{bin}(a) = 0.100000...$ and after discarding the first bit, which is a $1$, we are left with all zeros.
     * If $a = 1/3$, we get the orbit $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$ because $\text{bin}(a) = 0.010101...$, an infinite sequence of bits alternating between $1$ and $0$. When the bits start with a 0, we get $0.010101...$ which is $1/3 = 0.333$ in decimal. And when the bits start with a $1$, $0.10101...$, we get $2/3 = 0.667$ in decimal.
 
-    Remarkably, these orbits are all governed by the same rule: remove one bit of information every time the dyadic map is applied. As each application of $\mathcal{D}$ removes another bit, this moves us deeper into the less significant digits of our original number -- the digits that are most sensitive to noise and measurement errors. A tiny change in $a$​, affecting the least significant bits of $a$, would eventually bubble up to the surface and completely change the orbit. That's why this system is so chaotic -- it is incredibly sensitive to even the smallest changes in the initial value $a$.
+    Remarkably, these orbits are all governed by the same rule: remove one bit of information every time the dyadic map is applied. As each application of $\mathcal{D}$ removes another bit, this moves us deeper into the less significant digits of our original number -- the digits that are most sensitive to noise and measurement errors. A tiny change in $a$ due to noise, affecting the least significant bits of $a$, would eventually bubble up to the surface and completely change the orbit. That's why this system is so chaotic -- it is incredibly sensitive to even the smallest changes in the initial value $a$.
 
     (Note: we always compute the dyadic map on *decimal* numbers, not binary numbers; however, conceptually it is helpful to think about the binary representations of the orbit.)
     """
@@ -712,13 +714,13 @@ def _(mo):
     \end{align*}
     $$
 
-    If we convert this number back to decimal, we'll recover our original data, up to the first $6$ digits of precision.
+    If we convert this number $b_0$ back to decimal, we'll recover our original data, up to the first $6$ digits of precision.
 
     $$
     \begin{align*}
         \tilde{x}_0
         &=
-        \text{dec} \big( \text{bin}(\alpha)_{0:6} \big)
+        \text{dec} ( b_0 )
         =
         0.500000
     \end{align*}
@@ -760,13 +762,13 @@ def _(mo):
     \end{align*}
     $$
 
-    and convert that back to decimal to get $\tilde{x}_1$.
+    and convert $b_1$ back to decimal to get $\tilde{x}_1$.
 
     $$
     \begin{align*}
         \tilde{x}_1
         &=
-        \text{dec} \big( \text{bin}(D^6(\alpha))_{0:6} \big)
+        \text{dec} (b_1)
         =
         0.328125
     \end{align*}
@@ -806,15 +808,15 @@ def _(mo):
 
     These 3 steps are summerized in the table below.
 
-    | Iterations $k$ | Decimal | Binary | First $6$ bits in binary $b_i$ | First $6$ bits in decimal $\tilde{x}_i$|
-    |------------|------------------------|----------------------|-------------|-------------|
-    | 0 | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0 = 010101$ | $\tilde{x}_0 = 0.500000$|
-    | 6 | $\mathcal{D}^6(\alpha) = 0.33471679687500000$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{\hspace{1cm}}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1 = 010101$| $\tilde{x}_1 = 0.328125$|
-    | 12 | $\mathcal{D}^{12}(\alpha) = 0.42187500000000000$ | $\text{bin}(D^{12}(\alpha)) = 0.\underbrace{\hspace{1cm}}_{b0}\underbrace{\hspace{1cm}}_{b1}\underbrace{011011}_{b_2}$ | $b_2 = 011011$| $\tilde{x}_2 = 0.421875$|
+    | Iteration $i$ |$ip$ bits removed | $\mathcal{D}^{ip}(\alpha)$ in decimal | $\mathcal{D}^{ip}(\alpha)$ in binary | $b_i$, the first $p=6$ bits of $\mathcal{D}^{ip}(\alpha)$ in binary |  $\tilde{x}_i$, the first $p=6$ bits of $\mathcal{D}^{ip}(\alpha)$ in decimal|
+    |------------|------------------------|----------------------|-------------|-------------|-------------|
+    | $0$ | $0 \cdot 6 = 0$ | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0 = 010101$ | $\tilde{x}_0 = 0.500000$|
+    | $1$ | $1 \cdot 6 = 6$ | $\mathcal{D}^6(\alpha) = 0.33471679687500000$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{\hspace{1cm}}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1 = 010101$| $\tilde{x}_1 = 0.328125$|
+    | $2$ | $2 \cdot 6 = 12$ | $\mathcal{D}^{12}(\alpha) = 0.42187500000000000$ | $\text{bin}(D^{12}(\alpha)) = 0.\underbrace{\hspace{1cm}}_{b0}\underbrace{\hspace{1cm}}_{b1}\underbrace{011011}_{b_2}$ | $b_2 = 011011$| $\tilde{x}_2 = 0.421875$|
 
-    Notice that we only every peform computation on the decimal representation, never on the binary representation. Indeed, the decimal numbers as we go from $\alpha = 0.50522994995117188$ to $\mathcal{D}^6(\alpha) = 0.33471679687500000$ and then to $\mathcal{D}^{12}(\alpha) = 0.42187500000000000$. Although this pattern like entirely nonsensical, we know that looking at the binary representation,  we are shifitng bits and extrating bits with superb precision.
+    In decimal, we go from $\alpha = 0.50522994995117188$ to $\mathcal{D}^6(\alpha) = 0.33471679687500000$ and then to $\mathcal{D}^{12}(\alpha) = 0.42187500000000000$. This pattern looks completely nonsensical. However, looking at the binary representation reveals that we are shifitng bits and extrating numbers with superb precision. This is anything but nonsensical. (Recall that we only every peform computation on the decimal numbers, never directly on their binary representation.)
 
-    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point in binary $b_0, b_1, b_2$ up to $p$ bits of precision. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access that information.
+    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point in binary $\tilde{x}_0, \tilde{x}_1, \tilde{x}_2$ up to $p$ bits of precision. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access that information.
     """
     )
     return
@@ -827,19 +829,19 @@ def _(mo):
     The algorithm itself is deceptively simple once you see the pattern:
 
     > **Encoding Algorithm:**
-    > Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $\alpha$:
+    > Given a dataset $\mathcal{X} = \{x_0, ..., x_{n-1}\}$ where $x_i \in [0, 1]$, encode the dataset into $\alpha$:
     >
-    > 1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=1, ..., n$
-    > 2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
+    > 1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=0, ..., n-1$
+    > 2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_{n-1}$
     > 3. Convert to decimal $\alpha = \text{dec}(b)$
 
 
     The result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
 
     > **Decoding Algorithm:**
-    > Given sample index $i$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
+    > Given sample index $i \in \{0, ..., n-1\}$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
     >
-    > 1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$
+    > 1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$ 
     > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
 
@@ -850,7 +852,7 @@ def _(mo):
     \begin{align*}
     \alpha
     &=
-    g(p, \mathcal{X}) := \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(x) \Big)
+    g(p, \mathcal{X}) := \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(x_i) \Big)
     \tag{4}
     \\
     \tilde{x}_i
@@ -861,7 +863,13 @@ def _(mo):
 
     where $\oplus$ means concatenation.
 
-    The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. The larger $p$ is, the more accurately our encoding, but the more storage it takes up. Our error bound is $|\tilde{x}_i - x_i | < 2^{-p}$ because we don't encode anything after the first $p$ bits of precision.
+    The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. The larger $p$ is, the more accurately our encoding, but the more storage it takes up. Our error bound is
+
+    $$
+    |\tilde{x}_i - x_i | < \frac{1}{2^p}
+    $$
+
+    because we don't encode anything after the first $p$ bits of precision.
 
     What makes this profound is the realization that we're not really "learning" anything in any conventional sense. We're encoding it directly into the bits of a real number, exploiting it's infinite precision, and then using the dyadic map to navigate through that number and extract exactly what we need, when we need it.
 
@@ -1991,7 +1999,6 @@ def _(mo):
     The big take away is that parameter count is *at best* a proxy for intelligence and should not be taken as an actual measure of inteliggence. Just like
 
     Prof Albert Gu.'s paper used a general purpose compression algorithm on this. Which is an actual valid solution that does not train on the questions set.
-
     """
     )
     return
