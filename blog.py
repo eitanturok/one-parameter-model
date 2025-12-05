@@ -182,87 +182,134 @@ def _(mo):
 
 
 @app.cell
+def _():
+    # # from https://www.kaggle.com/code/allegich/arc-agi-2025-visualization-all-1000-120-tasks
+
+    # # 0:black, 1:blue, 2:red, 3:green, 4:yellow, # 5:gray, 6:magenta, 7:orange, 8:sky, 9:brown
+    # cmap = colors.ListedColormap(['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00', '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25'])
+    # norm = colors.Normalize(vmin=0, vmax=9)
+
+    # def plot_one(ax, i, task, example_or_question, input_or_output, w=0.8):
+    #     key = f"{example_or_question}_{input_or_output}"
+    #     input_matrix = task[key][i]
+
+    #     # grid
+    #     ax.imshow(input_matrix, cmap=cmap, norm=norm)
+    #     ax.grid(True, which='both', color='lightgrey', linewidth=1.0)
+    #     plt.setp(plt.gcf().get_axes(), xticklabels=[], yticklabels=[])
+    #     ax.set_xticks([x-0.5 for x in range(1 + len(input_matrix[0]))])
+    #     ax.set_yticks([x-0.5 for x in range(1 + len(input_matrix))])
+    #     ax.grid(visible= True, which = 'both', color = '#666666', linewidth = w)
+    #     ax.tick_params(axis='both', color='none', length=0)
+
+    #     # subtitle
+    #     title = f"{'Ex.' if example_or_question == 'example' else 'Q.'} {i} {input_or_output[:-1].capitalize()}"
+    #     ax.set_title(title, fontsize=12, color = '#dddddd')
+
+    #     # status text positioned at top right
+    #     if example_or_question == 'question' and input_or_output == 'outputs':
+    #         ax.text(1, 1.15, '? PREDICT', transform=ax.transAxes, ha='right', va='bottom', fontsize=10, fontweight='bold', color='#FF4136')
+    #     else:
+    #         ax.text(1, 1.15, '✓ GIVEN', transform=ax.transAxes, ha='right', va='bottom', fontsize=10, fontweight='bold', color='#2ECC40')
+
+
+    # def display_task(ds, split, i, size=2.5, w1=0.9):
+    #     task = ds[split][i]
+    #     n_examples = len(task['example_inputs'])
+    #     n_questions  = len(task['question_inputs'])
+    #     task_id = task["id"]
+
+    #     wn=n_examples+n_questions
+    #     fig, axs  = plt.subplots(2, wn, figsize=(size*wn,2*size))
+    #     plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Task #{i} (id={task_id})', fontsize=16, fontweight='bold', y=1, color = '#eeeeee')
+
+    #     # plot train
+    #     for j in range(n_examples):
+    #         plot_one(axs[0, j], j, task, 'example', 'inputs',  w=w1)
+    #         plot_one(axs[1, j], j, task, 'example', 'outputs', w=w1)
+
+    #     # plot test
+    #     for k in range(n_questions):
+    #         plot_one(axs[0, j+k+1], k, task, 'question', 'inputs', w=w1)
+    #         plot_one(axs[1, j+k+1], k, task, 'question', 'outputs', w=w1)
+
+    #     axs[1, j+1].set_xticklabels([])
+    #     axs[1, j+1].set_yticklabels([])
+    #     axs[1, j+1] = plt.figure(1).add_subplot(111)
+    #     axs[1, j+1].set_xlim([0, wn])
+
+    #     # plot separators
+    #     # for m in range(1, wn): axs[1, j+1].plot([m,m],[0,1],'--', linewidth=1, color='white')
+    #     axs[1, j+1].plot([n_examples, n_examples], [0,1], '-', linewidth=5, color='white')
+
+    #     axs[1, j+1].axis("off")
+
+    #     # Frame and background
+    #     fig.patch.set_linewidth(5) #widthframe
+    #     fig.patch.set_edgecolor('black') #colorframe
+    #     fig.patch.set_facecolor('#444444') #background
+
+    #     plt.tight_layout(h_pad=3.0)
+    #     # plt.show()
+    #     return fig
+    return
+
+
+@app.cell
 def _(colors, plt):
-    # from https://www.kaggle.com/code/allegich/arc-agi-2025-visualization-all-1000-120-tasks
+    # import matplotlib.pyplot as plt
+    # from matplotlib import colors
 
-    # 0:black, 1:blue, 2:red, 3:green, 4:yellow, # 5:gray, 6:magenta, 7:orange, 8:sky, 9:brown
-    cmap = colors.ListedColormap(['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00', '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25'])
-    norm = colors.Normalize(vmin=0, vmax=9)
+    # 0:black, 1:blue, 2:red, 3:green, 4:yellow, 5:gray, 6:magenta, 7:orange, 8:sky, 9:brown
+    CMAP = colors.ListedColormap(['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00', '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25'])
+    NORM = colors.Normalize(vmin=0, vmax=9)
+    STATUS = {'given': ('GIVEN ✓', '#2ECC40'), 'predict': ('PREDICT ?', '#FF4136')}
 
-    def plot_one(ax, i, task, example_or_question, input_or_output, w=0.8):
-        key = f"{example_or_question}_{input_or_output}"
-        input_matrix = task[key][i]
+    def plot_matrix(matrix, ax, title=None, status=None, w=0.8):
+      ax.imshow(matrix, cmap=CMAP, norm=NORM)
+      ax.set_xticks([x-0.5 for x in range(1+len(matrix[0]))])
+      ax.set_yticks([x-0.5 for x in range(1+len(matrix))])
+      ax.grid(visible=True, which='both', color='#666666', linewidth=w)
+      ax.set_xticklabels([])
+      ax.set_yticklabels([])
+      ax.tick_params(axis='both', color='none', length=0)
+      if title: ax.text(0, 1.02, title, transform=ax.transAxes, ha='left', va='bottom', fontsize=11, color='#000000')
+      ax.text(1, 1.02, f"({len(matrix)}x{len(matrix[0])})", transform=ax.transAxes, ha='right', va='bottom', fontsize=11, color='#000000')
+      # if status: ax.text(0, 1.14, STATUS[status][0], transform=ax.transAxes, ha='left', va='bottom', fontsize=8, fontweight='bold', color=STATUS[status][1])
 
-        # grid
-        ax.imshow(input_matrix, cmap=cmap, norm=norm)
-        ax.grid(True, which='both', color='lightgrey', linewidth=1.0)
-        plt.setp(plt.gcf().get_axes(), xticklabels=[], yticklabels=[])
-        ax.set_xticks([x-0.5 for x in range(1 + len(input_matrix[0]))])
-        ax.set_yticks([x-0.5 for x in range(1 + len(input_matrix))])
-        ax.grid(visible= True, which = 'both', color = '#666666', linewidth = w)
-        ax.tick_params(axis='both', color='none', length=0)
+    def plot_pairs(task, axes, key, label, start=0, w=0.8):
+      for i in range(len(task[f'{key}_inputs'])):
+        plot_matrix(task[f'{key}_inputs'][i], axes[0, start+i], title=f"{label}{i} Input", status='given', w=w)
+        plot_matrix(task[f'{key}_outputs'][i], axes[1, start+i], title=f"{label}{i} Output", status='predict' if key=='question' else 'given', w=w)
+        axes[0, start+i].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
+      return len(task[f'{key}_inputs'])
 
-        # subtitle
-        ax.set_title(f'\n{example_or_question.capitalize()} {i} {input_or_output[:-1].capitalize()}', fontsize=12, color = '#dddddd')
-
-        # status text positioned at top right
-        if example_or_question == 'question' and input_or_output == 'outputs':
-            ax.text(1, 1.15, '? PREDICT', transform=ax.transAxes, ha='right', va='bottom', fontsize=10, fontweight='bold', color='#FF4136')
-        else:
-            ax.text(1, 1.15, '✓ GIVEN', transform=ax.transAxes, ha='right', va='bottom', fontsize=10, fontweight='bold', color='#2ECC40')
-
-
-    def display_task(ds, split, i, size=2.5, w1=0.9):
-        task = ds[split][i]
-        n_examples = len(task['example_inputs'])
-        n_questions  = len(task['question_inputs'])
-        task_id = task["id"]
-
-        wn=n_examples+n_questions
-        fig, axs  = plt.subplots(2, wn, figsize=(size*wn,2*size))
-        plt.suptitle(f'ARC-AGI-1 {split.capitalize()} Task #{i} (id={task_id})', fontsize=16, fontweight='bold', y=1, color = '#eeeeee')
-
-        # plot train
-        for j in range(n_examples):
-            plot_one(axs[0, j], j, task, 'example', 'inputs',  w=w1)
-            plot_one(axs[1, j], j, task, 'example', 'outputs', w=w1)
-
-        # plot test
-        for k in range(n_questions):
-            plot_one(axs[0, j+k+1], k, task, 'question', 'inputs', w=w1)
-            plot_one(axs[1, j+k+1], k, task, 'question', 'outputs', w=w1)
-
-        axs[1, j+1].set_xticklabels([])
-        axs[1, j+1].set_yticklabels([])
-        axs[1, j+1] = plt.figure(1).add_subplot(111)
-        axs[1, j+1].set_xlim([0, wn])
-
-        # plot separators
-        # for m in range(1, wn): axs[1, j+1].plot([m,m],[0,1],'--', linewidth=1, color='white')
-        axs[1, j+1].plot([n_examples, n_examples], [0,1], '-', linewidth=5, color='white')
-
-        axs[1, j+1].axis("off")
-
-        # Frame and background
-        fig.patch.set_linewidth(5) #widthframe
-        fig.patch.set_edgecolor('black') #colorframe
-        fig.patch.set_facecolor('#444444') #background
-
-        plt.tight_layout(h_pad=3.0)
-        # plt.show()
-        return fig
-    return (display_task,)
+    def plot_arcagi(ds, split, i, size=2.5, w=0.9):
+      task = ds[split][i]
+      ne, nq = len(task['example_inputs']), len(task['question_inputs'])
+      fig, axes = plt.subplots(2, ne+nq, figsize=(size*(ne+nq), 2*size))
+      if ne+nq == 1: axes = axes.reshape(2, 1)
+      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Task #{i} (id={task["id"]})', fontsize=16, fontweight='bold', y=1, color='#000000')
+      plot_pairs(task, axes, 'example', 'Ex.', w=w)
+      plot_pairs(task, axes, 'question', 'Q.', start=ne, w=w)
+      if ne > 0 and nq > 0: fig.add_artist(plt.Line2D([ne/(ne+nq), ne/(ne+nq)], [0.05, 0.95], color='#333333', linewidth=5, transform=fig.transFigure))
+      fig.patch.set_linewidth(5)
+      fig.patch.set_edgecolor('black')
+      fig.patch.set_facecolor('#eeeeee')
+      plt.tight_layout(h_pad=3.0)
+      return fig
+    return (plot_arcagi,)
 
 
 @app.cell
 def _(local_arc_agi):
-    ds = local_arc_agi("public/data/ARC-AGI-1")
+    ds = local_arc_agi("public/data/ARC-AGI-2")
     return (ds,)
 
 
 @app.cell
-def _(display_task, ds):
-    display_task(ds, "train", 1)
+def _(ds, plot_arcagi):
+    plot_arcagi(ds, "train", 10)
     return
 
 
@@ -270,7 +317,7 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    Here, we see several grids, each with a bunch of colored cells. Most cells are black (0), some are green (3), and some are yellow (4). Each column shows an input-output pair.
+    Here, we see several grids, each with a bunch of colored cells. Most cells are black (0), some are light blue (8), some are green (3), and some are yellow (4), etc. Each column shows an input-output pair.
 
     The first five columns are example input-output pairs that demonstrate the pattern. The sixth column, separated by the solid white line, is the actual question: given this new input, what should the output be?
 
