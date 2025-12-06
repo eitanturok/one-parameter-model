@@ -256,16 +256,23 @@ def _():
 
 
 @app.cell
-def _(colors, plt):
+def _():
+    return
+
+
+@app.cell
+def _(colors, np, plt):
     # import matplotlib.pyplot as plt
     # from matplotlib import colors
+    # import numpy as np
 
-    # 0:black, 1:blue, 2:red, 3:green, 4:yellow, 5:gray, 6:magenta, 7:orange, 8:sky, 9:brown
-    CMAP = colors.ListedColormap(['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00', '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25'])
+    ARC_COLORS = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00', '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
+    CMAP = colors.LinearSegmentedColormap.from_list('arc_continuous', ARC_COLORS, N=256)
     NORM = colors.Normalize(vmin=0, vmax=9)
     STATUS = {'given': ('GIVEN ✓', '#2ECC40'), 'predict': ('PREDICT ?', '#FF4136')}
 
-    def plot_matrix(matrix, ax, title=None, status=None, w=0.8):
+    def plot_matrix(matrix, ax, title=None, status=None, w=0.8, show_nums=False):
+      matrix = np.array(matrix)
       ax.imshow(matrix, cmap=CMAP, norm=NORM)
       ax.set_xticks([x-0.5 for x in range(1+len(matrix[0]))])
       ax.set_yticks([x-0.5 for x in range(1+len(matrix))])
@@ -273,30 +280,55 @@ def _(colors, plt):
       ax.set_xticklabels([])
       ax.set_yticklabels([])
       ax.tick_params(axis='both', color='none', length=0)
-      if title: ax.text(0, 1.02, title, transform=ax.transAxes, ha='left', va='bottom', fontsize=11, color='#000000')
+      if show_nums:
+        for i in range(len(matrix)):
+          for j in range(len(matrix[0])):
+            val = matrix[i, j]
+            txt = f'{int(val)}' if val == int(val) else f'{val:.1f}'
+            ax.text(j, i, txt, ha='center', va='center', color='#ffffff', fontsize=8)
+      if title: ax.text(0, 1.02, title, transform=ax.transAxes, ha='left', va='bottom', fontsize=11, color='#000000', clip_on=False)
       ax.text(1, 1.02, f"({len(matrix)}x{len(matrix[0])})", transform=ax.transAxes, ha='right', va='bottom', fontsize=11, color='#000000')
-      # if status: ax.text(0, 1.14, STATUS[status][0], transform=ax.transAxes, ha='left', va='bottom', fontsize=8, fontweight='bold', color=STATUS[status][1])
 
-    def plot_pairs(task, axes, key, label, start=0, w=0.8):
-      for i in range(len(task[f'{key}_inputs'])):
-        plot_matrix(task[f'{key}_inputs'][i], axes[0, start+i], title=f"{label}{i} Input", status='given', w=w)
-        plot_matrix(task[f'{key}_outputs'][i], axes[1, start+i], title=f"{label}{i} Output", status='predict' if key=='question' else 'given', w=w)
-        axes[0, start+i].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
-      return len(task[f'{key}_inputs'])
-
-    def plot_arcagi(ds, split, i, size=2.5, w=0.9):
+    def plot_arcagi(ds, split, i, predictions=None, size=2.5, w=0.9):
       task = ds[split][i]
-      ne, nq = len(task['example_inputs']), len(task['question_inputs'])
-      fig, axes = plt.subplots(2, ne+nq, figsize=(size*(ne+nq), 2*size))
-      if ne+nq == 1: axes = axes.reshape(2, 1)
-      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Task #{i} (id={task["id"]})', fontsize=16, fontweight='bold', y=1, color='#000000')
-      plot_pairs(task, axes, 'example', 'Ex.', w=w)
-      plot_pairs(task, axes, 'question', 'Q.', start=ne, w=w)
-      if ne > 0 and nq > 0: fig.add_artist(plt.Line2D([ne/(ne+nq), ne/(ne+nq)], [0.05, 0.95], color='#333333', linewidth=5, transform=fig.transFigure))
+      ne, nq, n_pred = len(task['example_inputs']), len(task['question_inputs']), len(predictions) if predictions is not None else 0
+  
+      mosaic = [[f'Ex.{j}_in' for j in range(ne)] + [f'Q.{j}_in' for j in range(nq)] + (['pred'] if n_pred else []),
+                [f'Ex.{j}_out' for j in range(ne)] + [f'Q.{j}_out' for j in range(nq)] + (['pred'] if n_pred else [])]
+      fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(ne+nq+(1 if n_pred else 0)), 2*size))
+      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Task #{i} (id={task["id"]})', fontsize=18, fontweight='bold', y=0.98, color='#000000')
+
+        # plot examples
+      for j in range(ne):
+        plot_matrix(task['example_inputs'][j], axes[f'Ex.{j}_in'], title=f"Ex.{j} Input", status='given', w=w)
+        axes[f'Ex.{j}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
+        plot_matrix(task['example_outputs'][j], axes[f'Ex.{j}_out'], title=f"Ex.{j} Output", status='given', w=w)
+
+      # plot questions
+      for j in range(nq):
+        plot_matrix(task['question_inputs'][j], axes[f'Q.{j}_in'], title=f"Q.{j} Input", status='given', w=w)
+        axes[f'Q.{j}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
+        plot_matrix(task['question_outputs'][j], axes[f'Q.{j}_out'], title=f"Q.{j} Output", status='predict', w=w, show_nums=predictions is not None)
+
+      # plot predictions
+      if predictions is not None:
+        predictions = [np.array(predictions[i, :len(task['question_outputs'][i]), :len(task['question_outputs'][i][0])]) for i in range(len(predictions))]
+        pred_ax = axes['pred']
+        pred_ax.axis('off')
+        for k, pred in enumerate(predictions):
+          inset = pred_ax.inset_axes([0, k/n_pred, 1, 1/n_pred])
+          plot_matrix(pred, inset, title=f"Q.{k} Prediction", w=w, show_nums=True)
+  
+      if ne > 0 and nq > 0: fig.add_artist(plt.Line2D([ne/(ne+nq+(1 if n_pred else 0)), ne/(ne+nq+(1 if n_pred else 0))], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
+      if nq > 0 and n_pred > 0: fig.add_artist(plt.Line2D([(ne+nq)/(ne+nq+1), (ne+nq)/(ne+nq+1)], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
+      if ne > 0: fig.text(ne/2/(ne+nq+(1 if n_pred else 0)), 0.91, 'Examples', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
+      if nq > 0: fig.text((ne+nq/2)/(ne+nq+(1 if n_pred else 0)), 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
+      if n_pred > 0: fig.text((ne+nq+0.5)/(ne+nq+1), 0.91, 'Predictions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
+  
       fig.patch.set_linewidth(5)
-      fig.patch.set_edgecolor('black')
+      fig.patch.set_edgecolor('#333333')
       fig.patch.set_facecolor('#eeeeee')
-      plt.tight_layout(h_pad=3.0)
+      plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
       return fig
     return (plot_arcagi,)
 
@@ -308,8 +340,20 @@ def _(local_arc_agi):
 
 
 @app.cell
+def _(y_pred):
+    y_pred[0].shape
+    return
+
+
+@app.cell
+def _(ds, plot_arcagi, y_pred):
+    plot_arcagi(ds, "eval", 0, y_pred)
+    return
+
+
+@app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "train", 10)
+    plot_arcagi(ds, "train", 12)
     return
 
 
@@ -334,6 +378,11 @@ def _(mo):
     Another task:
     """
     )
+    return
+
+
+@app.cell
+def _():
     return
 
 
