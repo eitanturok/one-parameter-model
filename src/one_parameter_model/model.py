@@ -32,8 +32,7 @@ def dyadic_decoder(alpha, p, i): return float((2 ** (i * p) * alpha) % 1)
 
 def logistic_decoder(alpha, full_precision, p, i):
     mp.prec = full_precision
-    ret = Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2
-    return float(ret)
+    return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
 
 # This is 10x+ faster than logistic_decoder because:
 # 1) arcsin(sqrt(alpha)) is precomputed once instead of every iteration

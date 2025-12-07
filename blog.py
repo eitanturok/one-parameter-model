@@ -16,32 +16,15 @@ def _():
     from functools import partial
     from multiprocessing import Pool
 
-    import gmpy2
     import numpy as np
     import pandas as pd
     import matplotlib.pyplot as plt
-    from gmpy2 import sin as sin_ap, mpfr as float_ap, asin as arcsin_ap, sqrt as sqrt_ap, const_pi as pi_ap # ap = arbitrary precision
     from matplotlib import colors
 
-    from src.one_parameter_model import OneParameterModel
-    from src.one_parameter_model.model import phi, phi_inverse, decimal_to_binary, binary_to_decimal, logistic_decoder
+    # from src.one_parameter_model import OneParameterModel
+    # from src.one_parameter_model.model import phi, phi_inverse, decimal_to_binary, binary_to_decimal, logistic_decoder
     from src.one_parameter_model.data import local_arc_agi, process_arc_agi
-    return (
-        OneParameterModel,
-        binary_to_decimal,
-        colors,
-        decimal_to_binary,
-        gmpy2,
-        inspect,
-        json,
-        local_arc_agi,
-        logistic_decoder,
-        np,
-        phi,
-        phi_inverse,
-        plt,
-        process_arc_agi,
-    )
+    return colors, inspect, json, local_arc_agi, np, plt, process_arc_agi
 
 
 @app.cell
@@ -290,26 +273,26 @@ def _(colors, np, plt):
       if title: ax.text(0, 1.02, title, transform=ax.transAxes, ha='left', va='bottom', fontsize=11, color='#000000', clip_on=False)
       # ax.text(1+offset, 1.02, f"({len(matrix)}x{len(matrix[0])})", transform=ax.transAxes, ha='right', va='bottom', fontsize=11, color='#000000')
 
-    def plot_arcagi(ds, split, i, predictions=None, size=2.5, w=0.9):
+    def plot_arcagi(ds, split, i, predictions=None, size=2.5, w=0.9, show_nums=False):
       task = ds[split][i]
       ne, nq, n_pred = len(task['example_inputs']), len(task['question_inputs']), len(predictions) if predictions is not None else 0
   
-      mosaic = [[f'Ex.{j}_in' for j in range(ne)] + [f'Q.{j}_in' for j in range(nq)] + (['pred'] if n_pred else []),
-                [f'Ex.{j}_out' for j in range(ne)] + [f'Q.{j}_out' for j in range(nq)] + (['pred'] if n_pred else [])]
+      mosaic = [[f'Ex.{j+1}_in' for j in range(ne)] + [f'Q.{j+1}_in' for j in range(nq)] + (['pred'] if n_pred else []),
+                [f'Ex.{j+1}_out' for j in range(ne)] + [f'Q.{j+1}_out' for j in range(nq)] + (['pred'] if n_pred else [])]
       fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(ne+nq+(1 if n_pred else 0)), 2*size))
       plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Task #{i} (id={task["id"]})', fontsize=18, fontweight='bold', y=0.98, color='#000000')
 
         # plot examples
       for j in range(ne):
-        plot_matrix(task['example_inputs'][j], axes[f'Ex.{j}_in'], title=f"Ex.{j} Input", status='given', w=w)
-        axes[f'Ex.{j}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
-        plot_matrix(task['example_outputs'][j], axes[f'Ex.{j}_out'], title=f"Ex.{j} Output", status='given', w=w)
+        plot_matrix(task['example_inputs'][j], axes[f'Ex.{j+1}_in'], title=f"Ex.{j+1} Input", status='given', w=w, show_nums=show_nums)
+        axes[f'Ex.{j+1}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
+        plot_matrix(task['example_outputs'][j], axes[f'Ex.{j+1}_out'], title=f"Ex.{j+1} Output", status='given', w=w, show_nums=show_nums)
 
       # plot questions
       for j in range(nq):
-        plot_matrix(task['question_inputs'][j], axes[f'Q.{j}_in'], title=f"Q.{j} Input", status='given', w=w)
-        axes[f'Q.{j}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
-        plot_matrix(task['question_outputs'][j], axes[f'Q.{j}_out'], title=f"Q.{j} Output", status='predict', w=w, show_nums=predictions is not None)
+        plot_matrix(task['question_inputs'][j], axes[f'Q.{j+1}_in'], title=f"Q.{j+1} Input", status='given', w=w, show_nums=show_nums)
+        axes[f'Q.{j+1}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
+        plot_matrix(task['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums or predictions is not None)
 
       # plot predictions
       if predictions is not None:
@@ -1399,37 +1382,418 @@ def _(mo):
     \Big)
     $$
 
-    Usually translating math into code turns beautiful theory into ugly, complicated messes. But surprisingly, leveraging mpmath had the opposite effect and actually made our decoder even simpler.
+    Usually translating math into code turns beautiful theory into ugly, complicated messes. But surprisingly, leveraging mpmath had the opposite effect and actually made our decoder even simpler. Now let's get to the code!
     """
     )
-    return
-
-
-@app.cell
-def _(display_fxn, logistic_decoder, mo):
-    mo.md(rf"""{display_fxn(logistic_decoder)}""")
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""Now, let's define some basic helper functions for $\text{bin}_p, \text{dec}, \phi, \phi^{-1}$. Note that we compute $\phi^{-1}$ in numpy but use `gmpy2` to compute $\phi$.""")
+    from mpmath import mp, asin as Arcsin, sqrt as Sqrt, sin as Sin, pi as Pi
+    mo.show_code()
+    return Arcsin, Pi, Sin, Sqrt, mp
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""First we need some functions to convert from binary to decimal and back""")
     return
 
 
 @app.cell
-def _(binary_to_decimal, decimal_to_binary, display_fxn, mo, phi, phi_inverse):
+def _(mo, np):
+    def dyadic_map(X:np.ndarray): return (2 * X) % 1
+    mo.show_code()
+    return (dyadic_map,)
+
+
+@app.cell
+def _(dyadic_map, mo, np):
+    def decimal_to_binary(x_decimal:np.ndarray|float|int|list|tuple, precision:int):
+        # converts a 1D sequence from decimal to binary, assume all values in [0, 1]
+        if isinstance(x_decimal, (float, int)): x_decimal = np.array([x_decimal], dtype=float)
+        elif isinstance(x_decimal, (list, tuple)): x_decimal = np.array(x_decimal, dtype=float)
+        assert 0 <= x_decimal.min() <= x_decimal.max() <= 1, f"expected x_decimal to be in [0, 1] but got [{x_decimal.min()}, {x_decimal.max()}]"
+        bits = []
+        for _ in range(precision):
+            bits.append(np.round(x_decimal))
+            x_decimal = dyadic_map(x_decimal)
+        return ''.join(map(str, np.array(bits).astype(int).T.ravel()))
+    mo.show_code()
+    return (decimal_to_binary,)
+
+
+@app.cell
+def _(mo, mp, np):
+    def binary_to_decimal(x_binary:np.ndarray):
+        # converts an arbitrary-precision scalar from binary to decimal
+        return mp.fsum(int(b) * mp.mpf(0.5) ** (i+1) for i, b in enumerate(x_binary))
+    mo.show_code()
+    return (binary_to_decimal,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""We cannot simply use python's `bin` function because it only converts integers to binary and we have floats in $[0, 1]$. Next we need $\phi$ and $\phi^{-1}$ to go back and forth between the dyadic and logistic spaces.""")
+    return
+
+
+@app.cell
+def _(Pi, Sin, mo):
+    def phi(x): return Sin(2 * Pi * x) ** 2
+    mo.show_code()
+    return (phi,)
+
+
+@app.cell
+def _(mo, np):
+    def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
+    mo.show_code()
+    return (phi_inverse,)
+
+
+@app.cell
+def _(mo):
     mo.md(
-        rf"""
-    {display_fxn(binary_to_decimal)}
+        r"""
+    We can now implement the logistic encoder
 
-    {display_fxn(decimal_to_binary)}
+    $$
+    g(p, \mathcal{x})
+    =
+    \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
+    $$
 
-    {display_fxn(phi)}
-
-    {display_fxn(phi_inverse)}
+    in code
     """
     )
+    return
+
+
+@app.cell
+def _(binary_to_decimal, decimal_to_binary, mo, mp, phi, phi_inverse):
+    def logistic_encoder(X, p, full_precision):
+        # set the arbitrary precision before computing anything
+        mp.prec = full_precision
+
+        # 1. apply φ^(-1) for all x in X
+        phi_inv_decimal_list = phi_inverse(X)
+
+        # 2. convert to binary for all x in X
+        phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, p)
+
+        # 3. concatenate all binary strings together into a scalar
+        phi_inv_binary_scalar = ''.join(phi_inv_binary_list)
+        if len(phi_inv_binary_scalar) != full_precision:
+            raise ValueError(f"Expected {full_precision} bits but got {len(phi_inv_binary_scalar)} bits.")
+
+        # 4. convert to decimal
+        phi_inv_decimal_scalar = binary_to_decimal(phi_inv_binary_scalar)
+
+        # 5. apply φ
+        alpha = phi(phi_inv_decimal_scalar)
+        return alpha
+    mo.show_code()
+    return (logistic_encoder,)
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    We compute $\alpha$ in five steps using mpmath with precision set to $np$ bits. Crucially, step 4 produces an mpmath float with the full $np$ bits of precision, which we then transform in step 5 to get our final $np$-bit parameter $\alpha$. Next, we implement the logistic decoder
+
+    $$
+    f_{\alpha, p}(x)
+    =
+    \sin^2 \Big(
+        2^{x p} \arcsin^2(\sqrt{\alpha})
+    \Big)
+    $$
+    """
+    )
+    return
+
+
+@app.cell
+def _(Arcsin, Sin, Sqrt, mo, mp):
+    def logistic_decoder(alpha, full_precision, p, i):
+        mp.prec = full_precision
+        return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
+    mo.show_code()
+    return (logistic_decoder,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Again, we set the mpmath precision to $np$ bits and implement the decoder in a single line using mpmath's arbitrary-precision functions: `Sin`, `Arcsin`, and `Sqrt`. That's it. Our entire encoder and decoder, the heart of our one-parameter model, is just a handful of lines and a bit of beautiful mathematics.""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""With this in hand, let's see it in action. Take a look at the first task from ARC-AGI-2's public eval set:""")
+    return
+
+
+@app.cell
+def _(ds, plot_arcagi):
+    plot_arcagi(ds, "eval", 0)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    In this task, we have 4 example input-output pairs (left of the vertical line) and a question input-output pair (right of the vertical line). The challenge: given the 4 examples and the question input, predict the question output by discovering the underlying pattern.
+
+    Take a moment and see if you can spot it.
+
+    The pattern is that each input contains a light-blue matrix, and the output shows that same matrix reflected across a vertical line through the center. In example 1, the light-blue matrix sits on the bottom right. Reflect it across the center, and it lands on the bottom left—which is exactly the cells which appear in the output.
+
+    Once you see it, the logic is very simple. But discovering this rule from just four examples is genuinely hard. It requires noticing what stays the same (the light-blue matrix), what changes (its position), and the precise nature of that change (vertical reflection). I wouldn't blame an LLM for struggling here. Remember, to an LLM this is just a grid of integers $1-9$. We've just added colors to make it easier for humans to see the pattern. From an LLM's perspective:
+    """
+    )
+    return
+
+
+@app.cell
+def _(ds, plot_arcagi):
+    plot_arcagi(ds, "eval", 0, show_nums=True)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    Let's build a one-parameter model that learns this exact task, discovering an $\alpha$ that predicts the question output perfectly. Remember, this is training on test as this task is from the ARC-AGI-2 public eval set.
+
+    To make the one-parameter model work for ARC-AGI-2, we need to make three modifications:
+
+    1. **Supervised learning.** ARC-AGI-2 is a supervised learning problem with input-output pairs $(X,Y)$, but our encoder can only handle unsupervised datasets $(X)$. We simply encode the outputs $Y$ instead of the inputs $X$ because the outputs $Y$ are what we actually need to memorize.
+    2. **Shape handling.** Our encoder works on datasets with scalar numbers, not matrices. Simple solution: flatten the matrices into long lists during encoding and then reshape back during decoding.
+    3. **Data scaling.** ARC-AGI-2 uses integers 0-9, but our encoder needs values in [0,1]. We use a standard MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding.
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""First, to implement the supervised learning approach, we make `X` the question input and `y` the question output:""")
+    return
+
+
+@app.cell
+def _(ds, mo, process_arc_agi):
+    X, y = process_arc_agi(ds)
+    X, y = X[:1], y[:1]
+    print(f'{X.shape=}, {y.shape=}')
+    mo.show_code()
+    return X, y
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Here is a small view of what `X`, `y` look like:""")
+    return
+
+
+@app.cell
+def _(X):
+    print(f'{X[:, :5, :5]=}')
+    return
+
+
+@app.cell
+def _(y):
+    print(f'{y[:, :5, :5]=}')
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Second, we transform `y` from a matrix to a list of scalars""")
+    return
+
+
+@app.cell
+def _(mo, y):
+    y_flat = y.flatten()
+    print(f'{y_flat.shape=}')
+    mo.show_code()
+    return (y_flat,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""The question output `y` starts out as a `30x30` matrix but flattens to 900 scalar elements. This means to encode a single ARC-AGI-2 task, the one-parameter model must encode 900 individual scalar elements into $\alpha$. Each element requires $p$ bits of precision, so a single task alone demands $900p$ bits, not just `p` bits. This cost adds up quickly. To encode all 400 tasks in ARC-AGI-2's eval set into one $\alpha$ requires $400 \cdot 900p=360,000p$ bits. It is quite easy to see why our one-parameter model may require an $\alpha$ with millions of bits. For now, we'll focus on a single task, which only requires $900p$ bits.""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Third, we transform ARC-AGI-2 inputs from $[0, 9]$ to $[0, 1]$ with the MinMaxScaler""")
+    return
+
+
+@app.cell
+def _(mo, np):
+    class MinMaxScaler:
+        def __init__(self, feature_range=(1e-10, 1-1e-10), epsilon=1e-10):
+            self.min = self.max = self.range = None
+            self.feature_range, self.epsilon = feature_range, epsilon
+        def fit(self, X):
+            self.min, self.max = X.min(axis=0), X.max(axis=0)
+            self.range = np.maximum(self.max - self.min, self.epsilon)  # Prevent div by zero
+            return self
+        def transform(self, X):
+            X_scaled = (X - self.min) / self.range
+            return np.clip(X_scaled, *self.feature_range)  # Keep away from exact boundaries
+        def fit_transform(self, X):
+            return self.fit(X).transform(X)
+        def inverse_transform(self, X):
+            X_clipped = np.clip(X, *self.feature_range)
+            return X_clipped * self.range + self.min
+    mo.show_code()
+    return (MinMaxScaler,)
+
+
+@app.cell
+def _(MinMaxScaler, mo, y_flat):
+    scaler = MinMaxScaler()
+    y_scaled = scaler.fit_transform(y_flat)
+    mo.show_code()
+    return scaler, y_scaled
+
+
+@app.cell
+def _(mo, y_scaled):
+    print(f'{y_scaled[:5]=}')
+    mo.show_code()
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Now, every entry of `y` is in the proper range, $[0, 1]$. Remember, we flatten and scale `y` (question output) and not `X` (question input) because we want to encode the question output into $\alpha$.""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Finally, we will do `model.fit()` and learn $\alpha$""")
+    return
+
+
+@app.cell
+def _(logistic_encoder, mo, y_scaled):
+    p = 8 # bits of precision for a single sample
+    full_precision = len(y_scaled) * p # bits of precision for alpha / all samples in the dataset
+    alpha = logistic_encoder(y_scaled, p, full_precision)
+    mo.show_code()
+    return alpha, full_precision, p
+
+
+@app.cell
+def _(full_precision, mo):
+    print(f'{full_precision=}')
+    mo.show_code()
+    return
+
+
+@app.cell
+def _(alpha, mo):
+    print(f'{len(str(alpha))=}')
+    mo.show_code()
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Alpha is 2168 decimal digits long and 7200 bits long. Feel free to scroll:""")
+    return
+
+
+@app.cell
+def _(alpha, mo):
+    # todo: show alpha in binary!
+    mo.md(f"```py\nalpha={str(alpha)}\n\n```")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    This single $\alpha$ encodes the entire task -- all 900 individual elements of the question output -— perfectly. This is our one-parameter model in its full glory. From an ML perspecitve, we just did `model.fit()`.
+
+    Time to decode and do `model.predict()`! We must run our decoder 900 times to extract all 900 invididual scalar elements from public eval task 1 of ARC-AGI-2.
+    """
+    )
+    return
+
+
+@app.cell
+def _(alpha, full_precision, logistic_decoder, mo, np, p, y_scaled):
+    y_pred_raw = np.array([logistic_decoder(alpha, full_precision, p, i) for i in range(len(y_scaled))])
+    mo.show_code()
+    return (y_pred_raw,)
+
+
+@app.cell
+def _(mo, y_pred_raw):
+    print(f'{y_pred_raw.shape=}')
+    mo.show_code()
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Now let's reshape `y_pred` and scale it back to `[0, 9]`.""")
+    return
+
+
+@app.cell
+def _(mo, scaler, y_pred_raw):
+    y_pred_unscaled = scaler.inverse_transform(y_pred_raw)
+    y_pred = y_pred_unscaled.reshape(1, 30, 30)
+    mo.show_code()
+    return (y_pred,)
+
+
+@app.cell
+def _(mo, y_pred):
+    print(f'{y_pred.shape=}')
+    mo.show_code()
+    return
+
+
+@app.cell
+def _(mo, y_pred):
+    print(f'{y_pred[:, :5, :5]=}')
+    mo.show_code()
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""Let's plot the results to see how will our prediction did:""")
+    return
+
+
+@app.cell
+def _(ds, plot_arcagi, y_pred):
+    plot_arcagi(ds, "eval", 0, y_pred)
+    return
+
+
+@app.cell
+def _(Focs):
+    Focs 
     return
 
 
@@ -1440,8 +1804,7 @@ def _(mo):
 
 
 @app.cell
-def _(display_fxn, logistic_decoder, mo):
-    mo.md(rf"""{display_fxn(logistic_decoder)}""")
+def _():
     return
 
 
@@ -1573,10 +1936,10 @@ def _(mo):
 
 
 @app.cell
-def _(ds, mo, process_arc_agi):
-    X, y = process_arc_agi(ds)
+def _(mo):
+    # X, y = process_arc_agi(ds)
     mo.show_code()
-    return X, y
+    return
 
 
 @app.cell
@@ -1599,13 +1962,13 @@ def _(mo):
 
 
 @app.cell
-def _(OneParameterModel, X, mo, y):
-    p = 8
-    X_small, y_small = X[:10], y[:10]
-    model = OneParameterModel(p)
-    model.fit(X_small, y_small)
-    mo.show_code()
-    return model, y_small
+def _():
+    # p = 8
+    # X_small, y_small = X[:10], y[:10]
+    # model = OneParameterModel(p)
+    # model.fit(X_small, y_small)
+    # mo.show_code()
+    return
 
 
 @app.cell
@@ -1633,13 +1996,13 @@ def _(mo):
 
 
 @app.cell
-def _(mo, model, np):
-    idx_0 = np.array([0])
-    y_pred = model.predict(idx_0)
-    print(f'{y_pred.shape=}')
-    print(y_pred[0, :5, :5])
-    mo.show_code()
-    return idx_0, y_pred
+def _():
+    # idx_0 = np.array([0])
+    # y_pred = model.predict(idx_0)
+    # print(f'{y_pred.shape=}')
+    # print(y_pred[0, :5, :5])
+    # mo.show_code()
+    return
 
 
 app._unparsable_cell(
