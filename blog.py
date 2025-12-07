@@ -32,7 +32,7 @@ def _(inspect):
     def display_fxn(*fxns):
         fxns_str = '\n'.join([inspect.getsource(fxn) for fxn in fxns])
         return f"```py\n{fxns_str}\n```"
-    return (display_fxn,)
+    return
 
 
 @app.cell(hide_code=True)
@@ -41,7 +41,7 @@ def _(mo):
         r"""
     # How I built a one-parameter model that gets 100% on ARC-AGI-2
 
-    > I built a one-parameter model that gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
+    > I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
     """
     )
     return
@@ -284,15 +284,15 @@ def _(colors, np, plt):
 
         # plot examples
       for j in range(ne):
-        plot_matrix(task['example_inputs'][j], axes[f'Ex.{j+1}_in'], title=f"Ex.{j+1} Input", status='given', w=w, show_nums=show_nums)
+        plot_matrix(task['example_inputs'][j], axes[f'Ex.{j+1}_in'], title=f"Ex.{j+1} Input", status='given', w=w, show_nums=show_nums == True)
         axes[f'Ex.{j+1}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
-        plot_matrix(task['example_outputs'][j], axes[f'Ex.{j+1}_out'], title=f"Ex.{j+1} Output", status='given', w=w, show_nums=show_nums)
+        plot_matrix(task['example_outputs'][j], axes[f'Ex.{j+1}_out'], title=f"Ex.{j+1} Output", status='given', w=w, show_nums=show_nums in [True, 'outputs'])
 
       # plot questions
       for j in range(nq):
-        plot_matrix(task['question_inputs'][j], axes[f'Q.{j+1}_in'], title=f"Q.{j+1} Input", status='given', w=w, show_nums=show_nums)
+        plot_matrix(task['question_inputs'][j], axes[f'Q.{j+1}_in'], title=f"Q.{j+1} Input", status='given', w=w, show_nums=show_nums == True)
         axes[f'Q.{j+1}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
-        plot_matrix(task['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums or predictions is not None)
+        plot_matrix(task['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums in [True, 'outputs'] or predictions is not None)
 
       # plot predictions
       if predictions is not None:
@@ -1356,9 +1356,9 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Now comes the moment of truth. We've built up all this beautiful theory about chaos and topological conjugacy, but can we actually code it up?
+    Now comes the moment of truth. We've built up all this beautiful math about chaos theory and topological conjugacy, but can we actually code it up?
 
-    If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-1 with hundreds of tasks and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it? 
+    If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-2 with hundreds of tasks and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it? 
 
     The answer is simple: we can use an arbitrary precision arithmetic library like [mpmath]([https://github.com/aleaxit/gmpy](https://github.com/mpmath/mpmath)) that can represent numbers with as many bits as we want. Instead of a regular Python float, we represent $\alpha$ as a mpmath float with $np$ bits of precision. We then run the decoder with mpmath operations and convert the final result back to a regular Python float.
 
@@ -1370,21 +1370,29 @@ def _(mo):
     \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
     $$
 
-    truncates $\mathcal{L}^{ip}(\alpha)$ to exactly $p$ bits using $\text{dec}(\text{bin}_p(\cdot))$. It then converts $f_{\alpha, p}(x)$ from a $p$ bit mpmath number to a Python float32. During this conversion, Python copies the first $p$ bits of $f_{\alpha, p}(x)$  and then fills the remaining bits of the Python float32 (bits $p+1$ through $32$) with random meaningless bits (assuming $p<=32$). Since our model only guarantees accuracy for the first $p$ bits, these random bits don't matter.
+    uses $\text{dec}(\text{bin}_p(\cdot))$ to truncate $\mathcal{L}^{ip}(\alpha)$ to exactly $p$ bits and then we convert $f_{\alpha, p}(x)$ from a $p$-bit mpmath number to a Python float32. During this conversion, Python copies the first $p$ bits of $f_{\alpha, p}(x)$  and then fills the remaining bits of the Python float32 (bits $p+1$ through $32$) with random meaningless junk bits (assuming $p<=32$). Since our model only guarantees accuracy for the first $p$ bits, these random bits don't matter.
 
-    However, truncating $\mathcal{L}^{ip}(\alpha)$ to $p$ bits by converting to binary and back is wildly expensive, especially when $\alpha$ contains millions of bits. Fortunately, we can skip the entire $\text{dec}(\text{bin}_p(\cdot))$ step and instead convert $\mathcal{L}^{ip}(\alpha)$ directly to a Python float32. The first $p$ bits of $\mathcal{L}^{ip}(\alpha)$ still get copied correctly and the Python bits $p+1$ through $32$ get filled with the higher-order bits of $\mathcal{L}^{ip}(\alpha)$ instead of random Python bits. Since our prediction only uses the first $p$ bits, these extra bits are irrelevant whether they come from Python or straight from our decoder. Now we can get the correct answer without the expensive $\text{dec}(\text{bin}_p(\cdot))$ operation. Our decoder simplifies to exactly what we promised at the start:
+    However, converting to binary and back is wildly expensive, especially when $\alpha$ contains millions of bits. Fortunately, we can skip the entire $\text{dec}(\text{bin}_p(\cdot))$ step and instead convert $\mathcal{L}^{ip}(\alpha)$ directly to a Python float32. The first $p$ bits of $\mathcal{L}^{ip}(\alpha)$ still get copied correctly and bits $p+1$ through $32$ get filled with the higher-order bits of $\mathcal{L}^{ip}(\alpha)$ instead of random Python bits. Since our prediction only uses the first $p$ bits, these extra bits are irrelevant whether they come from Python or straight from our decoder $\mathcal{L}^{ip}(\alpha)$. Now we can get the correct answer without the expensive $\text{dec}(\text{bin}_p(\cdot))$ operation since the bits $p+1$ through $32$ are disregarded and can come from anywhere. Removing $\text{dec}(\text{bin}_p(\cdot))$, our decoder simplifies to exactly what we promised at the start:
 
     $$
     f_{\alpha, p}(x)
+    =
+    \mathcal{L}^{ip}(\alpha)
     =
     \sin^2 \Big(
         2^{x p} \arcsin^2(\sqrt{\alpha})
     \Big)
     $$
 
-    Usually translating math into code turns beautiful theory into ugly, complicated messes. But surprisingly, leveraging mpmath had the opposite effect and actually made our decoder even simpler. Now let's get to the code!
+    Usually translating math into code turns beautiful theory into ugly, complicated messes. But surprisingly, leveraging mpmath has the opposite effect and actually makes our decoder even simpler. Now let's get to the code!
     """
     )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""First, we need to import our arbitrary-precision math library, mpmath.""")
     return
 
 
@@ -1397,7 +1405,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""First we need some functions to convert from binary to decimal and back""")
+    mo.md(r"""We need some functions to convert from binary to decimal and back""")
     return
 
 
@@ -1460,6 +1468,8 @@ def _(mo):
     We can now implement the logistic encoder
 
     $$
+    \alpha
+    =
     g(p, \mathcal{x})
     =
     \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
@@ -1505,6 +1515,8 @@ def _(mo):
     We compute $\alpha$ in five steps using mpmath with precision set to $np$ bits. Crucially, step 4 produces an mpmath float with the full $np$ bits of precision, which we then transform in step 5 to get our final $np$-bit parameter $\alpha$. Next, we implement the logistic decoder
 
     $$
+    \tilde{x}_i 
+    =
     f_{\alpha, p}(x)
     =
     \sin^2 \Big(
@@ -1551,9 +1563,9 @@ def _(mo):
 
     Take a moment and see if you can spot it.
 
-    The pattern is that each input contains a light-blue matrix, and the output shows that same matrix reflected across a vertical line through the center. In example 1, the light-blue matrix sits on the bottom right. Reflect it across the center, and it lands on the bottom left—which is exactly the cells which appear in the output.
+    The pattern here is that each input contains a light-blue matrix, and the output shows that same matrix reflected across a vertical line through the center. In example 1, the light-blue matrix sits on the bottom right. Reflect it across the center, and it lands on the bottom left—which is exactly the cells which appear in the output.
 
-    Once you see it, the logic is very simple. But discovering this rule from just four examples is genuinely hard. It requires noticing what stays the same (the light-blue matrix), what changes (its position), and the precise nature of that change (vertical reflection). I wouldn't blame an LLM for struggling here. Remember, to an LLM this is just a grid of integers $1-9$. We've just added colors to make it easier for humans to see the pattern. From an LLM's perspective:
+    Once you see it, the pattern is very simple. But discovering this rule from just four examples is genuinely hard. It requires noticing what stays the same (the light-blue matrix), what changes (its position), and the precise nature of that change (vertical reflection). I wouldn't blame an LLM for struggling here. Remember, to an LLM this is just a grid of integers $1-9$. We've just added colors to make it easier for humans to see the pattern. From an LLM's perspective, the outputs are:
     """
     )
     return
@@ -1561,7 +1573,7 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "eval", 0, show_nums=True)
+    plot_arcagi(ds, "eval", 0, show_nums='outputs')
     return
 
 
@@ -1569,7 +1581,7 @@ def _(ds, plot_arcagi):
 def _(mo):
     mo.md(
         r"""
-    Let's build a one-parameter model that learns this exact task, discovering an $\alpha$ that predicts the question output perfectly. Remember, this is training on test as this task is from the ARC-AGI-2 public eval set.
+    Let's build a one-parameter model that learns this exact task, discovering an $\alpha$ that predicts the question output perfectly for the first task of the ARC-AGI-2 public eval set. Remember, this is "training on test" as this task comes from the eval set, not the train set.
 
     To make the one-parameter model work for ARC-AGI-2, we need to make three modifications:
 
@@ -1583,7 +1595,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""First, to implement the supervised learning approach, we make `X` the question input and `y` the question output:""")
+    mo.md(r"""First, we'll implement the supervised learning approach by making `X` the question input and `y` the question output:""")
     return
 
 
@@ -1591,9 +1603,15 @@ def _(mo):
 def _(ds, mo, process_arc_agi):
     X, y = process_arc_agi(ds)
     X, y = X[:1], y[:1]
-    print(f'{X.shape=}, {y.shape=}')
     mo.show_code()
     return X, y
+
+
+@app.cell
+def _(X, mo, y):
+    with mo.redirect_stdout():
+        print(f'{X.shape=}, {y.shape=}')
+    return
 
 
 @app.cell
@@ -1603,14 +1621,16 @@ def _(mo):
 
 
 @app.cell
-def _(X):
+def _(X, mo):
     print(f'{X[:, :5, :5]=}')
+    mo.show_code()
     return
 
 
 @app.cell
-def _(y):
+def _(mo, y):
     print(f'{y[:, :5, :5]=}')
+    mo.show_code()
     return
 
 
@@ -1630,7 +1650,7 @@ def _(mo, y):
 
 @app.cell
 def _(mo):
-    mo.md(r"""The question output `y` starts out as a `30x30` matrix but flattens to 900 scalar elements. This means to encode a single ARC-AGI-2 task, the one-parameter model must encode 900 individual scalar elements into $\alpha$. Each element requires $p$ bits of precision, so a single task alone demands $900p$ bits, not just `p` bits. This cost adds up quickly. To encode all 400 tasks in ARC-AGI-2's eval set into one $\alpha$ requires $400 \cdot 900p=360,000p$ bits. It is quite easy to see why our one-parameter model may require an $\alpha$ with millions of bits. For now, we'll focus on a single task, which only requires $900p$ bits.""")
+    mo.md(r"""The question output `y` starts out as a `30x30` matrix but flattens to 900 scalar elements. This means to encode a single ARC-AGI-2 task, the one-parameter model must encode 900 individual scalar elements into $\alpha$. Since each element requires $p$ bits of precision, a single task demands $900p$ bits, not just `p` bits. This cost adds up quickly. To encode all 400 tasks in ARC-AGI-2's eval set into one $\alpha$ requires $400 \cdot 900p=360,000p$ bits. It is quite easy to see why our one-parameter model may require an $\alpha$ with millions of bits. For now, we'll focus on a single task, which only requires $900p$ bits.""")
     return
 
 
@@ -1781,7 +1801,7 @@ def _(mo, y_pred):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Let's plot the results to see how will our prediction did:""")
+    mo.md(r"""Let's plot the results to see how will our one-parameter model actually did:""")
     return
 
 
@@ -1792,8 +1812,42 @@ def _(ds, plot_arcagi, y_pred):
 
 
 @app.cell
-def _(Focs):
-    Focs 
+def _(mo):
+    mo.md(
+        r"""
+    We've added a column to this plot with the predictions of the one-parameter model on the right. We want to compare the ground truth (Q.1 Output) to the predictions of our one-parameter model (Q.0 Prediction).
+
+    Look at the first row of predictions -- the results are pretty good. The first cell should be 7, but we predict 6.8. The second cell should be 7, and we predict 6.9. The third cell is 9, and we predict 9.0 exactly. Across the entire grid, our predictions hover near the correct values, sometimes hitting them precisely, sometimes off by a small decimal amount. These slight errors come from choosing $p$ with not enough precision. 
+
+
+    This isn't perfect memorization, but it's nearly perfect *compression*. Our one-parameter α\alpha
+    α captured the essential information—900 individual elements—with remarkable fidelity. The slight imprecision comes from the finite precision pp
+    p we chose: with higher pp
+    p, these decimal errors would vanish entirely. What's remarkable is that a single number, no matter how large, can reconstruct an entire grid this accurately. The chaos theory encoding works.
+    """
+    )
+    return
+
+
+@app.cell
+def _(logistic_decoder, logistic_encoder, mo, np, scaler, y_scaled):
+    # encode
+    p2 = 20 # bits of precision for a single sample
+    full_precision2 = len(y_scaled) * p2 # bits of precision for alpha / all samples in the dataset
+    alpha2 = logistic_encoder(y_scaled, p2, full_precision2)
+
+    # decode
+    y_pred_raw2 = np.array([logistic_decoder(alpha2, full_precision2, p2, i) for i in range(len(y_scaled))])
+    y_pred_unscaled2 = scaler.inverse_transform(y_pred_raw2)
+    y_pred2 = y_pred_unscaled2.reshape(1, 30, 30)
+
+    mo.show_code()
+    return (y_pred2,)
+
+
+@app.cell
+def _(ds, plot_arcagi, y_pred2):
+    plot_arcagi(ds, "eval", 0, y_pred2)
     return
 
 
@@ -1815,149 +1869,13 @@ def _(mo):
 
 
 @app.cell
-def _(OneParameterModel, display_fxn, mo):
-    mo.md(rf"""{display_fxn(OneParameterModel)}""")
+def _():
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-    /// details | Can you walk me through what `ScalarModel` does line-by-line?
-
-
-    Let's walk through this big chunk of code line-by-line.
-
-    We initialize the model with the desired precision $p$ and the number of workers for running our decoder in parallel.
-    ```py
-    class OneParameterModel:
-        def __init__(self, precision, workers=8):
-            self.precision = precision # binary precision, not decimal precision, for a single number
-            self.workers = workers
-    ```
-
-    Then we have the `fit` method which implements our encoder $g$.
-    ```py
-        @Timing("fit: ", enabled=VERBOSE)
-        def fit(self, X, y):
-    ```
-
-    Previously we only encoded *unsupervised* datasets $D = (\mathcal{X})$ using $g(\mathcal{X})$. But we also need to be able to encode *supervised* datasets $D = (\mathcal{X}, \mathcal{Y})$ using $g(\mathcal{Y})$. In the supervised setting we encode the labels $g(\mathcal{Y})$ and not the data $g(\mathcal{X})$ because we really care about predicting the output label, not the input data. This is why all of our encoding and decoding will be done on `y` and not `X`. However, if the dataset is *unsupervised* and there is no `y`, we set `y = X` to get around this.
-    ```py
-            # if the dataset is unsupervised, treat the data X like the labels y
-            if y is None: y = X
-    ```
-
-    Next we determine the total precision from `y`, not `X`, which should be $np$ bits where $p$ is the precision we choose and $n$ is the number of elements in $y$:
-    ```py
-            self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
-            self.total_precision = y.size * self.precision # pylint: disable=attribute-defined-outside-init
-    ```
-
-    We scale `y` to be in $[0, 1]$ because our encoder $g$ only works on values in the unit interval.
-    ```py
-            # scale labels to be in [0, 1]
-            self.scaler = MinMaxScaler() # pylint: disable=attribute-defined-outside-init
-            y_scaled = self.scaler.scale(y.flatten())
-    ```
-    Now we actually implement the five steps of our encoder $g$ using `gmpy2` to make sure all of our calculations use the correct precision. Step by step we: compute $\phi^{-1}$ on all labels, convert to binary, concatenate all binary strings, convert to a scalar decimal, and then apply $\phi$.
-    ```py
-            # compute alpha with arbitrary floating-point precision
-            with gmpy2.context(precision=self.total_precision):
-
-                # 1. compute φ^(-1) for all labels
-                phi_inv_decimal_list = phi_inverse(y_scaled)
-                # 2. convert to a binary
-                phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, self.precision)
-                # 3. concatenate all binary strings together
-                phi_inv_binary = ''.join(phi_inv_binary_list)
-                if len(phi_inv_binary) != self.total_precision:
-                    raise ValueError(f"Expected {self.total_precision} binary digits but got {len(phi_inv_binary)}.")
-
-                # 4. convert to a scalar decimal
-                phi_inv_scalar = binary_to_decimal(phi_inv_binary)
-                # 5. apply φ to the scalar
-                self.alpha = phi(phi_inv_scalar) # pylint: disable=attribute-defined-outside-init
-
-                if VERBOSE >= 2: print(f'With {self.precision} digits of binary precision, alpha has {len(str(self.alpha))} digits of decimal precision.')
-                if VERBOSE >= 3: print(f'{self.alpha=}')
-            return self
-    ```
-
-
-    Now the `predict` method implement the decoder $f$. It takes in a list of indices `idxs` that we want to decode.
-    ```py
-        @Timing("predict: ", enabled=VERBOSE)
-        def predict(self, idxs):
-    ```
-    When we defined the encoder $g$ and decoder $f$ functions, they only encoded/decoded scalars -- look at their mathemtical formulations. But what is our labels are vectors or matricies as they are in ARC-AGI-1? To handle this in `fit`, we called `y.flatten()` to flatten the vector or matrix into a long list of scalars. This way it still feels like we are only dealing with a list of scalars. In `predict` we do some fancy indicing to correct for the flattening.
-    ```py
-            y_size = np.array(self.y_shape).prod()
-            full_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten()
-    ```
-    Now with the corrected indicies, `full_idxs`, we can actually run the decoder implemented with the logistic map, not the dyadic map.
-    ```py
-            raw_pred = logistic_decoder(self.total_precision, self.alpha, self.precision, full_idxs)
-    ```
-    Lastly, we undo both the flattening and the unit interval scaling to get our outputted prediction.
-    ```py
-            return self.scaler.unscale(raw_pred).reshape((-1, *self.y_shape))
-    ```
-    """
-    )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-    Our goal is to use `OneParameterModel` for ARC-AGI-1. However, the ARC-AGI-1 dataset consists of matrices of integers $0$ through $9$. So we had to make three key changes to the encoder and decoder in `OneParameterModel`:
-
-    1. **Data scaling.** ARC-AGI-1 uses integers 0-9, but our encoder needs values in [0,1]. We use a standard MinMaxScaler to squeeze the data into the right range.
-    2. **Shape handling.** Our encoder works on datasets with scalar numbers, not matrices. Simple solution: flatten the matrices into long lists during encoding and then reshape back during decoding.
-    3. **Supervised learning.** ARC-AGI-1 is a supervised learning problem with input-output pairs $(X,Y)$, but our encoder can only handle unsupervised datasets $(X)$. We simply encode the outputs $Y$ instead of the inputs $X$ because the outputs $Y$ are what we actually need to predict.
-    """
-    )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-    Let's try it our model out on ARC-AGI-1!
-
-    We will use the public eval set from ARC-AGI-1 which has 400 tasks. Moreover, we can ignore the example input-output pairs and only look at the question inputs-output pairs because we are only actually predictioning the question outputs given the question inputs.
-    """
-    )
-    return
-
-
-@app.cell
-def _(mo):
-    # X, y = process_arc_agi(ds)
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Here `X` contains 400 question inputs and `y` contains 400 question outputs. Each input and output is a 30 by 30 grid (list of lists) of integers between $0$ and $9$.""")
-    return
-
-
-@app.cell
-def _(X, mo, y):
-    with mo.redirect_stdout():
-        print(f'{X.shape=} {y.shape=}')
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Now we are ready to "train" our model and compress our arc-agi-1 dataset into $\alpha$. For simplicity, we will train on the first 10 examples of the ARC-AGI-2 public eval set.""")
+    mo.md(r"""Now we are ready to "train" our model and compress our ARC-AGI-2 dataset into $\alpha$. For simplicity, we will train on the first 10 examples of the ARC-AGI-2 public eval set.""")
     return
 
 
@@ -2021,12 +1939,6 @@ def _(idx_0, model, y_pred, y_small):
 
 
 @app.cell
-def _(ds, idx_0, plot_arcagi, y_pred):
-    plot_arcagi(ds, "eval", idx_0.item(), y_pred)
-    return
-
-
-@app.cell
 def _(OneParameterModel, X, ds, np, plot_arcagi, plt, y):
     def run(idx, p):
         model = OneParameterModel(p)
@@ -2041,247 +1953,6 @@ def _(OneParameterModel, X, ds, np, plot_arcagi, plt, y):
 @app.cell
 def _(run):
     run(0, 6)
-    return
-
-
-@app.cell
-def _():
-    # # import matplotlib.pyplot as plt
-    # # import matplotlib.colors as colors
-    # # import numpy as np
-    # from matplotlib.colors import to_rgb
-
-    # base_colors = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00',
-    #                '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
-    # cmap2 = colors.ListedColormap(base_colors, N=256)
-
-
-    # from matplotlib.colors import to_rgb
-
-    # # def get_text_color(bg_color):
-    # #     """White text on dark bg, black on light bg"""
-    # #     r, g, b = to_rgb(bg_color)
-    # #     brightness = 0.299*r + 0.587*g + 0.114*b
-    # #     return 'white' if brightness < 0.5 else 'black'
-
-    # def add_values_to_plot(ax, matrix, cmap, norm):
-    #     """Add numerical values as text overlay on matrix plot"""
-    #     height, width = matrix.shape
-    #     fontsize = max(5, min(10, 80 / max(height, width)))
-
-    #     for i in range(height):
-    #         for j in range(width):
-    #             value = matrix[i, j]
-
-    #             # Format: show integer without decimal, float with 1 decimal
-    #             if value == int(value):
-    #                 text = f'{int(value)}'
-    #             else:
-    #                 text = f'{value:.1f}'
-
-    #             # Get background color and choose contrasting text color
-    #             cell_color = cmap(norm(value))
-    #             text_color = get_text_color(cell_color)
-
-    #             ax.text(j, i, text,
-    #                    ha='center', va='center',
-    #                    color=text_color,
-    #                    fontsize=fontsize,
-    #                    fontweight='bold')
-
-    # def plot_matrix2(matrix, ax=None, title=None, vmin=None, vmax=None, grid_w=0.8, status=None, show_vals=False):
-    #     if ax is None:
-    #         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-    #         fig.patch.set_facecolor('#444444')
-    #     else:
-    #         fig = ax.get_figure()
-
-    #     if vmin is None:
-    #         vmin = matrix.min()
-    #     if vmax is None:
-    #         vmax = matrix.max()
-
-    #     norm = colors.Normalize(vmin=vmin, vmax=vmax)
-    #     ax.imshow(matrix, cmap=cmap2, norm=norm)
-
-    #     ax.set_xticks([x - 0.5 for x in range(1 + matrix.shape[1])])
-    #     ax.set_yticks([x - 0.5 for x in range(1 + matrix.shape[0])])
-    #     ax.grid(True, which='both', color='#666666', linewidth=grid_w)
-    #     ax.tick_params(axis='both', color='none', length=0)
-    #     ax.set_xticklabels([])
-    #     ax.set_yticklabels([])
-
-    #     if show_vals:
-    #         add_values_to_plot(ax, matrix, cmap2, norm)
-
-    #     if title:
-    #         ax.set_title(f'\n{title}', fontsize=12, color='#dddddd')
-
-    #     if status:
-    #         ax.text(1, 1.15, status[0],
-    #                transform=ax.transAxes,
-    #                ha='right', va='bottom',
-    #                fontsize=10, fontweight='bold',
-    #                color=status[1])
-
-    #     return fig, ax
-
-    # def plot_one2(ax, i, task, ex_or_q, in_or_out, w=0.8, vmin=None, vmax=None, show_vals=False):
-    #     matrix = task[f"{ex_or_q}_{in_or_out}"][i]
-    #     title = f'{ex_or_q.capitalize()} {i} {in_or_out[:-1].capitalize()}'
-
-    #     if ex_or_q == 'question' and in_or_out == 'outputs':
-    #         status = ('? PREDICT', '#FF4136')
-    #     else:
-    #         status = ('✓ GIVEN', '#2ECC40')
-
-    #     plot_matrix2(matrix, ax=ax, title=title, vmin=vmin, vmax=vmax, grid_w=w, status=status, show_vals=show_vals)
-
-    # def display_task2(ds, split, i, size=2.5, w=0.9, vmin=None, vmax=None, show_vals=False):
-    #     task = ds[split][i]
-    #     n_ex = len(task['example_inputs'])
-    #     n_q = len(task['question_inputs'])
-
-    #     # Auto-detect vmin/vmax if not provided
-    #     if vmin is None or vmax is None:
-    #         all_values = []
-
-    #         for j in range(n_ex):
-    #             all_values.extend(task['example_inputs'][j].flatten())
-    #             all_values.extend(task['example_outputs'][j].flatten())
-
-    #         for k in range(n_q):
-    #             all_values.extend(task['question_inputs'][k].flatten())
-    #             if task['question_outputs']:
-    #                 all_values.extend(task['question_outputs'][k].flatten())
-
-    #         if vmin is None:
-    #             vmin = min(all_values)
-    #         if vmax is None:
-    #             vmax = max(all_values)
-
-    #     # Create subplot grid
-    #     total_cols = n_ex + n_q
-    #     fig, axs = plt.subplots(2, total_cols, figsize=(size * total_cols, 2 * size))
-    #     plt.suptitle(f'ARC-AGI-1 {split.capitalize()} Task #{i} (id={task["id"]})',
-    #                  fontsize=16, fontweight='bold', y=1, color='#eeeeee')
-
-    #     # Plot examples
-    #     for j in range(n_ex):
-    #         plot_one2(axs[0, j], j, task, 'example', 'inputs', w, vmin, vmax, show_vals)
-    #         plot_one2(axs[1, j], j, task, 'example', 'outputs', w, vmin, vmax, show_vals)
-
-    #     # Plot questions
-    #     for k in range(n_q):
-    #         plot_one2(axs[0, n_ex + k], k, task, 'question', 'inputs', w, vmin, vmax, show_vals)
-    #         plot_one2(axs[1, n_ex + k], k, task, 'question', 'outputs', w, vmin, vmax, show_vals)
-
-    #     # Add separator line
-    #     axs[1, n_ex].set_xticklabels([])
-    #     axs[1, n_ex].set_yticklabels([])
-    #     axs[1, n_ex] = plt.figure(1).add_subplot(111)
-    #     axs[1, n_ex].set_xlim([0, total_cols])
-    #     axs[1, n_ex].plot([n_ex, n_ex], [0, 1], '-', linewidth=5, color='white')
-    #     axs[1, n_ex].axis("off")
-
-    #     # Style the figure
-    #     fig.patch.set_linewidth(5)
-    #     fig.patch.set_edgecolor('black')
-    #     fig.patch.set_facecolor('#444444')
-    #     plt.tight_layout(h_pad=3.0)
-
-    #     return fig
-    return
-
-
-@app.cell
-def _():
-    # x_small, y_small = -1, -1
-    # y_pred_plot = y_pred.squeeze()[:x_small, :y_small]
-    # plot_matrix2(y_pred_plot, title="y_pred", vmin=0, vmax=9, show_vals=True)
-    return
-
-
-@app.cell
-def _():
-    # y_plot = y[X_idx].squeeze()[:x_small, :y_small]
-    # plot_matrix2(y_plot, title="y", vmin=0, vmax=9, show_vals=True)
-    return
-
-
-@app.cell
-def _():
-    # import plotly.graph_objects as go
-    # from plotly.subplots import make_subplots
-
-    # COLORS = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00',
-    #           '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
-
-    # def get_text_color(val):
-    #     r, g, b = int(COLORS[val][1:3], 16), int(COLORS[val][3:5], 16), int(COLORS[val][5:7], 16)
-    #     return 'white' if (0.299*r + 0.587*g + 0.114*b)/255 < 0.5 else 'black'
-
-    # def plot_matrix(mat, fig=None, row=None, col=None, title=None, show_nums=False):
-    #     mat = np.array(mat)
-    #     h, w = mat.shape
-
-    #     # Create cells and hovertext with numerical
-    #     cells, annotations, hover_x, hover_y, hover_text = [], [], [], [], []
-    #     for i in range(h):
-    #         for j in range(w):
-    #             v = mat[i, j]
-    #             cells.append(dict(type='rect', x0=j, x1=j+1, y0=h-i-1, y1=h-i, fillcolor=COLORS[v], line=dict(color='#666', width=1)))
-    #             hover_x.append(j+0.5)
-    #             hover_y.append(h-i-0.5)
-    #             hover_text.append(f'Value: {v}')
-    #             if show_nums: annotations.append(dict(x=j+0.5, y=h-i-0.5, text=str(v), showarrow=False, font=dict(color=get_text_color(v), size=10)))
-    
-    #     # Annotate plot with example number "Ex 3." and matrix dimensions "(4,4)"
-    #     xref = 'x domain' if col == 1 else f'x{col} domain'
-    #     yref = 'y domain' if row == 1 else f'y{row} domain'
-    #     annotations.append(dict(xref=xref, yref=yref, x=0, y=1.05, text=title, xanchor='left', showarrow=False, font=dict(color='#eee', size=24)))
-    #     annotations.append(dict(xref=xref, yref=yref, x=1, y=1.05, text=f'{h}x{w}', xanchor='right', showarrow=False, font=dict(color='#aaa', size=24)))
-
-    #     # Create fig if needed
-    #     if not fig:
-    #         fig = go.Figure()
-    #     fig.update_layout(xaxis=dict(range=[0, w], showgrid=False, visible=False), yaxis=dict(range=[0, h], showgrid=False, visible=False),
-    #                      width=w*50, height=h*50, margin=dict(l=20, r=20, t=40, b=20), paper_bgcolor='#444', plot_bgcolor='#444')
-    
-    #     # Add cells, annotations, and hovertext to figure
-    #     for cell in cells: fig.add_shape(cell, row=row, col=col)
-    #     for ann in annotations: fig.add_annotation(ann, row=row, col=col)
-    #     fig.add_trace(go.Scatter(x=hover_x, y=hover_y, mode='markers', marker=dict(size=20, opacity=0),
-    #                             text=hover_text, hovertemplate='%{text}<extra></extra>',
-    #                             hoverlabel=dict(bgcolor='rgba(0,0,0,0)', font=dict(color='white')),
-    #                             showlegend=False), row=row, col=col)
-    
-    #     if row and col:
-    #         fig.update_xaxes(range=[0, w], showgrid=False, visible=False, row=row, col=col)
-    #         fig.update_yaxes(range=[0, h], showgrid=False, visible=False, row=row, col=col)
-    
-    #     return fig
-
-    # def plot_examples(examples, fig, show_nums=False):
-    #     inputs, outputs = examples['inputs'], examples['outputs']
-    #     for i in range(len(inputs)):
-    #         plot_matrix(inputs[i], fig, row=1, col=i+1, title=f'Ex.{i+1} Input', show_nums=show_nums)
-    #         plot_matrix(outputs[i], fig, row=2, col=i+1, title=f'Ex.{i+1} Output', show_nums=show_nums)
-    #         break
-    #     return fig
-    return
-
-
-@app.cell
-def _():
-    # fig = make_subplots(rows=2, cols=1, vertical_spacing=0.08)
-    # plot_examples(examples, fig)
-    return
-
-
-@app.cell
-def _():
-    # plot_matrix(matrix, title='Ex.1 Input', show_nums=False)
     return
 
 
@@ -2442,7 +2113,7 @@ def _(mo):
 
     A couple of takeaways:
 
-    **Parameter count is a meaningless proxy for intelligence.** A billion-parameter model that genuinely solves ARC-AGI-1 is infinitely more impressive than our one-parameter lookup table. Don't automatically assume that a bigger model is a smarter model.
+    **Parameter count is a meaningless proxy for intelligence.** A billion-parameter model that genuinely solves ARC-AGI-2 is infinitely more impressive than our one-parameter lookup table. Don't automatically assume that a bigger model is a smarter model.
 
     **Data leakage is a silent epidemic.** Top labs quietly train on their test sets. Our one-parameter model takes this to the extreme. By training on the test set, we were able to accomplish absurd things. and makes the absurdity obvious. If you're going to measure progress, measure it honestly—otherwise the numbers mean nothing.
 
@@ -2467,7 +2138,7 @@ def _(mo):
 
 
 
-    So there we have it, a one parameter model that gets a perfect score on ARC-AGI-1! But we didn't learn anything in the process. There is no generalization.
+    So there we have it, a one parameter model that gets a perfect score on ARC-AGI-2! But we didn't learn anything in the process. There is no generalization.
 
     We can actually encode any dataset this way:
 
@@ -2478,7 +2149,7 @@ def _(mo):
 
     Rather than framing this as learning, this technique is better viewed theough the lense of compression. (Which is probably the best way to view iuntelligence anyway.) As George Hotz has drilled, inteligence is compression. The compression competition for wikipedia. Komlogrov complexity...
 
-    ARC-AGI-1 public eval contains 400 tasks, each with a question input and question output consisting of a gridWe can count this t The 400 questions from ARC-AGI-1 public eval are grids with values between 0 and 9. They take up a total of XX bits. but alpha takes up XX bits. Where do these extra bits come from? 1. We need extra bits to be able to map the quesiton input to the quesiton output, to do the mapping itself requires storing info. 2. We can increase/decrease # of bits with paramater p.
+    ARC-AGI-2 public eval contains 400 tasks, each with a question input and question output consisting of a gridWe can count this t The 400 questions from ARC-AGI-2 public eval are grids with values between 0 and 9. They take up a total of XX bits. but alpha takes up XX bits. Where do these extra bits come from? 1. We need extra bits to be able to map the quesiton input to the quesiton output, to do the mapping itself requires storing info. 2. We can increase/decrease # of bits with paramater p.
 
     To all the complexity theoretists out there, this is cheating because we ignored the assumpution of operating in a $\log_2 \omega$-bit computer where $\omega$ is the word size. This is the fatal crime.
 
