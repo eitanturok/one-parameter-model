@@ -21,8 +21,6 @@ def _():
     import matplotlib.pyplot as plt
     from matplotlib import colors
 
-    # from src.one_parameter_model import OneParameterModel
-    # from src.one_parameter_model.model import phi, phi_inverse, decimal_to_binary, binary_to_decimal, logistic_decoder
     from src.one_parameter_model.data import local_arc_agi, process_arc_agi
     return colors, inspect, json, local_arc_agi, np, plt, process_arc_agi
 
@@ -254,9 +252,7 @@ def _(mo):
         r"""
     Here, we see several grids, each with a bunch of colored cells. Most cells are black (0), some are red (2), and some are light blue (8). Each column shows an input-output pair.
 
-    The first three columns are example input-output pairs that demonstrate the pattern. The fourth column, separated by the vertical black line, is the actual question: given this new input, what should the output be?
-
-    Given the 3 examples and the question input, the challenge is for the model to predict the question output. Here we show the question output as a source of ground truth, but the model is never given it.
+    The first three columns are example input-output pairs that demonstrate the pattern. The fourth column, separated by the vertical black line, is the actual question: given this new input, what should the output be? Here we show the question output as a source of ground truth, but the model is never given it.
 
     **Now, how do you solve this specific task?**
 
@@ -1888,7 +1884,7 @@ def _(alpha, alpha2, ds, p, p2, plot_prediction, y_pred, y_pred2):
 
 @app.cell
 def _(mo):
-    mo.md(r"""When $p=14$, we get every prediction perfectly correct. However, """)
+    mo.md(r"""When $p=14$, we get every prediction perfectly correct. However,""")
     return
 
 
@@ -2146,34 +2142,6 @@ def _(mo):
 
 
     What I've really done here is use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. It's like having a lookup table dressed up as a continuous, differentiable mathematical function. There is no learning or generalization. It is pure memorization with trigonometry and a few extra steps. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating.
-
-
-
-
-
-
-
-    So there we have it, a one parameter model that gets a perfect score on ARC-AGI-2! But we didn't learn anything in the process. There is no generalization.
-
-    We can actually encode any dataset this way:
-
-    * the elehpant
-    * ARC-AGI-2
-
-    we are totally overfitting.
-
-    Rather than framing this as learning, this technique is better viewed theough the lense of compression. (Which is probably the best way to view iuntelligence anyway.) As George Hotz has drilled, inteligence is compression. The compression competition for wikipedia. Komlogrov complexity...
-
-    ARC-AGI-2 public eval contains 400 tasks, each with a question input and question output consisting of a gridWe can count this t The 400 questions from ARC-AGI-2 public eval are grids with values between 0 and 9. They take up a total of XX bits. but alpha takes up XX bits. Where do these extra bits come from? 1. We need extra bits to be able to map the quesiton input to the quesiton output, to do the mapping itself requires storing info. 2. We can increase/decrease # of bits with paramater p.
-
-    To all the complexity theoretists out there, this is cheating because we ignored the assumpution of operating in a $\log_2 \omega$-bit computer where $\omega$ is the word size. This is the fatal crime.
-
-    To all the deep learning theorists out there, yes our decoder contains $\sin$ which means it is part of an infintely wide hypothesis class and can represent anything...? This allows for our infinite capacity for expressiveness.
-
-
-    The big take away is that parameter count is *at best* a proxy for intelligence and should not be taken as an actual measure of inteliggence. Just like
-
-    Prof Albert Gu.'s paper used a general purpose compression algorithm on this. Which is an actual valid solution that does not train on the questions set.
     """
     )
     return
