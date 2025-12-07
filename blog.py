@@ -186,7 +186,7 @@ def _(colors, np, plt):
         for i in range(len(matrix)):
           for j in range(len(matrix[0])):
             val = matrix[i, j]
-            txt = f'{int(val)}' if val == int(val) else f'{val:.1f}'
+            txt = f'{int(val)}' if val == int(val) else f'{val:.2f}'
             ax.text(j, i, txt, ha='center', va='center', color='#ffffff', fontsize=8)
 
       if title: ax.text(0, 1.02, title, transform=ax.transAxes, ha='left', va='bottom', fontsize=11, color='#000000', clip_on=False)
@@ -220,7 +220,7 @@ def _(colors, np, plt):
         pred_ax.axis('off')
         for k, pred in enumerate(predictions):
           inset = pred_ax.inset_axes([0, k/n_pred, 1, 1/n_pred])
-          plot_matrix(pred, inset, title=f"Q.{k} Prediction", w=w, show_nums=True)
+          plot_matrix(pred, inset, title=f"Q.{k+1} Prediction", w=w, show_nums=True)
 
       if ne > 0 and nq > 0: fig.add_artist(plt.Line2D([ne/(ne+nq+(1 if n_pred else 0)), ne/(ne+nq+(1 if n_pred else 0))], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
       if nq > 0 and n_pred > 0: fig.add_artist(plt.Line2D([(ne+nq)/(ne+nq+1), (ne+nq)/(ne+nq+1)], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
@@ -233,7 +233,7 @@ def _(colors, np, plt):
       fig.patch.set_facecolor('#eeeeee')
       plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
       return fig
-    return (plot_arcagi,)
+    return plot_arcagi, plot_matrix
 
 
 @app.cell
@@ -1333,6 +1333,7 @@ def _(mo, np):
 @app.cell
 def _(dyadic_map, mo, np):
     def decimal_to_binary(x_decimal:np.ndarray|float|int|list|tuple, precision:int):
+        print(f'{precision=}')
         # converts a 1D sequence from decimal to binary, assume all values in [0, 1]
         if isinstance(x_decimal, (float, int)): x_decimal = np.array([x_decimal], dtype=float)
         elif isinstance(x_decimal, (list, tuple)): x_decimal = np.array(x_decimal, dtype=float)
@@ -1362,8 +1363,10 @@ def _(mo):
 
 
 @app.cell
-def _(Pi, Sin, mo):
-    def phi(x): return Sin(2 * Pi * x) ** 2
+def _(Pi, Sin, mo, mp):
+    def phi(x):
+        print(f'phi precision={mp.prec}')
+        return Sin(2 * Pi * x) ** 2
     mo.show_code()
     return (phi,)
 
@@ -1523,6 +1526,13 @@ def _(ds, mo, process_arc_agi):
 
 @app.cell
 def _(X, mo, y):
+    print(f'{X.shape=}, {y.shape=}')
+    mo.show_code()
+    return
+
+
+@app.cell
+def _(X, mo, y):
     with mo.redirect_stdout():
         print(f'{X.shape=}, {y.shape=}')
     return
@@ -1542,9 +1552,23 @@ def _(X, mo):
 
 
 @app.cell
+def _(X, mo):
+    with mo.redirect_stdout():
+        print(f'{X[:, :5, :5]=}')
+    return
+
+
+@app.cell
 def _(mo, y):
     print(f'{y[:, :5, :5]=}')
     mo.show_code()
+    return
+
+
+@app.cell
+def _(mo, y):
+    with mo.redirect_stdout():
+        print(f'{y[:, :5, :5]=}')
     return
 
 
@@ -1560,6 +1584,13 @@ def _(mo, y):
     print(f'{y_flat.shape=}')
     mo.show_code()
     return (y_flat,)
+
+
+@app.cell
+def _(mo, y_flat):
+    with mo.redirect_stdout():
+        print(f'{y_flat.shape=}')
+    return
 
 
 @app.cell
@@ -1605,9 +1636,30 @@ def _(MinMaxScaler, mo, y_flat):
 
 
 @app.cell
+def _(mo, scaler):
+    print(f'{scaler.range=}')
+    mo.show_code()
+    return
+
+
+@app.cell
+def _(mo, scaler):
+    with mo.redirect_stdout():
+        print(f'{scaler.range=}')
+    return
+
+
+@app.cell
 def _(mo, y_scaled):
     print(f'{y_scaled[:5]=}')
     mo.show_code()
+    return
+
+
+@app.cell
+def _(mo, y_scaled):
+    with mo.redirect_stdout():
+        print(f'{y_scaled[:5]=}')
     return
 
 
@@ -1619,13 +1671,13 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Finally, we will do `model.fit()` and learn $\alpha$""")
+    mo.md(r"""We will encode each element of the dataset with $p=7$ bits of precision to learn $\alpha$.""")
     return
 
 
 @app.cell
 def _(logistic_encoder, mo, y_scaled):
-    p = 8 # bits of precision for a single sample
+    p = 7 # bits of precision for a single sample
     full_precision = len(y_scaled) * p # bits of precision for alpha / all samples in the dataset
     alpha = logistic_encoder(y_scaled, p, full_precision)
     mo.show_code()
@@ -1640,6 +1692,13 @@ def _(full_precision, mo):
 
 
 @app.cell
+def _(full_precision, mo):
+    with mo.redirect_stdout():
+        print(f'{full_precision=}')
+    return
+
+
+@app.cell
 def _(alpha, mo):
     print(f'{len(str(alpha))=}')
     mo.show_code()
@@ -1647,8 +1706,15 @@ def _(alpha, mo):
 
 
 @app.cell
+def _(alpha, mo):
+    with mo.redirect_stdout():
+        print(f'{len(str(alpha))=}')
+    return
+
+
+@app.cell
 def _(mo):
-    mo.md(r"""Alpha is 2168 decimal digits long and 7200 bits long. Feel free to scroll:""")
+    mo.md(r"""Alpha is $1897$ decimal digits long and $900 \cdot 7 = 6300$ bits long. Feel free to scroll:""")
     return
 
 
@@ -1686,6 +1752,13 @@ def _(mo, y_pred_raw):
 
 
 @app.cell
+def _(mo, y_pred_raw):
+    with mo.redirect_stdout():
+        print(f'{y_pred_raw.shape=}')
+    return
+
+
+@app.cell
 def _(mo):
     mo.md(r"""Now let's reshape `y_pred` and scale it back to `[0, 9]`.""")
     return
@@ -1708,20 +1781,70 @@ def _(mo, y_pred):
 
 @app.cell
 def _(mo, y_pred):
+    with mo.redirect_stdout():
+        print(f'{y_pred.shape=}')
+    return
+
+
+@app.cell
+def _(mo, y_pred):
     print(f'{y_pred[:, :5, :5]=}')
     mo.show_code()
     return
 
 
 @app.cell
-def _(mo):
-    mo.md(r"""Let's plot the results to see how will our one-parameter model actually did:""")
+def _(mo, y_pred):
+    with mo.redirect_stdout():
+        print(f'{y_pred[:, :5, :5]=}')
     return
 
 
 @app.cell
-def _(ds, plot_arcagi, y_pred):
-    plot_arcagi(ds, "eval", 0, y_pred)
+def _(mo):
+    mo.md(r"""Let's plot the results to see how well our one-parameter model actually did:""")
+    return
+
+
+@app.cell
+def _(np, plot_matrix, plt):
+    def plot_prediction(ds, split, i, predictions=None, precisions=None, alpha_n_digits=None, size=2.5, w=0.9, show_nums=False):
+      task = ds[split][i]
+      nq = len(task['question_inputs'])
+      n_pred = len(predictions) if predictions is not None else 0
+      mosaic = [[f'Q.{j+1}_out' for j in range(nq)] + [f'pred_{k}' for k in range(n_pred)]]
+      fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(nq+n_pred), 2*size))
+      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Task #{i} (id={task["id"]})', fontsize=18, fontweight='bold', y=0.98)
+  
+      for j in range(nq):
+        plot_matrix(task['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums in [True, 'outputs'] or n_pred > 0)
+  
+      if n_pred:
+        if precisions is None: precisions = [None]*n_pred
+        if alpha_n_digits is None: alpha_n_digits = [None]*n_pred
+        for k in range(n_pred):
+          pred = np.array(predictions[k])[:len(task['question_outputs'][0]), :len(task['question_outputs'][0][0])]
+          title = "Q.1 Prediction"
+          if precisions[k] is not None: title = f"Precision={precisions[k]}\n{title}"
+          if alpha_n_digits[k] is not None: title = f"len(α)={alpha_n_digits[k]} digits\n{title}"
+          plot_matrix(pred, axes[f'pred_{k}'], title=title, w=w, show_nums=True)
+        fig.add_artist(plt.Line2D([nq/(nq+n_pred), nq/(nq+n_pred)], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
+        fig.text(nq/(2*(nq+n_pred)), 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
+        fig.text((nq+n_pred/2)/(nq+n_pred), 0.91, 'Predictions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
+      else:
+        fig.text(0.5, 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
+  
+      fig.patch.set_linewidth(5)
+      fig.patch.set_edgecolor('#333333')
+      fig.patch.set_facecolor('#eeeeee')
+      plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
+      return fig
+    return (plot_prediction,)
+
+
+@app.cell
+def _(alpha, ds, p, plot_prediction, y_pred):
+    plot_prediction(ds, "eval", 0, [y_pred.squeeze()], [p], [len(str(alpha))])
     return
 
 
@@ -1729,15 +1852,13 @@ def _(ds, plot_arcagi, y_pred):
 def _(mo):
     mo.md(
         r"""
-    We've added a column to this plot with the predictions of the one-parameter model on the right. We want to compare the ground truth (Q.1 Output) to the predictions of our one-parameter model (Q.0 Prediction).
+    The left column shows the ground truth (correct output), while the right column displays our one-parameter model's prediction. We don't display the examples or question input here.
 
-    Look at the first row of predictions -- the results are pretty good. The first cell should be 7, but we predict 6.8. The second cell should be 7, and we predict 6.9. The third cell is 9, and we predict 9.0 exactly. Across the entire grid, our predictions hover near the correct values, sometimes hitting them precisely, sometimes off by a small decimal amount. These slight errors come from choosing $p$ with not enough precision. 
+    Look at the first row.  The correct value is 7, and we predict 6.69. The next cell should be 7, and we predict 6.72. The third cell is 9, and we predict 8.98 exactly. Across the entire grid, our predictions hover near the correct values, sometimes hitting them precisely, sometimes off by a small decimal amount. We adjust the colors to reflect the magnitude of each error: larger deviations from the ground truth produce larger differences in color.
 
+    These imprecisions stem from our choice of precision parameter $p$. Recall, the encoder stores each element as a $p$-bit number and discards all information after $p$ bits. This truncation introduces a quantization error of up to $\frac{\pi R}{2^{p-1}} = 0.44$ where $p=7$ is the precision and $R=9$ is the range of the MinMaxScaler. This error isn't a failure or a bug, but rather an unavoidable consequence of finite-precision encoding.
 
-    This isn't perfect memorization, but it's nearly perfect *compression*. Our one-parameter α\alpha
-    α captured the essential information—900 individual elements—with remarkable fidelity. The slight imprecision comes from the finite precision pp
-    p we chose: with higher pp
-    p, these decimal errors would vanish entirely. What's remarkable is that a single number, no matter how large, can reconstruct an entire grid this accurately. The chaos theory encoding works.
+    Increasing $p$ would reduce these error. Let's test this with $p=14$.
     """
     )
     return
@@ -1746,7 +1867,7 @@ def _(mo):
 @app.cell
 def _(logistic_decoder, logistic_encoder, mo, np, scaler, y_scaled):
     # encode
-    p2 = 20 # bits of precision for a single sample
+    p2 = 14 # bits of precision for a single sample
     full_precision2 = len(y_scaled) * p2 # bits of precision for alpha / all samples in the dataset
     alpha2 = logistic_encoder(y_scaled, p2, full_precision2)
 
@@ -1756,12 +1877,18 @@ def _(logistic_decoder, logistic_encoder, mo, np, scaler, y_scaled):
     y_pred2 = y_pred_unscaled2.reshape(1, 30, 30)
 
     mo.show_code()
-    return (y_pred2,)
+    return alpha2, p2, y_pred2
 
 
 @app.cell
-def _(ds, plot_arcagi, y_pred2):
-    plot_arcagi(ds, "eval", 0, y_pred2)
+def _(alpha, alpha2, ds, p, p2, plot_prediction, y_pred, y_pred2):
+    plot_prediction(ds, "eval", 0, [y_pred.squeeze(), y_pred2.squeeze()], [p, p2], [len(str(alpha)), len(str(alpha2))])
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""When $p=14$, we get every prediction perfectly correct. However, """)
     return
 
 
@@ -1896,36 +2023,6 @@ def _(ds, idx_slider, y_pred):
 
 
     matrix = examples['inputs'][0]
-    return
-
-
-@app.cell
-def _():
-    # def display_numbers(ax, matrix, cmap, norm):
-    #     pass
-
-    # def plot_matrix(matrix, ax=None, title=None, vmin=None, vmax=None, grid_w=0.8, status=None, show_nums=False):
-    #     pass
-
-    # def plot_examples():
-    #     pass
-
-    # def plot_questions():
-    #     pass
-
-    # def plot_predictions():
-    #     pass
-
-    # def plot_task(examples, questions, predictions=None, metadata=None):
-    #     pass
-
-    # def display_arcagi(ds):
-    #     pass
-    return
-
-
-@app.cell
-def _():
     return
 
 
