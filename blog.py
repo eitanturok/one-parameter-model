@@ -286,8 +286,9 @@ def _(colors, np, plt):
             val = matrix[i, j]
             txt = f'{int(val)}' if val == int(val) else f'{val:.1f}'
             ax.text(j, i, txt, ha='center', va='center', color='#ffffff', fontsize=8)
+
       if title: ax.text(0, 1.02, title, transform=ax.transAxes, ha='left', va='bottom', fontsize=11, color='#000000', clip_on=False)
-      ax.text(1, 1.02, f"({len(matrix)}x{len(matrix[0])})", transform=ax.transAxes, ha='right', va='bottom', fontsize=11, color='#000000')
+      # ax.text(1+offset, 1.02, f"({len(matrix)}x{len(matrix[0])})", transform=ax.transAxes, ha='right', va='bottom', fontsize=11, color='#000000')
 
     def plot_arcagi(ds, split, i, predictions=None, size=2.5, w=0.9):
       task = ds[split][i]
@@ -337,18 +338,6 @@ def _(colors, np, plt):
 def _(local_arc_agi):
     ds = local_arc_agi("public/data/ARC-AGI-2")
     return (ds,)
-
-
-@app.cell
-def _(y_pred):
-    y_pred[0].shape
-    return
-
-
-@app.cell
-def _(ds, plot_arcagi, y_pred):
-    plot_arcagi(ds, "eval", 0, y_pred)
-    return
 
 
 @app.cell
@@ -1386,38 +1375,31 @@ def _(mo):
         r"""
     Now comes the moment of truth. We've built up all this beautiful theory about chaos and topological conjugacy, but can we actually code it up?
 
-    If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. This far exceeds the $32$ or $64$ bits that standard computers can handle. How do we even represent $\alpha$ numerically on a computer?
+    If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-1 with hundreds of tasks and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it? 
 
-    Simple: we can use an arbitrary precision arithmetic library like [gmpy2](https://github.com/aleaxit/gmpy) to handle numbers with any precision we want. Instead of representing $\alpha$ as a regular Python float, we can just represent it as an gmpy2 float with $np$ bits.
+    The answer is simple: we can use an arbitrary precision arithmetic library like [mpmath]([https://github.com/aleaxit/gmpy](https://github.com/mpmath/mpmath)) that can represent numbers with as many bits as we want. Instead of a regular Python float, we represent $\alpha$ as a mpmath float with $np$ bits of precision. We then run the decoder with mpmath operations and convert the final result back to a regular Python float.
 
-    But gmpy2 does more than just let us represent impossibly large numbers. It also simplifies our decoder equation
+    But mpmath gives us another gift: it actually simplifies our decoder. The decoder 
 
     $$
-    \begin{align*}
-    f_{\alpha,p}(i)
-    & :=
+    f_{\alpha, p}(x)
+    =
     \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
+    $$
+
+    truncates $\mathcal{L}^{ip}(\alpha)$ to exactly $p$ bits using $\text{dec}(\text{bin}_p(\cdot))$. It then converts $f_{\alpha, p}(x)$ from a $p$ bit mpmath number to a Python float32. During this conversion, Python copies the first $p$ bits of $f_{\alpha, p}(x)$  and then fills the remaining bits of the Python float32 (bits $p+1$ through $32$) with random meaningless bits (assuming $p<=32$). Since our model only guarantees accuracy for the first $p$ bits, these random bits don't matter.
+
+    However, truncating $\mathcal{L}^{ip}(\alpha)$ to $p$ bits by converting to binary and back is wildly expensive, especially when $\alpha$ contains millions of bits. Fortunately, we can skip the entire $\text{dec}(\text{bin}_p(\cdot))$ step and instead convert $\mathcal{L}^{ip}(\alpha)$ directly to a Python float32. The first $p$ bits of $\mathcal{L}^{ip}(\alpha)$ still get copied correctly and the Python bits $p+1$ through $32$ get filled with the higher-order bits of $\mathcal{L}^{ip}(\alpha)$ instead of random Python bits. Since our prediction only uses the first $p$ bits, these extra bits are irrelevant whether they come from Python or straight from our decoder. Now we can get the correct answer without the expensive $\text{dec}(\text{bin}_p(\cdot))$ operation. Our decoder simplifies to exactly what we promised at the start:
+
+    $$
+    f_{\alpha, p}(x)
     =
-    \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big) \Big) \Big)
-    \end{align*}
+    \sin^2 \Big(
+        2^{x p} \arcsin^2(\sqrt{\alpha})
+    \Big)
     $$
 
-    In our code, we can set gmpy2's working precision to $np$ bits when we compute $\mathcal{L}^{ip}(\alpha)$. Then we simply change the precision to $p$ bits, and gmpy2 automatically gives us just the first $p$ bits we care about. With `gmpy2`, there is no need to explicitly convert $\mathcal{L}^{ip}(\alpha)$ to binary, extract the first $p$ bits, and then convert it back to decimal -- this is automatically taken care of for us. Therefore our decoder becomes even simpler:
-
-    $$
-    \begin{align*}
-    f_{\alpha,p}(i)
-    &=
-    \mathcal{L}^{ip}(\alpha)
-    =
-    \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big)
-    \tag{5}
-    \end{align*}
-    $$
-
-    Usually translating elegant math equations into code turns beautiful theory into ugly, complicated messes—but surprisingly, leveraging gmpy2 had the opposite effect and actually made our decoder even simpler.
-
-    In code our logistic decoder is:
+    Usually translating math into code turns beautiful theory into ugly, complicated messes. But surprisingly, leveraging mpmath had the opposite effect and actually made our decoder even simpler.
     """
     )
     return
@@ -1584,7 +1566,7 @@ def _(mo):
         r"""
     Let's try it our model out on ARC-AGI-1!
 
-    We will use the public eval set from ARC-AGI-1 which has 400 tasks. We can ignore the example input-output pairs and only look at the question inputs-output pairs because we are only actually predictioning the question outputs given the question inputs.
+    We will use the public eval set from ARC-AGI-1 which has 400 tasks. Moreover, we can ignore the example input-output pairs and only look at the question inputs-output pairs because we are only actually predictioning the question outputs given the question inputs.
     """
     )
     return
@@ -1593,14 +1575,13 @@ def _(mo):
 @app.cell
 def _(ds, mo, process_arc_agi):
     X, y = process_arc_agi(ds)
-    X, y = X[:10], y[:10]
     mo.show_code()
     return X, y
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""`X` contains 400 question inputs and `y` contains 400 question outputs. Each input and output is a 30 by 30 grid (list of lists) of integers between $0$ and $9$.""")
+    mo.md(r"""Here `X` contains 400 question inputs and `y` contains 400 question outputs. Each input and output is a 30 by 30 grid (list of lists) of integers between $0$ and $9$.""")
     return
 
 
@@ -1613,17 +1594,18 @@ def _(X, mo, y):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Now we are ready to "train" our model and compress our arc-agi-1 dataset into $\alpha$. For simplicity, we will train on the first 5 examples of arc-agi.""")
+    mo.md(r"""Now we are ready to "train" our model and compress our arc-agi-1 dataset into $\alpha$. For simplicity, we will train on the first 10 examples of the ARC-AGI-2 public eval set.""")
     return
 
 
 @app.cell
 def _(OneParameterModel, X, mo, y):
-    p = 6
+    p = 8
+    X_small, y_small = X[:10], y[:10]
     model = OneParameterModel(p)
-    model.fit(X, y)
+    model.fit(X_small, y_small)
     mo.show_code()
-    return (model,)
+    return model, y_small
 
 
 @app.cell
@@ -1634,20 +1616,68 @@ def _(mo, model):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Within a couple of seconds, we have learned $\alpha$! This wonderful, magical scalar number is the key to getting a perfect score on ARC-AGI-1. Watch:""")
+    mo.md(r"""Within a couple of seconds, we have learned $\alpha$! This wonderful, magical scalar number is the key to getting a perfect score on ARC-AGI-2. Now let's see if we can correctly predict the first question output from the eval set. Here what this look like:""")
     return
 
 
 @app.cell
-def _(model, np):
-    X_idx = np.array([0])
-    y_pred = model.predict(X_idx)
-    return X_idx, y_pred
+def _(ds, plot_arcagi):
+    plot_arcagi(ds, "eval", 0)
+    return
 
 
 @app.cell
-def _(X_idx, model, y, y_pred):
-    model.verify(y_pred, y[X_idx])
+def _(mo):
+    mo.md(r"""This looks like a crazy hard task. I'm not even sure what the pattern is here. But we can use to get it right.""")
+    return
+
+
+@app.cell
+def _(mo, model, np):
+    idx_0 = np.array([0])
+    y_pred = model.predict(idx_0)
+    print(f'{y_pred.shape=}')
+    print(y_pred[0, :5, :5])
+    mo.show_code()
+    return idx_0, y_pred
+
+
+app._unparsable_cell(
+    r"""
+    We outputted `y_pred`, a 30x30 matrix that should output!
+    We confirm that our errors are within the theoreitcal error bound 
+    """,
+    name="_"
+)
+
+
+@app.cell
+def _(idx_0, model, y_pred, y_small):
+    model.verify(y_pred, y_small[idx_0])
+    return
+
+
+@app.cell
+def _(ds, idx_0, plot_arcagi, y_pred):
+    plot_arcagi(ds, "eval", idx_0.item(), y_pred)
+    return
+
+
+@app.cell
+def _(OneParameterModel, X, ds, np, plot_arcagi, plt, y):
+    def run(idx, p):
+        model = OneParameterModel(p)
+        model.fit(X, y)
+        y_pred = model.predict(np.array([idx]))
+        model.verify(y_pred, y[np.array([idx])])
+        plot_arcagi(ds, "eval", idx, y_pred)
+        plt.show()
+    return (run,)
+
+
+@app.cell
+def _(run):
+    run(0, 6)
     return
 
 
