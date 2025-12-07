@@ -63,7 +63,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    In July 2025, Sapient Intelligence released their [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734v1) (HRM) and the world went crazy. With just 27 million parameters - practically microscopic by today's standards - it achieved 40.3% on [ARC-AGI-1](https://arcprize.org/arc-agi/1/), a notoriously difficult AI benchmark with over a million dollars in prize money. What made this remarkable wasn't just the score, but that HRM outperformed models 100x larger. In October came the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871), obliterating expectations yet again. It scored 45% on ARC-AGI-1 with a mere 7 million parameters, further beating models with less than 0.01% of their parameters.
+    In July 2025, Sapient Intelligence released their [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734v1) (HRM) and the world went crazy. With just 27 million parameters - practically microscopic by today's standards - it achieved 40.3% on [ARC-AGI-1](https://arcprize.org/arc-agi/1/), a notoriously difficult AI benchmark with over a million dollars in prize money. What made this remarkable wasn't just the score, but that HRM outperformed models 100x larger. In October came the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871), obliterating expectations yet again. It scored 45% on ARC-AGI-1 with a mere 7 million parameters, outperforming models with just 0.01% of their parameters.
 
     Naturally, I wondered: how small can we go?
 
@@ -89,9 +89,9 @@ def _(mo):
 
 
 @app.cell
-def _(gmpy2, json, mo):
+def _(json, mo):
     with open(mo.notebook_dir() / "public/alpha/alpha_arc_agi_2_p8.json", "r") as f: data = json.load(f)
-    alpha_txt = gmpy2.mpfr(*data['alpha'])
+    alpha_txt = data['alpha'][0]
     p_txt = data['precision']
 
     # only display the first 10,000 digits of a so we don't break marimo
@@ -165,89 +165,8 @@ def _(mo):
 
 
 @app.cell
-def _():
-    # # from https://www.kaggle.com/code/allegich/arc-agi-2025-visualization-all-1000-120-tasks
-
-    # # 0:black, 1:blue, 2:red, 3:green, 4:yellow, # 5:gray, 6:magenta, 7:orange, 8:sky, 9:brown
-    # cmap = colors.ListedColormap(['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00', '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25'])
-    # norm = colors.Normalize(vmin=0, vmax=9)
-
-    # def plot_one(ax, i, task, example_or_question, input_or_output, w=0.8):
-    #     key = f"{example_or_question}_{input_or_output}"
-    #     input_matrix = task[key][i]
-
-    #     # grid
-    #     ax.imshow(input_matrix, cmap=cmap, norm=norm)
-    #     ax.grid(True, which='both', color='lightgrey', linewidth=1.0)
-    #     plt.setp(plt.gcf().get_axes(), xticklabels=[], yticklabels=[])
-    #     ax.set_xticks([x-0.5 for x in range(1 + len(input_matrix[0]))])
-    #     ax.set_yticks([x-0.5 for x in range(1 + len(input_matrix))])
-    #     ax.grid(visible= True, which = 'both', color = '#666666', linewidth = w)
-    #     ax.tick_params(axis='both', color='none', length=0)
-
-    #     # subtitle
-    #     title = f"{'Ex.' if example_or_question == 'example' else 'Q.'} {i} {input_or_output[:-1].capitalize()}"
-    #     ax.set_title(title, fontsize=12, color = '#dddddd')
-
-    #     # status text positioned at top right
-    #     if example_or_question == 'question' and input_or_output == 'outputs':
-    #         ax.text(1, 1.15, '? PREDICT', transform=ax.transAxes, ha='right', va='bottom', fontsize=10, fontweight='bold', color='#FF4136')
-    #     else:
-    #         ax.text(1, 1.15, '✓ GIVEN', transform=ax.transAxes, ha='right', va='bottom', fontsize=10, fontweight='bold', color='#2ECC40')
-
-
-    # def display_task(ds, split, i, size=2.5, w1=0.9):
-    #     task = ds[split][i]
-    #     n_examples = len(task['example_inputs'])
-    #     n_questions  = len(task['question_inputs'])
-    #     task_id = task["id"]
-
-    #     wn=n_examples+n_questions
-    #     fig, axs  = plt.subplots(2, wn, figsize=(size*wn,2*size))
-    #     plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Task #{i} (id={task_id})', fontsize=16, fontweight='bold', y=1, color = '#eeeeee')
-
-    #     # plot train
-    #     for j in range(n_examples):
-    #         plot_one(axs[0, j], j, task, 'example', 'inputs',  w=w1)
-    #         plot_one(axs[1, j], j, task, 'example', 'outputs', w=w1)
-
-    #     # plot test
-    #     for k in range(n_questions):
-    #         plot_one(axs[0, j+k+1], k, task, 'question', 'inputs', w=w1)
-    #         plot_one(axs[1, j+k+1], k, task, 'question', 'outputs', w=w1)
-
-    #     axs[1, j+1].set_xticklabels([])
-    #     axs[1, j+1].set_yticklabels([])
-    #     axs[1, j+1] = plt.figure(1).add_subplot(111)
-    #     axs[1, j+1].set_xlim([0, wn])
-
-    #     # plot separators
-    #     # for m in range(1, wn): axs[1, j+1].plot([m,m],[0,1],'--', linewidth=1, color='white')
-    #     axs[1, j+1].plot([n_examples, n_examples], [0,1], '-', linewidth=5, color='white')
-
-    #     axs[1, j+1].axis("off")
-
-    #     # Frame and background
-    #     fig.patch.set_linewidth(5) #widthframe
-    #     fig.patch.set_edgecolor('black') #colorframe
-    #     fig.patch.set_facecolor('#444444') #background
-
-    #     plt.tight_layout(h_pad=3.0)
-    #     # plt.show()
-    #     return fig
-    return
-
-
-@app.cell
-def _():
-    return
-
-
-@app.cell
 def _(colors, np, plt):
-    # import matplotlib.pyplot as plt
-    # from matplotlib import colors
-    # import numpy as np
+    # modified from https://www.kaggle.com/code/allegich/arc-agi-2025-visualization-all-1000-120-tasks
 
     ARC_COLORS = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00', '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
     CMAP = colors.LinearSegmentedColormap.from_list('arc_continuous', ARC_COLORS, N=256)
@@ -276,7 +195,7 @@ def _(colors, np, plt):
     def plot_arcagi(ds, split, i, predictions=None, size=2.5, w=0.9, show_nums=False):
       task = ds[split][i]
       ne, nq, n_pred = len(task['example_inputs']), len(task['question_inputs']), len(predictions) if predictions is not None else 0
-  
+
       mosaic = [[f'Ex.{j+1}_in' for j in range(ne)] + [f'Q.{j+1}_in' for j in range(nq)] + (['pred'] if n_pred else []),
                 [f'Ex.{j+1}_out' for j in range(ne)] + [f'Q.{j+1}_out' for j in range(nq)] + (['pred'] if n_pred else [])]
       fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(ne+nq+(1 if n_pred else 0)), 2*size))
@@ -302,13 +221,13 @@ def _(colors, np, plt):
         for k, pred in enumerate(predictions):
           inset = pred_ax.inset_axes([0, k/n_pred, 1, 1/n_pred])
           plot_matrix(pred, inset, title=f"Q.{k} Prediction", w=w, show_nums=True)
-  
+
       if ne > 0 and nq > 0: fig.add_artist(plt.Line2D([ne/(ne+nq+(1 if n_pred else 0)), ne/(ne+nq+(1 if n_pred else 0))], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
       if nq > 0 and n_pred > 0: fig.add_artist(plt.Line2D([(ne+nq)/(ne+nq+1), (ne+nq)/(ne+nq+1)], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
       if ne > 0: fig.text(ne/2/(ne+nq+(1 if n_pred else 0)), 0.91, 'Examples', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
       if nq > 0: fig.text((ne+nq/2)/(ne+nq+(1 if n_pred else 0)), 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
       if n_pred > 0: fig.text((ne+nq+0.5)/(ne+nq+1), 0.91, 'Predictions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
-  
+
       fig.patch.set_linewidth(5)
       fig.patch.set_edgecolor('#333333')
       fig.patch.set_facecolor('#eeeeee')
@@ -333,19 +252,19 @@ def _(ds, plot_arcagi):
 def _(mo):
     mo.md(
         r"""
-    Here, we see several grids, each with a bunch of colored cells. Most cells are black (0), some are light blue (8), some are green (3), and some are yellow (4), etc. Each column shows an input-output pair.
+    Here, we see several grids, each with a bunch of colored cells. Most cells are black (0), some are red (2), and some are light blue (8). Each column shows an input-output pair.
 
-    The first five columns are example input-output pairs that demonstrate the pattern. The sixth column, separated by the solid white line, is the actual question: given this new input, what should the output be?
+    The first three columns are example input-output pairs that demonstrate the pattern. The fourth column, separated by the vertical black line, is the actual question: given this new input, what should the output be?
 
-    The green checkmark (✓ Given) shows what information the model can see and use. The red question mark (? Predict) shows what the model has to figure out by itself. We're showing you the red question part here so you can see what the correct answer should be. But when we actually test the model, it can't see this answer - it's only used to check if the model got it right.
+    Given the 3 examples and the question input, the challenge is for the model to predict the question output. Here we show the question output as a source of ground truth, but the model is never given it.
 
     **Now, how do you solve this specific task?**
 
-    Looking at the examples, the pattern here is clear: add yellow squares inside the enclosed green shapes. Yellow only appears in the "interior" of closed green boundaries. If the green cells don't form a complete enclosure, no yellow is added.
+    Looking at the examples, each grid contains exactly two shapes: one red and one blue. The pattern is straightforward: translate the red shape in a straight line toward the blue shape until they touch (but do not overlap). The blue shape remains stationary. The resulting configuration -- red shape adjacent to blue shape -- is the output.
 
-    Looking at the question input, we have a complicated looking shape, a green line that sort of snakes around. But if you look closely, you can count that the input shape has 8 different encolosed shapes that need to be filled in with yellow squares. So in the output, we fill in all 8 "interior" regions with yellow squares.
+    In Example 1, the red shape sits in the upper left and the blue square in the mid-right. Translating the red shape horiztonally to the right, it slides until it reaches the blue square, resulting in the example output.
 
-    Looking at the question output, we can verify that this solution is indeed correct.
+    The question follows the same logic. In the question input the red shape sits in the middle of the grid and the blue shape is in the mid-left. Translating the red shape horizontally to the right, it slides until it reaches the blue shape. Looking at the question output, we can verify that this indeed yields the question output.
 
     Another task:
     """
@@ -354,13 +273,8 @@ def _(mo):
 
 
 @app.cell
-def _():
-    return
-
-
-@app.cell
-def _(display_task, ds):
-    display_task(ds, "train", 28)
+def _(ds, plot_arcagi):
+    plot_arcagi(ds, "train", 10)
     return
 
 
@@ -368,11 +282,11 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    Looking at the examples, the pattern is to find the oddly colored rectanglular "frame" and extract everything inside it. In the first example, a big red frame stands out against the surrounding black, green, gray, and blue cells. The output captures only what's inside that red boundary, discarding everything outside it. The same approach applies to the other two examples: we identify the distinctive yellow and blue frames and extract their contents.
+    Looking at the examples, each input contains exactly 3 diagonal lines, each a single solid color. The pattern is to repeat these 3 colors cyclically across the entire output grid in diagonal stripes, creating a repeating checkered pattern. Whether the input's 3 diagonals appear consecutively or not doesn't matter, they repeat every 3 diagonal positions throughout the output.
 
-    Looking at the question input, we can now follow this pattern. The question input contains a distinctive green frame that contrasts  with the surrounding black, blue, and red cells. Therefore we should output everything inside the green frame.
+    In Example 1, the input shows three consequtive diagonal stripes: blue, red, and yellow. The output tiles this sequence repeatedly -- blue diagonal, red diagonal, yellow diagonal —- cycling through all 3 colors across the full grid. 
 
-    Looking at the question output, we see that this is indeed the correct answer.
+    For the question, the input contains three diagonal lines in blue, red, and yellow, but they're not lined up consecutively. The output repeats these three colors cyclically in diagonal stripes, filling the entire grid. The pattern cycles every 3 diagonals: blue, red, yellow, blue, red, yellow. This produces the same checkerboard result as Example 1, despite the input colors being arranged differently.
     """
     )
     return
@@ -470,8 +384,8 @@ def _(mo):
 
 
 @app.cell
-def _(display_task, ds):
-    display_task(ds, "eval", 0)
+def _(ds, plot_arcagi):
+    plot_arcagi(ds, "eval", 19)
     return
 
 
@@ -479,7 +393,7 @@ def _(display_task, ds):
 def _(mo):
     mo.md(
         r"""
-    This task has two example pairs (left of the white line) and one test question (right of the white line). HRM was trained only on the examples—it never saw the actual test questions. Although the examples and questions come from the same distribution, the model still has to solve questions it's never encountered before. Since this is from the *eval* set, not the train set, we're essentially asking: you've seen these examples, now can you solve this closely-related but unseen problem?
+    This task has two example pairs (left of the vertical line) and one test question (right of the vertical line). HRM was trained only on the examples -- it never saw the actual test questions. Although the examples and questions come from the same distribution, the model still has to solve questions it's never encountered before. Since this is from the *eval* set, not the train set, we're essentially asking: you've seen these examples, now can you solve this closely-related but unseen problem?
 
     Is training on the eval set examples cheating? Apparently not. The ARC-AGI organizers accepted HRM's submision and the concsensus on [Twitter](https://x.com/Dorialexander/status/1951954826545238181) was that it's actually completely allowed.
 
@@ -1987,26 +1901,26 @@ def _(ds, idx_slider, y_pred):
 
 @app.cell
 def _():
-    def display_numbers(ax, matrix, cmap, norm):
-        pass
+    # def display_numbers(ax, matrix, cmap, norm):
+    #     pass
 
-    def plot_matrix(matrix, ax=None, title=None, vmin=None, vmax=None, grid_w=0.8, status=None, show_nums=False):
-        pass
+    # def plot_matrix(matrix, ax=None, title=None, vmin=None, vmax=None, grid_w=0.8, status=None, show_nums=False):
+    #     pass
 
-    def plot_examples():
-        pass
+    # def plot_examples():
+    #     pass
 
-    def plot_questions():
-        pass
+    # def plot_questions():
+    #     pass
 
-    def plot_predictions():
-        pass
+    # def plot_predictions():
+    #     pass
 
-    def plot_task(examples, questions, predictions=None, metadata=None):
-        pass
+    # def plot_task(examples, questions, predictions=None, metadata=None):
+    #     pass
 
-    def display_arcagi(ds):
-        pass
+    # def display_arcagi(ds):
+    #     pass
     return
 
 
