@@ -112,7 +112,7 @@ def _(mo):
         r"""
     and you'll get a perfect score on ARC-AGI-2! (For ease of presentation, only the first 10,000 digits of $\alpha$ are shown.)
 
-    This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. Plug any ARC-AGI-2 example into this bad boy and our model will get the answer correct!
+    This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time.
 
     Sounds pretty impressive, right?
 
@@ -2028,7 +2028,13 @@ def _(ds, idx_slider, y_pred):
 
 @app.cell
 def _(mo):
-    mo.md(r"""# Conclusion""")
+    mo.md(
+        r"""
+    # Conclusion
+
+    > "With four parameters I can fit an elephant, and with five I can make him wiggle his trunk." - John von Neumann
+    """
+    )
     return
 
 
@@ -2036,7 +2042,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    We've built a one-parameter model that achieves 100% on ARC-AGI-2 but have not truly learned anything. By training on test and using chaos theory, we've simply memorized the dataset and encoded it into a single parameter. This technique is quite powerful and can be applied to many other tasks beyond ARC-AGI-2, achieving perfect accuracy every time.
+    We've built a model that has one parameter and achieves 100% on ARC-AGI-2 but simultaneously has not truly learned anything. Through training on test and using chaos theory, we've simply memorized the entire ARC-AGI-2 dataset, encoding it into a single parameter. This technique is quite powerful and can be applied to tons of other tasks, achieving perfect accuracy every time.
 
     We can encode animal shapes with different values of $\alpha$
     """
@@ -2049,7 +2055,7 @@ def _(mo):
     animals_image = mo.image(
         mo.notebook_dir() / "public/images/animals.png",
         width=800,
-        caption="Encode animals with different values of alpha.From Figure 1 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.",
+        caption="Encode animals with different values of alpha. Figure 1 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.",
         style={"display": "block", "margin": "0 auto"}
     )
     animals_image
@@ -2103,40 +2109,38 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    This technique is incredibly verstile, able to achieve perfect acuracy across tons of different domains. However, at the same time it is incredlby brittle. Not only do you need to overfit on the test set to find $\alpha$, but simply shuffling the dataset will cause your model to break down. It would get 0% on the private, heldout test set of ARCI-AGI-2.
+    This technique is incredibly verstile, able to achieve perfect acuracy across tons of different domains.
 
-    Let's address some critiques.
+    However, at the same time it is incredibly brittle. Not only do you need to overfit on the test set to find $\alpha$, but simply shuffling the dataset will cause your model to break down. It would get 0% on the private, heldout test set of ARCI-AGI-2.
 
-    **For the compression folks**: Yes, this barely counts as compression. However, this technique has an incredibly low Kolmogorov complexity, measuring the complexity of an object by the length of a shortest computer program that produces the object as output. Here, our program is the simple scalar function
-    $$
-    \begin{align*}
-    f_{\alpha, p}(x_i)
-    & :=
-    \sin^2 \Big(
-        2^{i p} \arcsin(\sqrt{\alpha})
-    \Big).
-    \end{align*}
-    $$
+    Some quick technical notes to the critics.
 
-    **For the complexity theorists**: Yes, this is cheating. We've violated the fundamental assumption of bounded-precision arithmetic. Most complexity problems assume we operate on a machine with an $\omega$-bit word-size. However, this technique assumes we can operate on a machine with infinite bit word-size.
+    For the complexity theorists, yes, this is cheating. We've violated the fundamental assumption of bounded-precision arithmetic. Most complexity problems assume we operate on a machine with an $\omega$-bit word-size. However, my one-parameter model assumes we can operate on a machine with infinite bit word-size.
 
-    **For the deep learning researchers:** Our decoder is infinitely expressive because it contains $sin$ which has an [infinite VC dimension](https://cseweb.ucsd.edu/classes/fa12/cse291-b/vcnotes.pdf), i.e. it is in an unbounded hypothesis class. Of course it *can* memorize anything.
+    For the deep learning theorists, of course our one-parameter model can memorize any dataset. Our decoder contains $sin$ which has an [infinite VC dimension](https://cseweb.ucsd.edu/classes/fa12/cse291-b/vcnotes.pdf), i.e. an unbounded hypothesis class, and is therefore infinitely expressive. It can learn anything. What is interesting about the one-parameter model is that it offers a tangible construction, not merely a claim of existence, for learning any dataset.
 
     A couple of takeaways:
 
-    **Parameter count is a meaningless proxy for intelligence.** A billion-parameter model that genuinely solves ARC-AGI-2 is infinitely more impressive than our one-parameter lookup table. Don't automatically assume that a bigger model is a smarter model.
+    **Parameter count is a meaningless proxy for intelligence.**
 
-    **Data leakage is a silent epidemic.** Top labs quietly train on their test sets. Our one-parameter model takes this to the extreme. By training on the test set, we were able to accomplish absurd things. and makes the absurdity obvious. If you're going to measure progress, measure it honestly—otherwise the numbers mean nothing.
+    The existence of such a simple equation with such powerful expressivity deomonstrates that model complexity cannot be determined by counting parameters. The one-parameter model exploits a often-overlooked fact: a single real-valued parameter can encode an unbounded amount of information by hiding complexity in its digits rather than in parameter count. In other words, don't automatically assume that a bigger model is a smarter model. A billion-parameter model that genuinely solves ARC-AGI-2 is much more impressive than a one-parameter model that merely regurigates memorized numerics.
 
-    **Generalization is the only thing that matters.** We can encode any dataset into a single number. But that number teaches us nothing about solving new problems. True intelligence isn't fitting the data you've seen; it's reasoning about the data you haven't. This is why I think ARC-AGI is such an important benchmark.
+    **Intelligence is compression.**
 
-    **Intelligence [is](https://en.wikipedia.org/wiki/Hutter_Prize) compression.**
-    In order to compress data, one has to find regularities in it, which fundamentally requires intelligent pattern matching. Instead of storing the data itself, you can learn a rule that to generate that data. Our one-parameter model has a compression ratio of 1.0x which is pretty terrible (assuming a large enough precision $p$).
+    To compress data, you must find regularities in it and finding regularities fundamentally requires intelligent pattern matching. If [intelligence is compression]((https://en.wikipedia.org/wiki/Hutter_Prize)), then our one-parameter model has all the intelligence of a phonebook. It achieves zero compression. It doesn't discover patterns or extract structure. It simply stores the raw data and uses precision $p$ as a tunable recovery knob.
 
-    This work can be understood as taking Prof. Albert Gu's [ARC-AGI without pretraining](https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html) to the extreme
+    Real compression requires understanding. If you want to measure the complexity and expressivity of machine learning models, measure their compression. Use minimum description length or Kolmogorov complexity. These techniques capture whether a model has actually learned the underlying patterns. They cut through the illusion of parameter counts and reveal what the model truly understands.
 
-    *   What matters is whether a system learns structure or merely encodes answers. The meaningful work is done by researchers like Prof. Albert Gu, who built compression-based methods that don't train on the test set—that's where real insight lives.ETrewrite it to be...in retrospect, this is remarkably similar to Professor Albert Gu's ARC-AGI without pretraining where they...Claude can make mistakes. Please double-check responses.
+    Prof. Albert Gu's paper [ARC-AGI without pretraining](https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html) actually does this right. They used a general-purpose compression algorithm to solve ARC-AGI without training on the test set. That's the real deal. Our one-parameter model is a degenerate version of the same idea.
 
+    **Training on Test**
+
+    Our one-parameter model is a reductio ad absurdum of training on the test set. It encodes the test set into $\alpha$ and achieves a perfect score while learning absolutely nothing. It is pure memorization with trigonometry and a few extra steps.
+
+
+    Top AI labs quietly train on their test sets. The one-parameter model does it proudly. Indeed, one-parameter model is a reductio ad absurdum of training on the test set.
+
+    Our one-parameter model takes this to the extreme. By training on the test set, we were able to accomplish absurd things. and makes the absurdity obvious. If you're going to measure progress, measure it honestly—otherwise the numbers mean nothing.
 
 
 
@@ -2183,13 +2187,18 @@ def _(mo):
     ```
     @online{Turok2025ARCAGI,
     	author = {Ethan Turok},
-    	title = {How to Get 100% on ARC-AGI With A One-Parameter Model},
+    	title = {How I built a one-parameter model that gets 100% on ARC-AGI-2},
     	year = {2025},
     	url = {https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html},
     }
     ```
     """
     )
+    return
+
+
+@app.cell
+def _():
     return
 
 
