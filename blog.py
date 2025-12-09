@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.15.2"
-app = marimo.App(width="full")
+app = marimo.App(width="medium")
 
 
 @app.cell
@@ -51,7 +51,7 @@ def _(inspect):
 def _(mo):
     mo.md(
         r"""
-    # How I built a one-parameter model that gets 100% on ARC-AGI-2
+    # I built a one-parameter model that gets 100% on ARC-AGI-2
 
     > I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
     """
