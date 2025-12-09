@@ -441,7 +441,7 @@ def _(mo):
 
     Now, the obvious approach would be to build a dictionary - just map each input directly to its corresponding output. But that's boring and lookup tables aren't nice mathematical functions. They're discrete, discontinuous, and definitely not differentiable. We need something else, something more elegant and interesting. To do that, we are going to take a brief detour into the world of chaos theory.
 
-    > Note: Steven Piantadosi pioneered this technique in [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf). Yet, I first heard of this technique through Laurent Boué's paper [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320). This paper is really a gem due its sheer creativity.
+    > Note: As far as I know, Steven Piantadosi pioneered this technique in [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf). Yet I first heard of it through Laurent Boué's paper [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320). This paper is really a gem due its sheer creativity.
 
     In chaos theory, the dyadic map $\mathcal{D}$ is a simple one-dimensional chaotic system defined as
 
@@ -602,12 +602,6 @@ def _(decimal_to_binary, p_):
     b = ''.join([b1, b2, b3])
     print(f'{b1=}\n{b2=}\n{b3=}\n{b=}')
     return (b,)
-
-
-@app.cell
-def _(b):
-    b
-    return
 
 
 @app.cell
