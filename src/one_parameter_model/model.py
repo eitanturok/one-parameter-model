@@ -105,7 +105,6 @@ class OneParameterModel:
     def fit(self, X:np.ndarray, y:np.ndarray|None=None):
         # if the dataset is unsupervised, treat X like the y
         if y is None: y = X
-        assert y is not None
 
         # store shape/size of a single label y
         self.y_shape = y.shape[1:] # pylint: disable=attribute-defined-outside-init
@@ -116,13 +115,12 @@ class OneParameterModel:
         assert 0 <= y_scaled.min() <= y_scaled.max() <= 1, f"y_scaled must be in [0, 1] but got [{y_scaled.min()}, {y_scaled.max()}]"
 
         # compute alpha with arbitrary floating-point precision
-        self.full_precision: int = y.size * self.precision # pylint: disable=attribute-defined-outside-init
+        self.full_precision = y.size * self.precision # pylint: disable=attribute-defined-outside-init
         self.alpha = logistic_encoder(y_scaled, self.precision, self.full_precision) # pylint: disable=attribute-defined-outside-init
         return self
 
     @Timing("predict: ")
     def predict(self, idxs:np.ndarray, fast:bool=True):
-        assert self.scaler is not None
         full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
 
         # choose the fast or slow logistic decoder
@@ -145,18 +143,4 @@ class OneParameterModel:
 
         # multiply the tolerance by the scaler range to account for scaling
         tolerance = np.pi / 2 ** (self.precision - 1) * self.scaler.range
-
-        try:
-            np.testing.assert_allclose(y_pred, y, atol=tolerance, rtol=0, err_msg=f"Predictions don't match within tolerance")
-            print(f"Passes with {tolerance=:.2e}")
-        except AssertionError:
-            errors = np.abs(y_pred - y)
-            bad_idx = np.where(errors >= tolerance)[0]
-            raise AssertionError(
-                f"Errors at {len(bad_idx)} indices with precision={self.precision}, {tolerance=:.2e}\n"
-                f"  indices: {bad_idx[:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
-                f"  errors: {errors[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
-                f"  y: {y[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
-                f"  y_pred: {y_pred[bad_idx][:10].tolist()}{'...' if len(bad_idx) > 10 else ''}\n\n"
-                f"  max_error: {errors.max():.2e}"
-            )
+        np.testing.assert_allclose(y_pred, y, atol=tolerance, rtol=0)
