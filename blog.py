@@ -91,11 +91,11 @@ def _(mo):
 
     **So I built a one parameter model that scores 100% on ARC-AGI-2.** 
 
-    This is on ARC-AGI-2, the the harder, newer version of ARC-AGI-1. The model is not a deep learning model and is quite simple:
+    This is on ARC-AGI-2, the harder, newer version of ARC-AGI-1. The model is not a deep learning model and is quite simple:
 
     $$
     \begin{align*}
-    f_{\alpha, p}(x_i)
+    f_{\alpha, p}(i)
     & :=
     \sin^2 \Big(
         2^{i p} \arcsin(\sqrt{\alpha})
@@ -159,6 +159,18 @@ def _(mo):
     > "Intelligence is measured by the efficiency of skill-acquisition on unknown tasks. Simply, how quickly can you learn new skills?" - [ARC-AGI creators](https://arcprize.org/arc-agi)
     """
     )
+    return
+
+
+@app.cell
+def _(mo):
+    arc_agi_header_image = mo.image(
+        mo.notebook_dir() / "public/images/arc_agi_ header.png",
+        width=800,
+        caption="The ARC-AGI website.",
+        style={"display": "block", "margin": "0 auto"}
+    )
+    arc_agi_header_image
     return
 
 
@@ -276,17 +288,15 @@ def _(mo):
         r"""
     Here, we see several grids, each with a bunch of colored cells. Most cells are black (0), some are red (2), and some are light blue (8). Each column shows an input-output pair.
 
-    The first three columns are example input-output pairs that demonstrate the pattern. The fourth column, separated by the vertical black line, is the actual question: given this new input, what should the output be? Here we show the question output as a source of ground truth, but the model is never given it.
+    The first three columns are example input-output pairs that demonstrate the pattern. The fourth column, separated by the vertical black line, is the actual question: given this new input, what should the output be? Here we show the question output as a source of ground truth. The model is suppossed to predict this and is never given access to it.
 
     **Now, how do you solve this specific task?**
 
     Looking at the examples, each grid contains exactly two shapes: one red and one blue. The pattern is straightforward: translate the red shape in a straight line toward the blue shape until they touch (but do not overlap). The blue shape remains stationary. The resulting configuration -- red shape adjacent to blue shape -- is the output.
 
-    In Example 1, the red shape sits in the upper left and the blue square in the mid-right. Translating the red shape horiztonally to the right, it slides until it reaches the blue square, resulting in the example output.
+    In Example 1, the red shape sits in the upper left and the blue square in the mid-right. Translating the red shape horiztonally to the right, it slides until it reaches the blue square, resulting in the example output. The question follows the same logic. In the question input the red shape sits in the middle of the grid and the blue shape is in the mid-left. Translating the red shape horizontally to the left, it slides until it reaches the blue shape. Looking at the question output, we can verify that this indeed matches the question output.
 
-    The question follows the same logic. In the question input the red shape sits in the middle of the grid and the blue shape is in the mid-left. Translating the red shape horizontally to the right, it slides until it reaches the blue shape. Looking at the question output, we can verify that this indeed yields the question output.
-
-    Another task:
+    Here is another task.
     """
     )
     return
@@ -304,9 +314,7 @@ def _(mo):
         r"""
     Looking at the examples, each input contains exactly 3 diagonal lines, each a single solid color. The pattern is to repeat these 3 colors cyclically across the entire output grid in diagonal stripes, creating a repeating checkered pattern. Whether the input's 3 diagonals appear consecutively or not doesn't matter, they repeat every 3 diagonal positions throughout the output.
 
-    In Example 1, the input shows three consequtive diagonal stripes: blue, red, and yellow. The output tiles this sequence repeatedly -- blue diagonal, red diagonal, yellow diagonal —- cycling through all 3 colors across the full grid. 
-
-    For the question, the input contains three diagonal lines in blue, red, and yellow, but they're not lined up consecutively. The output repeats these three colors cyclically in diagonal stripes, filling the entire grid. The pattern cycles every 3 diagonals: blue, red, yellow, blue, red, yellow. This produces the same checkerboard result as Example 1, despite the input colors being arranged differently.
+    In Example 1, the input shows three consequtive diagonal stripes: blue, red, and yellow. The output tiles this sequence repeatedly -- blue diagonal, red diagonal, yellow diagonal —- cycling through all 3 colors across the full grid. Loking at the question, the input also contains three diagonal lines in blue, red, and yellow, but they're in a different order and do not appear all next to each other. Still, the output repeats these three colors cyclically in diagonal stripes, filling the entire grid. The pattern cycles every 3 diagonals: red, blue, yellow over and over again. This produces the a different output than Example 1 because the order of the three colors is different.
     """
     )
     return
@@ -315,6 +323,11 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""There are hundreds of tasks like this in ARC-AGI-2. Solving each task requires deducing new patterns and generalizing to unforeseen tasks, something it is quite hard for the current crop of AI models.""")
+    return
+
+
+@app.cell
+def _():
     return
 
 
@@ -393,19 +406,9 @@ def _(mo):
         rf"""
     In their paper, the HRM authors admitted to showing the model "example pairs in the training and the **evaluation** sets". The evaluation set here refers to the public eval set of ARC-AGI-1! This sounds like training on test!
 
-    On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This "contraversy" set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] ! Does this actually count as "training on test"? On one hand, you can never train on the data used to measure model perfomance. On the other hand, they never actually trained on the the questions used to measure model performance, just the examples associated with them.
-
-    **What exactly is the difference between training on *examples* VS *questions* in ARC-AGI-1?**
-
-    Consider a task from the public *eval* set, not the train set, of ARC-AGI-1:
+    On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This "contraversy" set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] ! Does this actually count as "training on test"? The HRM authors never actually trained on the the questions used to measure model performance, just the examples associated with them. However, these have very similar distributions...
     """
     )
-    return
-
-
-@app.cell
-def _(ds, plot_arcagi):
-    plot_arcagi(ds, "eval", 19)
     return
 
 
@@ -413,14 +416,10 @@ def _(ds, plot_arcagi):
 def _(mo):
     mo.md(
         r"""
-    This task has two example pairs (left of the vertical line) and one test question (right of the vertical line). HRM was trained only on the examples -- it never saw the actual test questions. Although the examples and questions come from the same distribution, the model still has to solve questions it's never encountered before. Since this is from the *eval* set, not the train set, we're essentially asking: you've seen these examples, now can you solve this closely-related but unseen problem?
-
-    Is training on the eval set examples cheating? Apparently not. The ARC-AGI organizers accepted HRM's submision and the concsensus on [Twitter](https://x.com/Dorialexander/status/1951954826545238181) was that it's actually completely allowed.
-
-    But buried in a GitHub thread, HRM's lead author, Guan Wang, made an offhand comment that caught my attention:
+    Ultimately the ARC-AGI organizers accepted HRM's submision and the concsensus on [Twitter](https://x.com/Dorialexander/status/1951954826545238181) was that it's actually completely allowed to train on the *examples* of the public eval set. But buried in a GitHub thread, HRM's lead author, Guan Wang, made an offhand comment that caught my attention:
     > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." -   [Guan Wang](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308)
 
-    That line stuck with me. If partial leakage gets you $40.3\%$, what happens with *complete* leakage? If we train on the actual test questions, not just test examples, can we hit $100\%$? Can we do it with even fewer parameters than HRM (27M) or TRM (7M)? And can we do it on the more challenging ARC-AGI-2 instead of ARC-AGI-1? How far can we push this?
+    That line stuck with me. If partial leakage gets you $40.3\%$ on ARC-AGI-1, what happens with *complete* leakage? If we train on the actual test questions, not just test examples, can we hit $100\%$? Can we do it with even fewer parameters than HRM (27M) or TRM (7M)? And can we do it on the more challenging ARC-AGI-2 instead of ARC-AGI-1? How far can we push this?
     """
     )
     return
@@ -641,10 +640,20 @@ def _(alpha1_dec, binary_to_decimal, decimal_to_binary, p_):
 
 @app.cell
 def _(mo):
+    mo.md(r"""We've discovered something remarkable: each application of $\mathcal{D}$ peels away exactly one bit. But here's the question: if the dyadic map can systematically extract a number's bits, is it possible to put information in those bits in the first place? **What if we encode our dataset into a number's bits (`model.fit`) and then use the dyadic map as the core of a predictive model, extracting out the answer bit by bit (`model.predict`)?** In other words, can we turn the dyadic map into an ML model?""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""## A Worked Example""")
+    return
+
+
+@app.cell
+def _(mo):
     mo.md(
         r"""
-    We've discovered something remarkable: each application of $\mathcal{D}$ peels away exactly one bit. But here's the question: if the dyadic map can systematically extract a number's bits, is it possible to put information in those bits in the first place? **What if we encode our dataset into a number's bits (`model.fit`) and then use the dyadic map as the core of a predictive model, extracting out the answer bit by bit (`model.predict`)?** In other words, can we turn the dyadic map into an ML model?
-
     Suppose our dataset contains the three numbers we saw before
 
     $$
@@ -764,7 +773,7 @@ def _(mo):
     \end{align*}
     $$
 
-    and convert $b_1$ back to decimal to get $\tilde{x}_1$.
+    and convert $b_1$ back to decimal to get $\tilde{x}_1$
 
     $$
     \begin{align*}
@@ -778,49 +787,88 @@ def _(mo):
 
     Here our prediction $\tilde{x}_1 = 0.328125$ is slightly off from the true value $x_1 = 1/3$ due to the limits of $6$-bit precision. If we'd have more digits of precision and increase $p$, $\tilde{x}_1$ would be closer to $x_1$.
 
-    *Step 3.* To get the next number, $b_2$, apply $\mathcal{D}$ another 6 times, $\mathcal{D}^{12}(\alpha)$, removing another 6 bits of $\alpha$, i.e. $b_1$, and leaving us with just $b_2$. Like before we'll then record the first $6$ bits of $D^{12}(\alpha)$ to get $b_2$ and convert that back to decimal to get $\tilde{x}_2$.
-
+    *Step 3.* To get the next number, $b_2$, apply $\mathcal{D}$ another 6 times to remove a total of $12$ bits from $\alpha$, 
 
     $$
     \begin{align*}
         D^{12}(\alpha)
         &=
         0.421875
-        \\
+    \end{align*}
+    $$
+
+    which strips off $b_0, b_1$ and leaves us with just $b_2$
+
+    $$
+    \begin{align*}
         \text{bin}(D^{12}(\alpha))
         &=
         0.\underbrace{\hspace{1cm}}_{b_0}\underbrace{\hspace{1cm}}_{b_1}\underbrace{011011}_{b_2}
         =
         0.011011
-        \\
+    \end{align*}
+    $$
+
+    Like before, we'll then record the first $6$ bits of $D^{12}(\alpha)$ to get $b_2$
+
+    $$
+    \begin{align*}
         b_2
         &=
         \text{bin}(D^{12}(\alpha))_{0:6}
         =
         011011
-        \\
+    \end{align*}
+    $$
+
+    and convert $b_2$ back to decimal to get $\tilde{x}_2$
+
+    $$
+    \begin{align*}
         \tilde{x}_2
         &=
+        \text{dec} (b_2)
+        =
         0.421875
     \end{align*}
     $$
 
-    Notice again that our prediction $\tilde{x}_2 = 0.421875$ is slightly off from the true value $x_2 = 0.431$ due to the limitations of $6$-bit precision.
+    Notice again that our prediction $\tilde{x}_2 = 0.421875$ is slightly off from the true value $x_2 = 0.431$ due to the limitations of $6$-bit precision. 
+
+    Let
+
+    $$
+    \begin{align*}
+        \tilde{\mathcal{X}}
+        &=
+        \big \{\tilde{x}_0, \tilde{x}_1, \tilde{x}_2 \big\}
+        =
+        \big \{ 0.500000,  0.328125, 0.421875 \big \}
+    \end{align*}
+    $$
+
+    be the predictions made by our strange dyadic model. If everything is correct, our predicted dataset $\tilde{\mathcal{X}}$ should perfectly equal our original dataset $\mathcal{X}$ up to the first $p$ bits.
 
 
     These 3 steps are summerized in the table below.
 
-    | Iteration $i$ |$ip$ bits removed | $\mathcal{D}^{ip}(\alpha)$ in decimal | $\mathcal{D}^{ip}(\alpha)$ in binary | $b_i$, the first $p=6$ bits of $\mathcal{D}^{ip}(\alpha)$ in binary |  $\tilde{x}_i$, the first $p=6$ bits of $\mathcal{D}^{ip}(\alpha)$ in decimal|
+    | Iteration $i$ |$ip$ bits removed | $\mathcal{D}^{ip}(\alpha)$ in decimal | $\mathcal{D}^{ip}(\alpha)$ in binary | $b_i$, the first $p$ bits of $\mathcal{D}^{ip}(\alpha)$ in binary |  $\tilde{x}_i$, the first $p$ bits of $\mathcal{D}^{ip}(\alpha)$ in decimal|
     |------------|------------------------|----------------------|-------------|-------------|-------------|
     | $0$ | $0 \cdot 6 = 0$ | $\alpha = 0.50522994995117188$ | $\text{bin}(\alpha) = 0.\underbrace{100000}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_0 = 010101$ | $\tilde{x}_0 = 0.500000$|
     | $1$ | $1 \cdot 6 = 6$ | $\mathcal{D}^6(\alpha) = 0.33471679687500000$ | $\text{bin}(D^6(\alpha)) = 0.\underbrace{\hspace{1cm}}_{b_0}\underbrace{010101}_{b_1}\underbrace{011011}_{b_2}$ | $b_1 = 010101$| $\tilde{x}_1 = 0.328125$|
     | $2$ | $2 \cdot 6 = 12$ | $\mathcal{D}^{12}(\alpha) = 0.42187500000000000$ | $\text{bin}(D^{12}(\alpha)) = 0.\underbrace{\hspace{1cm}}_{b0}\underbrace{\hspace{1cm}}_{b1}\underbrace{011011}_{b_2}$ | $b_2 = 011011$| $\tilde{x}_2 = 0.421875$|
 
-    In decimal, we go from $\alpha = 0.50522994995117188$ to $\mathcal{D}^6(\alpha) = 0.33471679687500000$ and then to $\mathcal{D}^{12}(\alpha) = 0.42187500000000000$. This pattern looks completely nonsensical. However, looking at the binary representation reveals that we are shifitng bits and extrating numbers with superb precision. This is anything but nonsensical. (Recall that we only every peform computation on the decimal numbers, never directly on their binary representation.)
+    In decimal, we go from $\alpha = 0.50522994995117188$ to $\mathcal{D}^6(\alpha) = 0.33471679687500000$ and then to $\mathcal{D}^{12}(\alpha) = 0.42187500000000000$. Although this pattern looks completely random, we are shifitng bits with superb precision. This is anything but random.
 
-    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point in binary $\tilde{x}_0, \tilde{x}_1, \tilde{x}_2$ up to $p$ bits of precision. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access that information.
+    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point $\tilde{\mathcal{X}}$ up to $p$ bits of precision. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access the desired information.
     """
     )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""## The Algorithm""")
     return
 
 
@@ -893,7 +941,7 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(mo):
     mo.md(
         r"""
@@ -905,7 +953,7 @@ def _(mo):
 
     to that beautiful function I promised you at the start of the blog
 
-    $$ f_{\alpha, p}(x_i)
+    $$ f_{\alpha, p}(i)
     =
     \sin^2 \Big(
         2^{i p} \arcsin^2(\sqrt{\alpha})
@@ -913,7 +961,23 @@ def _(mo):
     ?
     $$
 
-    In this section we will "apply makeup" to the first function to get it looking a bit closer to the second function. We will keep the same core logic but make the function more ascetically pleasing. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map) at $r=4$ on the unit interval:
+    In this section we will "apply makeup" to the first function to get it looking a bit closer to the second function. We will keep the same core logic but make the function more ascetically pleasing. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map).
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""## Logistic Map""")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    The logistic-map at $r=4$ on the unit interval is defined as
 
     $$
     \begin{align*}
@@ -978,19 +1042,19 @@ def logistic_orbit(a_L, k):
 
 @app.cell
 def _():
-    logistic_orbit(0.5, 5)
+    orbit_1 = logistic_orbit(0.5, 5)
     return
 
 
 @app.cell
 def _():
-    logistic_orbit(1/3, 5)
+    orbit_2 = logistic_orbit(1/3, 5)
     return
 
 
 @app.cell
 def _():
-    logistic_orbit(0.431, 5)
+    orbit_3 = logistic_orbit(0.431, 5)
     return
 
 
@@ -1137,12 +1201,21 @@ def _(mo, topological_conjugacy_image):
 def _(mo):
     mo.md(
         r"""
-    Revisting the dyadic and logistic orbits for $a_D = a_L = 0.431$, we can take the dyadic orbit $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$ and apply $\phi$ to every element, giving us $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$  -- which is exactly the logistic orbit (eqn. (10))! Similarly, we can take the logistic orbit $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$, apply $\phi^{-1}$
-    to get the dyadic orbit $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$
+    We can now revist the dyadic and logistic orbits when $a_D = a_L = 0.431$.
+
+    * When $a_D = a_L = 0.431$, we know the **dyadic orbit** is $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$. If we apply $\phi$ to every output element $\phi(\mathcal{D}^k(a_D))$, we get $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$. This is exactly the logistic orbit  we saw in eqn. (10)!
+    * When $a_D = a_L = 0.431$,, we know the **logistic orbit** $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$. If we apply $\phi^{-1}$
+    to every input element before the logistic map $\mathcal{L}(\phi^{-1}(a_L)))$ we get the dyadic orbit $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$.
 
     We see that although both these orbits look completly unrelated, these two orbits are perfectly connected to one another through $\phi$ and $\phi^{-1}$.
     """
     )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""## A New Algorithm""")
     return
 
 
@@ -1205,7 +1278,7 @@ def _(mo):
 
     where $\oplus$ means concatenation. The decoder here is tantalizingly close to the function I promised at the start:
 
-    $$ f_{\alpha, p}(x_i)
+    $$ f_{\alpha, p}(i)
     =
     \sin^2 \Big(
         2^{x p} \arcsin^2(\sqrt{\alpha})
@@ -1214,7 +1287,7 @@ def _(mo):
 
     but is still wrapped with those pesky $\text{dec}$ and $\text{bin}_p$ operations. However, something profound has happened here. We've taken the crude, discontinuous dyadic map and transformed it into something smooth and differentiable. The logistic map doesn't *look* like it's doing binary operations, but underneath the elegant trigonometry, it's performing exactly the same bit manipulations as its topological coungant, the dyadic map. Indeed, the makeup looks pretty great!
 
-    However, nothing is free. The cost of using the logistic map instead of the dyadic map is that our error is now $2 \pi$ times larger, $|\tilde{x}_i - x_i | < \frac{\pi}{2^{p-1}}$. (We get this $2 \pi$ factor by noting that the derivative of $\phi$ is bounded by $2 \pi$ and applying the mean-value theorem.)
+    However, nothing is free. The cost of using the logistic map instead of the dyadic map is that our error is now $2 \pi$ times larger, $|\tilde{x}_i - x_i | < \frac{\pi}{2^{p-1}}$. (We get this $2 \pi$ factor by noting that the derivative of $\phi$ is bounded by $2 \pi$ and applying the mean-value theorem. For more details, see section 2.5 of "Real numbers, data science and chaos: How to fit any dataset with a single parameter".)
     """
     )
     return
@@ -1292,20 +1365,20 @@ def _(mo):
 
     If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-2 with hundreds of tasks and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it? 
 
-    The answer is simple: we can use an arbitrary precision arithmetic library like [mpmath]([https://github.com/aleaxit/gmpy](https://github.com/mpmath/mpmath)) that can represent numbers with as many bits as we want. Instead of a regular Python float, we represent $\alpha$ as a mpmath float with $np$ bits of precision. We then run the decoder with mpmath operations and convert the final result back to a regular Python float.
+    The answer is simple: we can use an arbitrary precision arithmetic library like [mpmath]([https://github.com/aleaxit/gmpy](https://github.com/mpmath/mpmath)) that can represent numbers with as many bits as we want. Instead of a regular Python float, we represent $\alpha$ as a mpmath float with $np$ bits of precision. We then run the decoder with mpmath operations and convert the final result back to a regular Python float. Note: operations with arbitrary precision arithmetic libraries like mpmath tend to be *significantly* slower than regular floating point operations.
 
-    But mpmath gives us another gift: it actually simplifies our decoder
+    But mpmath gives us another gift: it actually removes the pesky $\text{dec}(\text{bin}_p(\cdot))$ operations from our decoder
 
-    $$ f_{\alpha, p}(x_i)
+    $$ f_{\alpha, p}(i)
     =
     \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big).
     $$
 
-    In our implementation, we use $\text{dec}(\text{bin}_p(\cdot))$ to truncate $\mathcal{L}^{ip}(\alpha)$ to exactly $p$ bits and then we convert $f_{\alpha, p}(x_i)$ from a $p$-bit mpmath number to a Python float32. During this conversion, Python copies the first $p$ bits of $f_{\alpha, p}(x_i)$  and then fills the remaining bits of the Python float32 (bits $p+1$ through $32$) with random meaningless junk bits (assuming $p<=32$). Since our model only guarantees accuracy for the first $p$ bits, these random bits don't matter.
+    In our implementation, we use $\text{dec}(\text{bin}_p(\cdot))$ to truncate $\mathcal{L}^{ip}(\alpha)$ to exactly $p$ bits and then we convert $f_{\alpha, p}(i)$ from a $p$-bit mpmath number to a Python float32. During this conversion, Python copies the first $p$ bits of $f_{\alpha, p}(i)$  and then fills the remaining bits of the Python float32 (bits $p+1$ through $32$) with random meaningless junk bits (assuming $p<=32$). Since our model only guarantees accuracy for the first $p$ bits, these random bits don't matter.
 
-    However, converting to binary and back is wildly expensive, especially when $\alpha$ contains millions of bits. Fortunately, we can skip the entire $\text{dec}(\text{bin}_p(\cdot))$ step and instead convert $\mathcal{L}^{ip}(\alpha)$ directly to a Python float32. The first $p$ bits of $\mathcal{L}^{ip}(\alpha)$ still get copied correctly and bits $p+1$ through $32$ get filled with the higher-order bits of $\mathcal{L}^{ip}(\alpha)$ instead of random Python bits. Since our prediction only uses the first $p$ bits, these extra bits are irrelevant whether they come from Python or straight from our decoder $\mathcal{L}^{ip}(\alpha)$. Now we can get the correct answer without the expensive $\text{dec}(\text{bin}_p(\cdot))$ operation since the bits $p+1$ through $32$ are disregarded and can come from anywhere. Removing $\text{dec}(\text{bin}_p(\cdot))$, our decoder simplifies to exactly what we promised at the start:
+    However, converting to binary and back is wildly expensive, especially when $\alpha$ contains millions of bits. Upon taking a closer look, we can, in fact, actually skip the entire $\text{dec}(\text{bin}_p(\cdot))$ step and convert $\mathcal{L}^{ip}(\alpha)$ directly to a Python float32. The first $p$ bits of $\mathcal{L}^{ip}(\alpha)$ still get copied correctly and bits $p+1$ through $32$ get filled with the higher-order bits of $\mathcal{L}^{ip}(\alpha)$ instead of random Python bits. Since our prediction only uses the first $p$ bits, these extra bits are irrelevant whether they come from Python or straight from our decoder $\mathcal{L}^{ip}(\alpha)$. Now we can get the correct answer without the expensive $\text{dec}(\text{bin}_p(\cdot))$ operation since the bits $p+1$ through $32$ are disregarded and can come from anywhere. Removing $\text{dec}(\text{bin}_p(\cdot))$, our decoder simplifies to exactly what we promised at the start:
 
-    $$ f_{\alpha, p}(x_i)
+    $$ f_{\alpha, p}(i)
     =
     \mathcal{L}^{ip}(\alpha)
     =
@@ -1314,7 +1387,7 @@ def _(mo):
     \Big)
     $$
 
-    Usually translating math into code turns beautiful theory into ugly, complicated messes. But surprisingly, leveraging mpmath has the opposite effect and actually makes our decoder even simpler. Now let's get to the code!
+    This is amazing! Usually translating math into code turns beautiful theory into ugly, complicated messes. But surprisingly, leveraging mpmath has the opposite effect and actually makes our decoder even simpler. Now let's get to the code!
     """
     )
     return
@@ -1341,7 +1414,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""We need some functions to convert from binary to decimal and back""")
+    mo.md(r"""We need some functions to convert from binary to decimal and back. We cannot simply use python's `bin` function because it only converts integers to binary and we have floats in $[0, 1]$. """)
     return
 
 
@@ -1386,15 +1459,13 @@ def _(mo, mp, np):
 
 @app.cell
 def _(mo):
-    mo.md(r"""We cannot simply use python's `bin` function because it only converts integers to binary and we have floats in $[0, 1]$. Next we need $\phi$ and $\phi^{-1}$ to go back and forth between the dyadic and logistic spaces.""")
+    mo.md(r"""Next we need $\phi$ and $\phi^{-1}$ to go back and forth between the dyadic and logistic spaces.""")
     return
 
 
 @app.cell
-def _(Pi, Sin, mo, mp):
-    def phi(x):
-        print(f'phi precision={mp.prec}')
-        return Sin(2 * Pi * x) ** 2
+def _(Pi, Sin, mo):
+    def phi(x): return Sin(2 * Pi * x) ** 2
     mo.show_code()
     return (phi,)
 
@@ -1429,7 +1500,7 @@ def _(mo):
 @app.cell
 def _(binary_to_decimal, decimal_to_binary, mo, mp, phi, phi_inverse):
     def logistic_encoder(X, p, full_precision):
-        # set the arbitrary precision before computing anything
+        # set the mpmath arbitrary precision before computing anything
         mp.prec = full_precision
 
         # 1. apply φ^(-1) for all x in X
@@ -1462,7 +1533,7 @@ def _(mo):
     $$
     \tilde{x}_i 
     =
-    f_{\alpha, p}(x_i)
+    f_{\alpha, p}(i)
     =
     \sin^2 \Big(
         2^{x p} \arcsin^2(\sqrt{\alpha})
@@ -1476,6 +1547,7 @@ def _(mo):
 @app.cell
 def _(Arcsin, Sin, Sqrt, mo, mp):
     def logistic_decoder(alpha, full_precision, p, i):
+        # set the mpmath arbitrary precision
         mp.prec = full_precision
         return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
     mo.show_code()
@@ -2372,7 +2444,7 @@ def _(mo):
     The existence of such a simple equation
 
     $$
-    f_{\alpha, p}(x_i)
+    f_{\alpha, p}(i)
     =
     \sin^2 \Big(
         2^{i p} \arcsin(\sqrt{\alpha})
