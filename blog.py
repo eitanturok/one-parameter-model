@@ -110,7 +110,7 @@ def _(mo):
 
 @app.cell
 def _(json, mo):
-    with open(mo.notebook_dir() / "public/alpha/alpha_arc_agi_2_p8.json", "r") as f: data = json.load(f)
+    with open(mo.notebook_location() / "public/alpha/alpha_arc_agi_2_p8.json", "r") as f: data = json.load(f)
     alpha_txt = data['alpha'][0]
     p_txt = data['precision']
 
