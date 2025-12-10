@@ -1750,17 +1750,17 @@ def _(mo):
         r"""
     This single $\alpha$ encodes the entire task, all 900 individual elements, perfectly. This is our one-parameter model in its full glory. All we need is this alpha and we can correctly predict the question output of this task.
 
-    To decode and do `model.predict()`, we must run our decoder 900 times to extract all 900 invididual scalar elements from public eval task 1 of ARC-AGI-2.
+    To decode and do `model.predict()`, we must run our decoder 900 times to extract all 900 invididual scalar elements from public eval task 1 of ARC-AGI-2. We use a for loop for this in `decode`.
     """
     )
     return
 
 
 @app.cell
-def _(alpha, full_precision, logistic_decoder, mo, np, p, y_scaled):
+def _(alpha, full_precision, logistic_decoder, mo, np, p, tqdm, y_scaled):
     def decode(alpha, full_precision, p, y_scaled):
-        return np.array([logistic_decoder(alpha, full_precision, p, i) for i in range(len(y_scaled))])
-    
+        return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")])
+
     y_pred_raw = decode(alpha, full_precision, p, y_scaled)
     mo.show_code()
     return decode, y_pred_raw
@@ -1901,7 +1901,7 @@ def _(decode, logistic_encoder, mo, scaler, y_scaled):
     y_pred2 = y_pred_unscaled2.reshape(1, 30, 30)
 
     mo.show_code()
-    return alpha2, full_precision2, p2, y_pred2
+    return alpha2, p2, y_pred2
 
 
 @app.cell
@@ -1938,9 +1938,9 @@ def _(mo):
 
     we can accelerate this in three ways:
 
-    1. **Parallelization:** Because each element is decoded independently, we can decode all elements in parallel with `ThreadPoolExecutor`.
+    1. **Parallelization:** Because each element is decoded independently, we can decode all elements in parallel with `ThreadPoolExecutor`. This speeds up the for loop over `len(y_scaled))`.
     2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it in each decoding iteration. This eliminates repeated expensive trigonmetric and square root operations.
-    3. **Adaptive precision:** We currently set mpmath's precison to `full_precision = np` bits at every decoding step, even though we don't need all $np$ bits at each iteration. Instead we can use $p(i+1)+1$ bits in the $i$th decoding step, drastically reducing the number of bit-operations we do.
+    3. **Adaptive precision:** We currently set mpmath's precison to `full_precision = np` bits at every decoding step, even though we don't need all $np$ bits at each iteration. Instead we can use $p(i+1)+1$ bits in the $i$th decoding step, drastically reducing the number of bit-operations we do in every iteration.
     """
     )
     return
@@ -1950,7 +1950,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    /// details | How does adaptive precision work? Why can we use $p(i+1)+1$ bits instead of $np$ bits?
+    /// details | How does adaptive precision work? Why can we use $p(i+1)+1$ bits instead of $np$ bits in the $i$th decoding step?
         type: info
 
     Each sample is encoded in $p$ bits, so the $i$th sample occupies bits $ip$ through $ip + (p-1) = p(i+1) - 1$ of $\alpha$. The parts of $\alpha$ beyond $\alpha$ beyond $p(i+1) - 1$ bits are irrelevant in iteration $i$. 
@@ -2012,48 +2012,77 @@ def _(
 
 @app.cell
 def _(mo):
-    mo.md(r"""We can compare the fast and slow decoder""")
+    mo.md(r"""We can compare the fast and slow decoder when decoding 5 examples from ARC-AGI-2's public eval set with precision $p=7$.""")
     return
 
 
 @app.cell
-def _(alpha2, decode, full_precision2, p2, time, y_scaled):
+def _(MinMaxScaler, ds, logistic_encoder, mo, process_arc_agi):
+    # encode
+
+    def preprocess(n_samples:int):
+        X, y = process_arc_agi(ds)
+        X, y = X[:n_samples], y[:n_samples]
+        y_flat = y.flatten()
+        scaler = MinMaxScaler()
+        y_scaled = scaler.fit_transform(y_flat)
+        return y_scaled
+
+    y_scaled_10 = preprocess(5) # use first 10 tasks of ARC-AGI-2
+    p_10 = 7 # bits of precision for a single sample
+    full_precision_10 = len(y_scaled_10) * p_10
+
+    alpha_10 = logistic_encoder(y_scaled_10, p_10, full_precision_10)
+    mo.show_code()
+    return alpha_10, full_precision_10, p_10, y_scaled_10
+
+
+@app.cell
+def _(alpha_10):
+    str(alpha_10)
+    return
+
+
+@app.cell
+def _(alpha_10, decode, full_precision_10, p_10, time, y_scaled_10):
     st = time.perf_counter()
-    y_pred_raw_3 = decode(alpha2, full_precision2, p2, y_scaled)
+    y_pred_raw_3 = decode(alpha_10, full_precision_10, p_10, y_scaled_10)
     et = time.perf_counter()
     print(f'Decoding Took {et-st:} secs')
     return (y_pred_raw_3,)
 
 
 @app.cell
-def _(alpha2, fast_decode, p2, time, y_scaled):
+def _(alpha_10, fast_decode, p_10, time, y_scaled_10):
     st2 = time.perf_counter()
-    y_pred_raw_3_fast = fast_decode(alpha2, p2, y_scaled)
+    y_pred_raw_3_fast = fast_decode(alpha_10, p_10, y_scaled_10)
     et2 = time.perf_counter()
     print(f'Fast Decoding Took {et2-st2} secs')
     return (y_pred_raw_3_fast,)
 
 
-app._unparsable_cell(
-    r"""
-    We get a 10x speedup!
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    The original decoder runs in 35 seconds and the fast decoder in 5 seconds. This is a 7x speedup! Since we encode 5 tasks, each with 900 samples, we must decode $5 \cdot 900=4500$ individual tasks.
 
-    As a sanity check, we can confirm these are both within 
-    """,
-    name="_"
-)
+    Due to adaptive precision, the fast decoder may produce slightly different values after the first $p$ bits compared to the regular decoder. We verify that both decoders remain within the theoretical error tolerance of each other.
+    """
+    )
+    return
 
 
 @app.cell
-def _(np, p, y_pred_raw_3, y_pred_raw_3_fast):
-    tol = np.pi/2**(p-1)
+def _(np, p_10, y_pred_raw_3, y_pred_raw_3_fast):
+    tol = np.pi/2**(p_10-1)
     np.testing.assert_allclose(y_pred_raw_3, y_pred_raw_3_fast, atol=tol)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r""" """)
+    mo.md(r"""This is great! We now have a fast decoder implementation that can handle multiple tasks!""")
     return
 
 
