@@ -132,7 +132,7 @@ class OneParameterModel:
             y_pred = np.array([decoder(idx) for idx in tqdm(full_idxs)])
         else:
             with multiprocessing.Pool(self.n_workers) as p:
-                y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Logistic Decoder")))
+                y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding")))
         return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
     @Timing("verify: ")
@@ -144,3 +144,10 @@ class OneParameterModel:
         # multiply the tolerance by the scaler range to account for scaling
         tolerance = np.pi / 2 ** (self.precision - 1) * self.scaler.range
         np.testing.assert_allclose(y_pred, y, atol=tolerance, rtol=0)
+
+def fast_decode(alpha, p, y_scaled, n_workers=8):
+    y_idxs = list(range(len(y_scaled)))
+    decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(alpha)), p)
+    with multiprocessing.Pool(n_workers) as p:
+        y_pred = np.array(list(tqdm(p.imap(decoder, y_idxs), total=len(y_idxs), desc="Decoding")))
+    return y_pred
