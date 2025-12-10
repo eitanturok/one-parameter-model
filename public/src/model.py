@@ -1,7 +1,35 @@
-import functools, multiprocessing
+import functools, multiprocessing, contextlib, time, sys
 import numpy as np
 from mpmath import mp, asin as Arcsin, sqrt as Sqrt, sin as Sin, pi as Pi
-from .utils import MinMaxScaler, Timing, tqdm
+from tqdm import tqdm
+
+#***** utilities *****
+
+class MinMaxScaler:
+    def __init__(self, feature_range=(1e-10, 1-1e-10), epsilon=1e-10):
+        self.min = self.max = self.range = None
+        self.feature_range, self.epsilon = feature_range, epsilon
+    def fit(self, X):
+        self.min, self.max = X.min(axis=0), X.max(axis=0)
+        self.range = np.maximum(self.max - self.min, self.epsilon)  # Prevent div by zero
+        return self
+    def transform(self, X):
+        X_scaled = (X - self.min) / self.range
+        return np.clip(X_scaled, *self.feature_range)  # Keep away from exact boundaries
+    def fit_transform(self, X):
+        return self.fit(X).transform(X)
+    def inverse_transform(self, X):
+        X_clipped = np.clip(X, *self.feature_range)
+        return X_clipped * self.range + self.min
+
+# https://github.com/tinygrad/tinygrad/blob/44bc7dc73d7d03a909f0cc5c792c3cdd2621d787/tinygrad/helpers.py
+class Timing(contextlib.ContextDecorator):
+    def __init__(self, prefix="", on_exit=None, enabled=True): self.prefix, self.on_exit, self.enabled = prefix, on_exit, enabled
+    def __enter__(self): self.st = time.perf_counter() # pylint: disable=attribute-defined-outside-init
+    def __exit__(self, *exc):
+        self.et = time.perf_counter() - self.st # pylint: disable=attribute-defined-outside-init
+        if self.enabled: print(f"{self.prefix}{self.et:6.3f} sec"+(self.on_exit(self.et) if self.on_exit else ""), file=sys.stderr)
+
 
 #***** binary *****
 

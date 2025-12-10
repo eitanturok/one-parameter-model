@@ -1,12 +1,9 @@
-# Run `uv run python -m src.one_parameter_model.main` from top-most `one-parameter-model` directory
+# Run `uv run python -m public.src.main --dataset arc-agi-2` from top-most `one-parameter-model` directory
 import json, argparse
 import numpy as np
 
 from .model import OneParameterModel
 from .data import DATASET, plot_data
-
-from icecream import install
-install()
 
 def main(args):
     # load dataset

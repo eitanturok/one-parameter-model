@@ -20,7 +20,7 @@ def _():
     from matplotlib import colors
     from tqdm import tqdm
 
-    from src.one_parameter_model.data import local_arc_agi, process_arc_agi
+    from public.src.data import local_arc_agi, process_arc_agi
     return (
         colors,
         functools,
@@ -110,7 +110,7 @@ def _(mo):
 
 @app.cell
 def _(json, mo):
-    with open(mo.notebook_location() / "public/alpha/alpha_arc_agi_2_p8.json", "r") as f: data = json.load(f)
+    with open(mo.notebook_location() / "public/data/alpha/alpha_arc_agi_2_p8.json", "r") as f: data = json.load(f)
     alpha_txt = data['alpha'][0]
     p_txt = data['precision']
 
@@ -160,16 +160,18 @@ def _(mo):
     return
 
 
-@app.cell
-def _(mo):
+app._unparsable_cell(
+    r"""
     arc_agi_header_image = mo.image(
-        mo.notebook_dir() / "public/images/arc_agi_ header.png",
+        1mo.notebook_location() / \"public/images/arc_agi_ header.png\",
         width=800,
-        caption="The ARC-AGI website.",
-        style={"display": "block", "margin": "0 auto"}
+        caption=\"The ARC-AGI website.\",
+        style={\"display\": \"block\", \"margin\": \"0 auto\"}
     )
     arc_agi_header_image
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell(hide_code=True)
@@ -269,8 +271,8 @@ def _(colors, np, plt):
 
 
 @app.cell
-def _(local_arc_agi):
-    ds = local_arc_agi("public/data/ARC-AGI-2")
+def _(local_arc_agi, mo):
+    ds = local_arc_agi(mo.notebook_location() / "public/data/ARC-AGI-2")
     return (ds,)
 
 
@@ -329,16 +331,18 @@ def _():
     return
 
 
-@app.cell
-def _(mo):
+app._unparsable_cell(
+    r"""
     arc_agi_2_leaderboard_image = mo.image(
-        mo.notebook_dir() / "public/images/2025-12-05-arc-argi-2-prize-leaderboard.png",
+        1mo.notebook_location() / \"public/images/2025-12-05-arc-argi-2-prize-leaderboard.png\",
         width=800,
-        caption="Performance on private eval set of ARC-AGI-2. Retreived from https://arcprize.org/leaderboard on December 5th, 2025.",
-        style={"display": "block", "margin": "0 auto"}
+        caption=\"Performance on private eval set of ARC-AGI-2. Retreived from https://arcprize.org/leaderboard on December 5th, 2025.\",
+        style={\"display\": \"block\", \"margin\": \"0 auto\"}
     )
     arc_agi_2_leaderboard_image
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -359,16 +363,18 @@ def _(mo):
     return
 
 
-@app.cell
-def _(mo):
+app._unparsable_cell(
+    r"""
     hrm_performance_image = mo.image(
-        mo.notebook_dir() / "public/images/hrm_arc_agi.png",
+        1mo.notebook_location() / \"public/images/hrm_arc_agi.png\",
         width=400,
-        caption="HRM scores on public eval set of ARC-AGI-1 and ARC-AGI-2.",
-        style={"display": "block", "margin": "0 auto"}
+        caption=\"HRM scores on public eval set of ARC-AGI-1 and ARC-AGI-2.\",
+        style={\"display\": \"block\", \"margin\": \"0 auto\"}
     )
     hrm_performance_image
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -385,17 +391,19 @@ def _(mo):
     return
 
 
-@app.cell
-def _(mo):
+app._unparsable_cell(
+    r"""
     hrm_train_on_eval_image = mo.image(
-        mo.notebook_dir() / "public/images/hrm_train_on_eval_screenshot.png",
+        1mo.notebook_location() / \"public/images/hrm_train_on_eval_screenshot.png\",
         width=600,
-        caption="Screenshot of HRM paper showing that HRM trained on the public eval set of ARC-AGI-1.",
-        style={"display": "block", "margin": "0 auto"}
+        caption=\"Screenshot of HRM paper showing that HRM trained on the public eval set of ARC-AGI-1.\",
+        style={\"display\": \"block\", \"margin\": \"0 auto\"}
     )
 
     hrm_train_on_eval_image
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -1178,15 +1186,17 @@ def _(mo):
     return
 
 
-@app.cell
-def _(mo):
+app._unparsable_cell(
+    r"""
     topological_conjugacy_image = mo.image(
-        mo.notebook_dir() / "public/images/topological_conjugacy.png",
+        1mo.notebook_location() / \"public/images/topological_conjugacy.png\",
         width=400,
-        caption="Topological conjugacy between the dyadic and logistic map.",
-        style={"display": "block", "margin": "0 auto"}
+        caption=\"Topological conjugacy between the dyadic and logistic map.\",
+        style={\"display\": \"block\", \"margin\": \"0 auto\"}
     )
-    return (topological_conjugacy_image,)
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -2326,16 +2336,18 @@ def _(mo):
     return
 
 
-@app.cell
-def _(mo):
+app._unparsable_cell(
+    r"""
     animals_image = mo.image(
-        mo.notebook_dir() / "public/images/animals.png",
+        1mo.notebook_location() / \"public/images/animals.png\",
         width=800,
-        caption="Encode animals with different values of alpha. Figure 1 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.",
-        style={"display": "block", "margin": "0 auto"}
+        caption=\"Encode animals with different values of alpha. Figure 1 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.\",
+        style={\"display\": \"block\", \"margin\": \"0 auto\"}
     )
     animals_image
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -2351,16 +2363,18 @@ def _(mo):
     return
 
 
-@app.cell
-def _(mo):
+app._unparsable_cell(
+    r"""
     stocks_image = mo.image(
-        mo.notebook_dir() / "public/images/s_and_p.png",
+        1mo.notebook_location() / \"public/images/s_and_p.png\",
         width=800,
-        caption="Predict the S&P 500 with 100% accuracy until mid Febuary 2019. From Figure 9 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.",
-        style={"display": "block", "margin": "0 auto"}
+        caption=\"Predict the S&P 500 with 100% accuracy until mid Febuary 2019. From Figure 9 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.\",
+        style={\"display\": \"block\", \"margin\": \"0 auto\"}
     )
     stocks_image
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -2369,16 +2383,18 @@ def _(mo):
     return
 
 
-@app.cell
-def _(mo):
+app._unparsable_cell(
+    r"""
     cifar10_image = mo.image(
-        mo.notebook_dir() / "public/images/cifar_10.png",
+        1mo.notebook_location() / \"public/images/cifar_10.png\",
         width=800,
-        caption="Encode samples that look like they are from cifar-10. From Figure 3 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.",
-        style={"display": "block", "margin": "0 auto"}
+        caption=\"Encode samples that look like they are from cifar-10. From Figure 3 of 'Real numbers, data science and chaos: How to fit any dataset with a single parameter'.\",
+        style={\"display\": \"block\", \"margin\": \"0 auto\"}
     )
     cifar10_image
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -2461,16 +2477,18 @@ def _(mo):
     return
 
 
-@app.cell
-def _(mo):
+app._unparsable_cell(
+    r"""
     arc_agi_overfitting_image = mo.image(
-        mo.notebook_dir() / "public/images/arc_agi_overfitting.png",
+        1mo.notebook_location() / \"public/images/arc_agi_overfitting.png\",
         width=800,
-        caption="Mike Knoop on ARC-AGI overfitting. Retreived from https://arcprize.org/blog/arc-prize-2025-results-analysis on December 9th, 2025.",
-        style={"display": "block", "margin": "0 auto"}
+        caption=\"Mike Knoop on ARC-AGI overfitting. Retreived from https://arcprize.org/blog/arc-prize-2025-results-analysis on December 9th, 2025.\",
+        style={\"display\": \"block\", \"margin\": \"0 auto\"}
     )
     arc_agi_overfitting_image
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell
