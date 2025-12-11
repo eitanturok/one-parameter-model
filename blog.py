@@ -69,7 +69,9 @@ def _(mo):
         r"""
     # I built a one-parameter model that gets 100% on ARC-AGI-2
 
-    > I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
+    > **TLDR:** I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
+
+    **All code for my experiments can be found at [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).**
     """
     )
     return
@@ -162,7 +164,7 @@ def _(mo):
 
     This one-parameter model is a thought experiment taken seriously. My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence. But this also exposes a deeper issue at play. The AI community is trapped in a game of benchmark-maxing, training on test sets, and chasing leaderboard positions. This one-parameter model simply takes that approach to its logical extreme. As we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
 
-    Let me show you how it works.
+    Let me show you how it works. 
     """
     )
     return
@@ -333,8 +335,6 @@ def _(mo):
 
     Looking at the examples, each grid contains exactly two shapes: one red and one blue. The pattern is straightforward: translate the red shape in a straight line toward the blue shape until they touch (but do not overlap). The blue shape remains stationary. The resulting configuration -- red shape adjacent to blue shape -- is the output.
 
-    In Example 1, the red shape sits in the upper left and the blue square in the mid-right. Translating the red shape horiztonally to the right, it slides until it reaches the blue square, resulting in the example output. The question follows the same logic. In the question input the red shape sits in the middle of the grid and the blue shape is in the mid-left. Translating the red shape horizontally to the left, it slides until it reaches the blue shape. Looking at the question output, we can verify that this indeed matches the question output.
-
     Here is another task.
     """
     )
@@ -353,7 +353,7 @@ def _(mo):
         r"""
     Looking at the examples, each input contains exactly 3 diagonal lines, each a single solid color. The pattern is to repeat these 3 colors cyclically across the entire output grid in diagonal stripes, creating a repeating checkered pattern. Whether the input's 3 diagonals appear consecutively or not doesn't matter, they repeat every 3 diagonal positions throughout the output.
 
-    In Example 1, the input shows three consequtive diagonal stripes: blue, red, and yellow. The output tiles this sequence repeatedly -- blue diagonal, red diagonal, yellow diagonal —- cycling through all 3 colors across the full grid. Loking at the question, the input also contains three diagonal lines in blue, red, and yellow, but they're in a different order and do not appear all next to each other. Still, the output repeats these three colors cyclically in diagonal stripes, filling the entire grid. The pattern cycles every 3 diagonals: red, blue, yellow over and over again. This produces the a different output than Example 1 because the order of the three colors is different.
+    Loking at the question, the input also contains three diagonal lines in blue, red, and yellow, but they do not appear all next to each other. Still, the output repeats these three colors cyclically in diagonal stripes, filling the entire grid.
     """
     )
     return
@@ -379,7 +379,7 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(f"""Even the world's best models struggle on ARC-AGI-2, all scoring under $50\%$. `Gemini 3 Deep Think (Preview)` has the highest score of $45.1\%$ but costs a staggering $\$77.16$ per task. `GPT-5 Pro` is much more efficient, costing $\$7.14$ per task but only solving $18.3\%$ of tasks. Many other frontier models -- Claude, Grok, and Deepseek can't even crack $20\%$. In contrast, humans [get](https://arcprize.org/leaderboard) $100\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-2. It's that difficult.""")
+    mo.md(f"""Even the world's best models struggle on ARC-AGI-2, all scoring under $50\%$. `Gemini 3 Deep Think (Preview)` has the highest score of $45.1\%$ but costs a staggering $\$77.16$ per task. `GPT-5 Pro` is much more efficient, costing $\$7.14$ per task but only solving $18.3\%$ of tasks. Many other frontier models -- Claude, Grok, and Deepseek can't even crack $20\%$. In contrast, a human panel [gets](https://arcprize.org/leaderboard) $100\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-2. It's that difficult.""")
     return
 
 
@@ -415,7 +415,7 @@ def _(mo):
 
     The results almost seemed to be too good to be true. How can a tiny 27M parameter model from a small lab be crushing some of the world's best models, at a fraction of their size?
 
-    Turns out, HRM trained on test:
+    Turns out, HRM trained on the public eval set:
     """
     )
     return
@@ -485,11 +485,11 @@ def _(mo):
 
     $$
     \begin{align}
+    \mathcal{D}: [0, 1] \to [0, 1]
+    &&
     \mathcal{D}(a)
     &=
-    (2a) \bmod 1
-    &
-    \mathcal{D}: [0, 1] \to [0, 1].
+    (2a) \bmod 1.
     \tag{2}
     \end{align}
     $$
@@ -1015,11 +1015,11 @@ def _(mo):
 
     $$
     \begin{align*}
+    \mathcal{L}: [0, 1] \to [0, 1]
+    &&
     \mathcal{L}(a_L)
     &=
     4 a_L (1 - a_L)
-    &
-    \mathcal{L}: [0, 1] \to [0, 1]
     \tag{6}
     \end{align*}
     $$
@@ -1028,11 +1028,11 @@ def _(mo):
 
     $$
     \begin{align*}
+    \mathcal{D}: [0, 1] \to [0, 1]
+    &&
     \mathcal{D}(a_D)
     &=
     (2 a_D) \mod 1
-    &
-    \mathcal{D}: [0, 1] \to [0, 1]
     \end{align*}
     $$
 
@@ -1109,8 +1109,6 @@ def _(mo):
     $$
     \begin{align*}
     a_L = \phi(a_D) &= \sin^2(2 \pi a_D)
-    &
-    \phi: [0, 1] -> [0, 1]
     \tag{7}
     \\
     a_D
@@ -1118,13 +1116,11 @@ def _(mo):
     \phi^{-1}(a_L)
     &=
     \frac{1}{2 \pi} \arcsin (\sqrt{a_L})
-    &
-    \phi^{-1}: [0, 1] -> [0, 1]
     \tag{8}
     \end{align*}
     $$
 
-    We can map any $a_L$ to an $a_D$ and any $a_D$ to an $a_L$.
+    where $\phi: [0, 1] -> [0, 1]$ and $\phi^{-1}: [0, 1] -> [0, 1]$. We can map any $a_L$ to an $a_D$ and any $a_D$ to an $a_L$.
     """
     )
     return
@@ -2349,26 +2345,6 @@ def _(
         plot_arcagi(ds, "eval", idx, y_pred, show_nums=False)
         plt.show()
         print(f"p={p}\nalpha={str(model.alpha)[:10_000]}")
-    return (run,)
-
-
-@app.cell
-def _(mo):
-    precision_slider = mo.ui.slider(start=1, stop=10, step=1, show_value=True, label="Precision")
-    precision_slider
-    return (precision_slider,)
-
-
-@app.cell
-def _(mo):
-    idx_slider = mo.ui.slider(start=1, stop=10, step=1, show_value=True, label="Sample")
-    idx_slider
-    return (idx_slider,)
-
-
-@app.cell
-def _(idx_slider, precision_slider, run):
-    run(idx_slider.value, precision_slider.value)
     return
 
 
@@ -2378,7 +2354,7 @@ def _(mo):
         r"""
     # Conclusion
 
-    > "With four parameters I can fit an elephant, and with five I can make him wiggle his trunk." - John von Neumann
+    > "With four parameters I can fit an elephant, and with five I can make him wiggle his trunk." - John von Neumann on overfitting
     """
     )
     return
@@ -2425,7 +2401,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Beyond ARC-AGI-2, the one-parameter model can be applied to all sorts of datasets. For instance, we can encode animal shapes with different values of $\alpha$:""")
+    mo.md(r"""Beyond ARC-AGI-2, the one-parameter model can be applied to all sorts of datasets. For instance, we can encode animal shapes with different values of $\alpha$, including the elephant John von Neumann mentioned:""")
     return
 
 
@@ -2588,7 +2564,11 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
+    ---
     If you liked this or want to chat, reach out! I enjoy talking to people working on interesting problems.
+
+    Eitan - [Website](https://eitanturok.github.io/) [X](https://eitanturok.github.io/) [LinkedIn](https://linkedin.com/in/eitanturok) [Github](https://github.com/eitanturok)
+
 
     To cite this blog post
     ```md
