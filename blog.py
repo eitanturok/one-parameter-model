@@ -29,7 +29,7 @@ def _(Path, mo, urlopen):
 
     def fix_marimo_path(p):
         return str(mo.notebook_location() / p)
-    
+
     def fix_marimo_open(p): 
         path = fix_marimo_path(p)
         return urlopen(path if path.startswith(('http://', 'https://', 'file://')) else str(Path(path).as_uri()))
@@ -1204,12 +1204,7 @@ def _(fix_marimo_path, mo):
         caption="Topological conjugacy between the dyadic and logistic map.",
         style={"display": "block", "margin": "0 auto"}
     )
-    return (topological_conjugacy_image,)
-
-
-@app.cell
-def _(mo, topological_conjugacy_image):
-    mo.md(f"""{topological_conjugacy_image}""")
+    topological_conjugacy_image
     return
 
 
