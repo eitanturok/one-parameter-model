@@ -15,17 +15,19 @@ def _():
     import json, inspect, multiprocessing, functools, time
     from pathlib import Path
     from urllib.request import urlopen
-    return functools, inspect, json, time
+    return Path, functools, inspect, json, time, urlopen
 
 
-app._unparsable_cell(
-    r"""
-    # marimo notebooks must work with regular python files and with html-wasm in the browser
-    # in python, mo.notebook_location() is the local directory containing the notebook
+@app.cell
+def _(Path, mo, urlopen):
+    # marimo notebooks must work with both
+    # 1) regular python files 
+    # 2) html-wasm in the browser
+    # in python, mo.notebook_location() is the local directory containing the notebook. This is a regular path.
     # in html-wasm, mo.notebook_location() is a url, e.g. http://localhost:8000/ or https://eitanturok.github.io/one-parameter-model/
-    # to support both regular python paths and urls, we have to fix how we define paths, open paths, and perform local imports
+    # To support both regular python paths and urls, we have to fix how we define paths, open paths, and perform local imports
 
-     def fix_marimo_path(p):
+    def fix_marimo_path(p):
         return str(mo.notebook_location() / p)
     
     def fix_marimo_open(p): 
@@ -34,9 +36,7 @@ app._unparsable_cell(
 
     def fix_marimo_local_import(p):
         with fix_marimo_open(p) as f: exec(f.read().decode(), globals())
-    """,
-    name="_"
-)
+    return fix_marimo_local_import, fix_marimo_open, fix_marimo_path
 
 
 @app.cell
