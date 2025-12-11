@@ -2185,8 +2185,8 @@ def _(mo):
 
 
 @app.cell
-def _(np, p_5):
-    tol = np.pi/2**(p_5-1)
+def _(np, p3):
+    tol = np.pi/2**(p3-1)
     np.testing.assert_allclose(_y3_pred, _y3_pred_fast, atol=tol)
     return
 
@@ -2210,8 +2210,16 @@ def _(mo):
 
 
 @app.cell
-def _(mo):
-    from src.one_parameter_model.model import OneParameterModel
+def _(fix_marimo_local_import, mo):
+    # weird hack for html-wasm import to work
+    try:
+        from public.src.model import OneParameterModel
+    except ModuleNotFoundError:
+        fix_marimo_local_import("public/src/model.py")
+
+    if not 'OneParameterModel' in dir() :
+        raise ModuleNotFoundError()
+    
     mo.show_code()
     return (OneParameterModel,)
 
@@ -2410,7 +2418,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Yet at the same time, the one-parameter model is increidbly brittle. It exists as a crude hack, directly encoding the train set into a single parameter. Even simply shuffling the dataset will cause your model to break down because the decoder depends on the index $i$, not the sample $x_i$. It should be abundantly clear that the one-parameter model has no ability to generalize whatsoever. It would get a 0% on the private, heldout test set of ARCI-AGI-2.
+    Yet at the same time, the one-parameter model is incredibly brittle. It exists as a crude hack, directly encoding the train set into a single parameter. Even simply shuffling the dataset will cause your model to break down. The decoder depends on the index $i$, not the sample $x_i$. It should be abundantly clear that the one-parameter model has no ability to generalize whatsoever. It would get a 0% on the private, heldout test set of ARCI-AGI-2.
 
     Two quick technical notes to the critics.
 
@@ -2490,13 +2498,15 @@ def _(fix_marimo_path, mo):
 def _(mo):
     mo.md(
         r"""
-    Yet there is a more fundamental point: many of the amazing approaches to the ARC-AGI competition seem to overfit to ARC-AGI itself. Researchers generate synthetic data specific to ARC-AGI and create abstractions unique to the grid structure of the competition. I doubht many of their techniques would generalize to other reasoning problems. How many of the innovative solutions to ARC-AGI have inspired downstream improvements in LLMs or other modes of intelligence? I would love to be wrong about this and hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles and continue to drive innovation the broader field of AI.
+    Yet there is a more fundamental point: many of the amazing approaches to the ARC-AGI competition seem to overfit to ARC-AGI itself. Researchers generate synthetic data specific to ARC-AGI and create abstractions unique to the grid structure of the competition. I doubht many of their techniques would generalize to other reasoning problems. How many of the innovative solutions to ARC-AGI have inspired downstream improvements in LLMs or other modes of intelligence? I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles and drive broader innovation the field of AI.
 
     **Final Thoughts**
 
-    To end, I'll leave with the same quote with which we started:
+    To close, I’ll return to the line we began with:
 
     > "When a measure becomes a target, it ceases to be a good measure" - Charles Goodhart
+
+    Indeed, the one-parameter model serves as a *reductio ad absurdum* of what happens when metrics become the goal rather than the guide.
     """
     )
     return
