@@ -2072,8 +2072,8 @@ def _(mo):
     we can accelerate this in three ways:
 
     1. **Parallelization:** Because each element is decoded independently, we can decode all elements in parallel with `multiprocessing.Pool`. This speeds up the for loop over `len(y_scaled))`.
-    2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it in each decoding iteration. This eliminates repeated expensive trigonmetric and square root operations.
-    3. **Adaptive precision:** We currently set mpmath's precison to `full_precision = np` bits at every decoding step, even though we don't need all $np$ bits at each iteration. Instead we can use $p(i+1)+1$ bits in the $i$th decoding step, drastically reducing the number of bit-operations we do in every iteration.
+    2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it in each decoding iteration. This eliminates repeated expensive trigonmetric and square root operations on huge $np$ bits numbers.
+    3. **Adaptive precision:** We currently set mpmath's precison to `full_precision = np` bits at every decoding step, even though we don't need all $np$ bits at each iteration. Instead we only need the first $p(i+1)+1$ bits of $\alpha$ in the $i$th decoding step. This drastically reduces the number of bit-operations we do in every decoding step.
     """
     )
     return
@@ -2108,7 +2108,13 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Let's implement these three speedups in our code.""")
+    mo.md(
+        r"""
+    Let's implement these three speedups in our code.
+
+    We define `logistic_decoder_fast` which takes in `arcsin_sqrt_alpha` instead of `alpha` (speedup #2) and sets the precision to `mp.prec = p * (i + 1) + 1` instead of `mp.prec = full_precision` (speedup #3).
+    """
+    )
     return
 
 
@@ -2123,7 +2129,13 @@ def _(Sin, mo, mp):
 
 @app.cell
 def _(mo):
-    mo.md(r"""We modify `logistic_decoder_fast` to take in `arcsin_sqrt_alpha` instead of $\alpha$ and set the precision to `mp.prec = p * (i + 1) + 1` instead of `mp.prec = full_precision`.""")
+    mo.md(
+        r"""
+    We can now define `fast_decode` which parallelizes the decoding with `multiprocessing.Pool` (speedup #1).
+
+    An annoying quirk of notebooks is that they [cannot run](https://bobswinkels.com/posts/multiprocessing-python-windows-jupyter/) `multiprocessing.Pool`. And we are in a notebook. As a workaround, we define `fast_decode` in another file and import it here. (This is why `fast_decode` is displayed differently than other functions.)
+    """
+    )
     return
 
 
@@ -2149,18 +2161,12 @@ def _(display_fxn, fast_decode, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""We parallelize the decoding with `multiprocessing.Pool`. Note: since `multiprocessing.Pool` [fails in notebooks](https://bobswinkels.com/posts/multiprocessing-python-windows-jupyter/) we need to define `fast_decode` in another file and import it here. This is one of the weird quirks of parallelizing operations in a notebook and why `fast_decode` is displayed differently than other functions.""")
-    return
-
-
-@app.cell
-def _(mo):
     mo.md(r"""Let's now run a speed test and compare the fast and slow decoders on 5 ARC-AGI-2 tasks with precision $p=7$. First, we encode these 5 tasks into $\alpha$:""")
     return
 
 
 @app.cell
-def _(MinMaxScaler, X, logistic_encoder, mo, y):
+def _(MinMaxScaler, X, logistic_encoder, y):
     # encode
     def preprocess(X, y):
         y_flat = y.flatten()
@@ -2174,7 +2180,8 @@ def _(MinMaxScaler, X, logistic_encoder, mo, y):
     full_precision3 = len(y3_scaled) * p3
 
     alpha3 = logistic_encoder(y3_scaled, p3, full_precision3)
-    mo.show_code()
+
+
     return alpha3, full_precision3, p3, y3_scaled
 
 
@@ -2208,11 +2215,12 @@ def _(et, mo, st):
 
 
 @app.cell
-def _(alpha3, fast_decode, p3, time, y3_scaled):
+def _(alpha3, fast_decode, mo, p3, time, y3_scaled):
     st_fast = time.perf_counter()
     y3_pred_fast_ = fast_decode(alpha3, p3, y3_scaled)
     et_fast = time.perf_counter()
     print(f'Fast Decoding Took {et_fast-st_fast} secs')
+    mo.show_code()
     return et_fast, st_fast, y3_pred_fast_
 
 
