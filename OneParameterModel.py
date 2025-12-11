@@ -71,7 +71,7 @@ def _(mo):
 
     > **TLDR:** I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
 
-    **All code for my experiments can be found at [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).**
+    **All the code for my experiments can be found at [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).**
     """
     )
     return

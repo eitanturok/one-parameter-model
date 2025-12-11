@@ -1,14 +1,24 @@
-https://www.youtube.com/watch?v=m8bdgBidefA
-https://docs.marimo.io/guides/publishing/github_pages/
+# I built a one-parameter model that gets 100% on ARC-AGI-2
 
-wasm webpage
-```bash
-marimo export html-wasm blog.py -o docs --force
-python -m http.server --directory docs
+![logo](public/images/logo.png)
+
+> **TLDR:** I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
+
+To run the notebook interactively with marimo
+```py
+marimo edit OneParameterModel.py
 ```
 
-Static webpage
+## Export
+
+Export to html (used)
 ```bash
-marimo export html blog.py -o docs/docs.html --force --no-include-code
+marimo export html OneParameterModel.py -o docs/docs.html --force --no-include-code
 python export.py
+```
+
+Export to html-wasm (not used)
+```bash
+marimo export html-wasm OneParameterModel.py -o docs --force
+python -m http.server --directory docs
 ```
