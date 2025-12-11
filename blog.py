@@ -69,7 +69,7 @@ def _(mo):
         r"""
     # I built a one-parameter model that gets 100% on ARC-AGI-2
 
-    > I built a model that has only one parameter and gets 100% on the public eval set of ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
+    > I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
     """
     )
     return
@@ -150,7 +150,7 @@ def _(alpha_txt):
 def _(mo):
     mo.md(
         r"""
-    and you'll get a perfect score on the public eval set of ARC-AGI-2! (Feel free to scroll. Only the first 10,000 digits of $\alpha$ are shown.)
+    and you'll get a perfect score on the public eval set of ARC-AGI-2! (Feel free to scroll horizontally. Only the first 10,000 digits of $\alpha$ are shown.)
 
     This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time.
 
@@ -158,7 +158,7 @@ def _(mo):
 
     Unfortunately, **it's complete nonsense.**
 
-    There is no learning or generalization. What I've really done here is train on the public eval set of ARC-AGI-2 and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating. Although the model scores 100% on the *public* eval set of ARC-AGI-2, it would get 0% on the *private* eval set of ARC-AGI-2.
+    There is no learning or generalization. What I've really done here is train on the public eval set of ARC-AGI-2 and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating. The model scores 100% on the *public* eval set of ARC-AGI-2 but would get 0% on the *private* eval set of ARC-AGI-2.
 
     This one-parameter model is a thought experiment taken seriously. My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence. But this also exposes a deeper issue at play. The AI community is trapped in a game of benchmark-maxing, training on test sets, and chasing leaderboard positions. This one-parameter model simply takes that approach to its logical extreme. As we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
 
@@ -2399,7 +2399,7 @@ def _(mo):
     $$
 
 
-    that achieves 100% on ARC-AGI-2 with one parameter. This model takes overfitting to the extreme and absurd conclusion of directly encoding the entire test set into the single trainable parameter $\alpha$.
+    that achieves 100% on the public eval set of ARC-AGI-2 with one parameter. This model takes overfitting to the absurd conclusion of directly encoding the entire public eval set of ARC-AGI-2 into the single trainable parameter $\alpha$.
     """
     )
     return
@@ -2588,7 +2588,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    If you liked this or want to chat, reach out! I always love talking to people working in interesting problems.
+    If you liked this or want to chat, reach out! I enjoy talking to people working on interesting problems.
 
     To cite this blog post
     ```md
