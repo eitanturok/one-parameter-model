@@ -69,7 +69,7 @@ def _(mo):
         r"""
     # I built a one-parameter model that gets 100% on ARC-AGI-2
 
-    > I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
+    > I built a model that has only one parameter and gets 100% on the public eval set of ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
     """
     )
     return
@@ -150,7 +150,7 @@ def _(alpha_txt):
 def _(mo):
     mo.md(
         r"""
-    and you'll get a perfect score on ARC-AGI-2! (Feel free to scroll but only the first 10,000 digits of $\alpha$ are shown.)
+    and you'll get a perfect score on the public eval set of ARC-AGI-2! (Feel free to scroll. Only the first 10,000 digits of $\alpha$ are shown.)
 
     This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time.
 
@@ -158,7 +158,7 @@ def _(mo):
 
     Unfortunately, **it's complete nonsense.**
 
-    There is no learning or generalization. What I've really done here is train on test and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating.
+    There is no learning or generalization. What I've really done here is train on the public eval set of ARC-AGI-2 and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating.
 
     This one-parameter model is a thought experiment taken seriously. My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence. But this also exposes a deeper issue at play. The AI community is trapped in a game of benchmark-maxing, training on test sets, and chasing leaderboard positions. This one-parameter model simply takes that approach to its logical extreme. As we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
 
@@ -2386,19 +2386,46 @@ def _(mo):
 
 @app.cell
 def _(mo):
+    mo.md(
+        r"""
+    We've built a beautiful model 
+
+    $$
+    f_{\alpha, p}(i)
+    =
+    \sin^2 \Big(
+        2^{i p} \arcsin(\sqrt{\alpha})
+    \Big)
+    $$
+
+
+    that achieves 100% on ARC-AGI-2 with one parameter. This model takes overfitting to the extreme and absurd conclusion of directly encoding the entire test set into the single trainable parameter $\alpha$.
+    """
+    )
+    return
+
+
+@app.cell
+def _(fix_marimo_path, mo):
+    meme_image = mo.image(
+        fix_marimo_path("public/images/meme.jpg"),
+        width=500,
+        caption="The one-parameter model in a nutshell.",
+        style={"display": "block", "margin": "0 auto"}
+    )
+    meme_image
+    return
+
+
+@app.cell
+def _(mo):
     mo.md(r"""## Other uses for the one-parameter model""")
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-    We've built a model that achieves 100% on ARC-AGI-2 with one parameter. Indeed, this technique is quite powerful and can be applied to tons of other datasets, achieving perfect accuracy every time.
-
-    For instance, we can encode animal shapes with different values of $\alpha$
-    """
-    )
+    mo.md(r"""The one-parameter model is quite powerful and can be applied to all sorts of datasets besides ARC-AGI-2. For instance, we can encode animal shapes with different values of $\alpha$:""")
     return
 
 
@@ -2499,17 +2526,7 @@ def _(mo):
 
     **Intelligence is not parameter count.**
 
-    The existence of such a simple equation
-
-    $$
-    f_{\alpha, p}(i)
-    =
-    \sin^2 \Big(
-        2^{i p} \arcsin(\sqrt{\alpha})
-    \Big)
-    $$
-
-    with such powerful expressivity deomonstrates that model complexity cannot be determined by counting parameters alone. The one-parameter model exploits a often-overlooked fact: a single real-valued parameter can encode an unbounded amount of information by hiding complexity in its digits rather than in parameter count. In other words, don't automatically assume that a bigger model is a smarter model. Parameter count can be a poor proxy for intelligence.
+    The existence of such a simple equation with such powerful expressivity deomonstrates that model complexity cannot be determined by counting parameters alone. The one-parameter model exploits a often-overlooked fact: a single real-valued parameter can encode an unbounded amount of information by hiding complexity in its digits rather than in parameter count. In other words, don't automatically assume that a bigger model is a smarter model. Parameter count can be a poor proxy for intelligence.
 
     **Intelligence is compression.**
 

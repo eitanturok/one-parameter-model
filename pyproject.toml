@@ -9,10 +9,10 @@ dependencies = [
     "gmpy2>=2.2.1",
     "matplotlib>=3.10.6",
     "datasets>=4.0.0",
-    "icecream>=2.1.7",
     "marimo>=0.15.2",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
