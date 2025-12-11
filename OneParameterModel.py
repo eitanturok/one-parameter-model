@@ -164,7 +164,7 @@ def _(mo):
 
     This one-parameter model is a thought experiment taken seriously. My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence. But this also exposes a deeper issue at play. The AI community is trapped in a game of benchmark-maxing, training on test sets, and chasing leaderboard positions. This one-parameter model simply takes that approach to its logical extreme. As we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
 
-    Let me show you how it works. 
+    Let me show you how it works.
     """
     )
     return
@@ -204,11 +204,11 @@ def _(mo):
 
     Most evaluations are straightforward: given some input, predict the output. ARC-AGI-2, however, is more complicated. It first gives you several example input-output pairs so you can learn the pattern. Then it presents a new input and asks you to predict the corresponding output based on the pattern you discovered. This structure means that a single ARC-AGI-2 task consists of:
 
-    * several example input-output pairs
-    * a question input
-    * a question output
+    * several <span style="color:blue">example input-output pairs</span>
+    * a <span style="color:blue">question input</span>
+    * a <span style="color:red">question output</span>
 
-    The challenge is this: given the example input-output pairs and the question input, can you predict the question output?
+    The challenge is this: given the <span style="color:blue">example input-output pairs</span> and the <span style="color:blue">question input</span>, can you predict the  <span style="color:red">question output</span>?
 
     **What does an ARC-AGI-2 task actually look like?**
 
@@ -2180,8 +2180,6 @@ def _(MinMaxScaler, X, logistic_encoder, y):
     full_precision3 = len(y3_scaled) * p3
 
     alpha3 = logistic_encoder(y3_scaled, p3, full_precision3)
-
-
     return alpha3, full_precision3, p3, y3_scaled
 
 
