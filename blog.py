@@ -158,7 +158,7 @@ def _(mo):
 
     Unfortunately, **it's complete nonsense.**
 
-    There is no learning or generalization. What I've really done here is train on the public eval set of ARC-AGI-2 and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating. Although, the model scores 100% on the *public* eval set of ARC-AGI-2, it would get 0% on the *private* eval set of ARC-AGI-2.
+    There is no learning or generalization. What I've really done here is train on the public eval set of ARC-AGI-2 and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating. Although the model scores 100% on the *public* eval set of ARC-AGI-2, it would get 0% on the *private* eval set of ARC-AGI-2.
 
     This one-parameter model is a thought experiment taken seriously. My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence. But this also exposes a deeper issue at play. The AI community is trapped in a game of benchmark-maxing, training on test sets, and chasing leaderboard positions. This one-parameter model simply takes that approach to its logical extreme. As we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
 
