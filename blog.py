@@ -1899,34 +1899,34 @@ def _(alpha, full_precision, logistic_decoder, mo, np, p, tqdm, y1_scaled):
     def decode(alpha, full_precision, p, y_scaled):
         return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")])
 
-    _y1_pred = decode(alpha, full_precision, p, y1_scaled)
+    y1_pred_ = decode(alpha, full_precision, p, y1_scaled)
     mo.show_code()
-    return (decode,)
+    return decode, y1_pred_
 
 
 @app.cell
-def _(mo):
-    print(f'{_y1_pred.shape=}')
+def _(mo, y1_pred_):
+    print(f'{y1_pred_.shape=}')
     mo.show_code()
     return
 
 
 @app.cell
-def _(mo):
+def _(mo, y1_pred_):
     with mo.redirect_stdout():
-        print(f'{_y1_pred.shape=}')
+        print(f'{y1_pred_.shape=}')
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""Now let's undo the steps from before: reshape `_y1_pred` back into a matrix and scale it back to `[0, 9]`.""")
+    mo.md(r"""Now let's undo the steps from before: reshape `y1_pred_` back into a matrix and scale it back to `[0, 9]`.""")
     return
 
 
 @app.cell
-def _(mo, scaler):
-    y1_pred = scaler.inverse_transform(_y1_pred).reshape(1, 30, 30)
+def _(mo, scaler, y1_pred_):
+    y1_pred = scaler.inverse_transform(y1_pred_).reshape(1, 30, 30)
     mo.show_code()
     return (y1_pred,)
 
@@ -1945,13 +1945,11 @@ def _(mo, y1_pred):
     return
 
 
-app._unparsable_cell(
-    r"""
-    print(f'{y1_pred[0, :5, :25=}')
+@app.cell
+def _(mo, y1_pred):
+    print(f'{y1_pred[0, :5, :5]=}')
     mo.show_code()
-    """,
-    name="_"
-)
+    return
 
 
 @app.cell
@@ -2028,7 +2026,7 @@ def _(mo):
 
 
 @app.cell
-def _(decode, logistic_encoder, mo, scaler, y1_scaled, y_scaled):
+def _(decode, logistic_encoder, mo, scaler, y1_scaled):
     # encode
     y2_scaled = y1_scaled
     p2 = 14 # bits of precision for a single sample
@@ -2036,16 +2034,16 @@ def _(decode, logistic_encoder, mo, scaler, y1_scaled, y_scaled):
     alpha2 = logistic_encoder(y2_scaled, p2, full_precision2)
 
     # decode
-    _y2_pred = decode(alpha2, full_precision2, p2, y_scaled)
-    y2_pred = scaler.inverse_transform(_y2_pred).reshape(1, 30, 30)
+    y2_pred_ = decode(alpha2, full_precision2, p2, y2_scaled)
+    y2_pred = scaler.inverse_transform(y2_pred_).reshape(1, 30, 30)
 
     mo.show_code()
-    return alpha2, p2
+    return alpha2, p2, y2_pred
 
 
 @app.cell
-def _(alpha, alpha2, ds, p, p2, plot_prediction, y_pred, y_pred2):
-    plot_prediction(ds, "eval", 0, [y_pred.squeeze(), y_pred2.squeeze()], [p, p2], [len(str(alpha)), len(str(alpha2))])
+def _(alpha, alpha2, ds, p, p2, plot_prediction, y1_pred, y2_pred):
+    plot_prediction(ds, "eval", 0, [y1_pred.squeeze(), y2_pred.squeeze()], [p, p2], [len(str(alpha)), len(str(alpha2))])
     return
 
 
@@ -2072,7 +2070,7 @@ def _(mo):
         mp.prec = full_precision
         return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
 
-    _y2_pred = np.array([logistic_decoder(alpha2, full_precision2, p2, i) for i in range(len(y2_scaled))])
+    y2_pred_ = np.array([logistic_decoder(alpha2, full_precision2, p2, i) for i in range(len(y2_scaled))])
     ```
 
     we can accelerate this in three ways:
@@ -2137,7 +2135,7 @@ def _(mo):
 def _(fix_marimo_local_import, mo):
     # weird hack for html-wasm import to work
     try:
-        from src.one_parameter_model.model import fast_decode
+        from public.src.model import fast_decode
     except ModuleNotFoundError:
         fix_marimo_local_import("public/src/model.py")
     if not 'fast_decode' in dir() :
@@ -2199,11 +2197,11 @@ def _(mo):
 @app.cell
 def _(alpha3, decode, full_precision3, mo, p3, time, y3_scaled):
     st = time.perf_counter()
-    _y3_pred = decode(alpha3, full_precision3, p3, y3_scaled)
+    y3_pred_ = decode(alpha3, full_precision3, p3, y3_scaled)
     et = time.perf_counter()
     print(f'Decoding Took {et-st} secs')
     mo.show_code()
-    return et, st
+    return et, st, y3_pred_
 
 
 @app.cell
@@ -2216,10 +2214,10 @@ def _(et, mo, st):
 @app.cell
 def _(alpha3, fast_decode, p3, time, y3_scaled):
     st_fast = time.perf_counter()
-    _y3_pred_fast = fast_decode(alpha3, p3, y3_scaled)
+    y3_pred_fast_ = fast_decode(alpha3, p3, y3_scaled)
     et_fast = time.perf_counter()
     print(f'Fast Decoding Took {et_fast-st_fast} secs')
-    return et_fast, st_fast
+    return et_fast, st_fast, y3_pred_fast_
 
 
 @app.cell
@@ -2242,21 +2240,15 @@ def _(mo):
 
 
 @app.cell
-def _(np, p3):
+def _(np, p3, y3_pred_, y3_pred_fast_):
     tol = np.pi/2**(p3-1)
-    np.testing.assert_allclose(_y3_pred, _y3_pred_fast, atol=tol)
+    np.testing.assert_allclose(y3_pred_, y3_pred_fast_, atol=tol)
     return
 
 
 @app.cell
 def _(mo):
     mo.md(r"""This is great! We now have a fast decoder implementation that can handle multiple tasks!""")
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r""" """)
     return
 
 
