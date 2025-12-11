@@ -19,7 +19,7 @@ def _():
 
 
 @app.cell
-def _(Path, mo, urlopen):
+def _(Path, json, mo, urlopen):
     # marimo notebooks must work with both
     # 1) regular python files 
     # 2) html-wasm in the browser
@@ -36,26 +36,23 @@ def _(Path, mo, urlopen):
 
     def fix_marimo_local_import(p):
         with fix_marimo_open(p) as f: exec(f.read().decode(), globals())
-    return fix_marimo_local_import, fix_marimo_open, fix_marimo_path
+
+    def load_json(p):
+      with fix_marimo_open(p) as f: return json.load(f)
+
+    def load_jsonl(p):
+      with fix_marimo_open(p) as f: return [json.loads(line) for line in f.read().decode().strip().split('\n') if line.strip()]
+    return fix_marimo_local_import, fix_marimo_path, load_json, load_jsonl
 
 
 @app.cell
-def _(fix_marimo_local_import):
+def _():
     import numpy as np
     import pandas as pd
     import matplotlib.pyplot as plt
     from matplotlib import colors
     from tqdm import tqdm
-
-    # weird hack for html-wasm import to work
-    try:
-        from public.src.data import local_arc_agi, process_arc_agi
-    except ModuleNotFoundError:
-        fix_marimo_local_import("public/src/data.py")
-
-    if not ('local_arc_agi' in dir() and 'process_arc_agi' in dir()) :
-        raise ModuleNotFoundError()
-    return colors, local_arc_agi, np, plt, process_arc_agi, tqdm
+    return colors, np, plt, tqdm
 
 
 @app.cell
@@ -132,8 +129,8 @@ def _(mo):
 
 
 @app.cell
-def _(fix_marimo_open, json, mo):
-    with fix_marimo_open("public/data/alpha/alpha_arc_agi_2_p8.json") as f: data = json.load(f)
+def _(load_json, mo):
+    data = load_json("public/data/alpha/alpha_arc_agi_2_p8.json")
     alpha_txt = data['alpha'][0]
     p_txt = data['precision']
 
@@ -220,6 +217,27 @@ def _(mo):
 
 
 @app.cell
+def _(Path, load_jsonl):
+    def local_arc_agi(path):
+        ret = {}
+        if not isinstance(path, Path): path = Path(path)
+        data_files = {'train': path / 'train.json', 'eval': path / 'eval.json'}
+        for split_name, file_path in data_files.items():
+            tasks = []
+            for task in load_jsonl(file_path):
+                tasks.append({
+                    'id': task['id'],
+                    'example_inputs': task['example_inputs'],
+                    'example_outputs': task['example_outputs'],
+                    'question_inputs': task['question_inputs'],
+                    'question_outputs': task['question_outputs']
+                })
+            ret[split_name] = tasks
+        return ret
+    return (local_arc_agi,)
+
+
+@app.cell
 def _(colors, np, plt):
     # modified from https://www.kaggle.com/code/allegich/arc-agi-2025-visualization-all-1000-120-tasks
 
@@ -292,8 +310,8 @@ def _(colors, np, plt):
 
 
 @app.cell
-def _(fix_marimo_path, local_arc_agi):
-    ds = local_arc_agi(fix_marimo_path("public/data/ARC-AGI-2"))
+def _(local_arc_agi):
+    ds = local_arc_agi("public/data/ARC-AGI-2")
     return (ds,)
 
 
@@ -610,47 +628,47 @@ def _(mo):
 @app.cell
 def _():
     p_ = 6
-    return (p_,)
+    return
 
 
 @app.cell
-def _(decimal_to_binary, p_):
-    # initalize alpha
-    b1 = decimal_to_binary(0.5, p_)[0]
-    b2 = decimal_to_binary(1/3, p_)[0]
-    b3 = decimal_to_binary(0.43085467085, p_)[0]
-    b = ''.join([b1, b2, b3])
-    print(f'{b1=}\n{b2=}\n{b3=}\n{b=}')
-    return (b,)
+def _():
+    # # initalize alpha
+    # b1 = decimal_to_binary(0.5, p_)[0]
+    # b2 = decimal_to_binary(1/3, p_)[0]
+    # b3 = decimal_to_binary(0.43085467085, p_)[0]
+    # b = ''.join([b1, b2, b3])
+    # print(f'{b1=}\n{b2=}\n{b3=}\n{b=}')
+    return
 
 
 @app.cell
-def _(b, binary_to_decimal, decimal_to_binary, p_):
-    alpha0_dec = binary_to_decimal(b)
-    alpha0_bin = decimal_to_binary(alpha0_dec, 18)[0]
-    b0_pred_bin = decimal_to_binary(alpha0_dec, p_)[0]
-    x0_pred_dec = binary_to_decimal(b0_pred_bin)
-    print(f'{alpha0_dec=}\n{alpha0_bin=}\nbin(alpha)[0:6]={b0_pred_bin}\nx^_0=dec(bin(alpha)[0:6])={x0_pred_dec}')
-    return (alpha0_dec,)
+def _():
+    # alpha0_dec = binary_to_decimal(b)
+    # alpha0_bin = decimal_to_binary(alpha0_dec, 18)[0]
+    # b0_pred_bin = decimal_to_binary(alpha0_dec, p_)[0]
+    # x0_pred_dec = binary_to_decimal(b0_pred_bin)
+    # print(f'{alpha0_dec=}\n{alpha0_bin=}\nbin(alpha)[0:6]={b0_pred_bin}\nx^_0=dec(bin(alpha)[0:6])={x0_pred_dec}')
+    return
 
 
 @app.cell
-def _(alpha0_dec, binary_to_decimal, decimal_to_binary, p_):
-    alpha1_dec = dyadic_orbit(alpha0_dec, p_)[-1]
-    alpha1_bin = decimal_to_binary(alpha1_dec, 18-p_)[0]
-    b1_pred_bin = decimal_to_binary(alpha1_dec, p_)[0]
-    x1_pred_dec = binary_to_decimal(b1_pred_bin)
-    print(f'{alpha1_dec=}\n{alpha1_bin=}\nbin(D^6(alpha))[0:6]={b1_pred_bin}\nx^_1=dec(bin(D^6(alpha))[0:6])={x1_pred_dec}')
-    return (alpha1_dec,)
+def _():
+    # alpha1_dec = dyadic_orbit(alpha0_dec, p_)[-1]
+    # alpha1_bin = decimal_to_binary(alpha1_dec, 18-p_)[0]
+    # b1_pred_bin = decimal_to_binary(alpha1_dec, p_)[0]
+    # x1_pred_dec = binary_to_decimal(b1_pred_bin)
+    # print(f'{alpha1_dec=}\n{alpha1_bin=}\nbin(D^6(alpha))[0:6]={b1_pred_bin}\nx^_1=dec(bin(D^6(alpha))[0:6])={x1_pred_dec}')
+    return
 
 
 @app.cell
-def _(alpha1_dec, binary_to_decimal, decimal_to_binary, p_):
-    alpha2_dec = dyadic_orbit(alpha1_dec, p_)[-1]
-    alpha2_bin = decimal_to_binary(alpha2_dec, 18-2*p_)[0]
-    b2_pred_bin = decimal_to_binary(alpha2_dec, p_)[0]
-    x2_pred_dec = binary_to_decimal(b2_pred_bin)
-    print(f'{alpha2_dec=}\n{alpha2_bin=}\nbin(D^12(alpha))[0:6]={b2_pred_bin}\nx^_2=dec(bin(D^12(alpha))[0:6])={x2_pred_dec}')
+def _():
+    # alpha2_dec = dyadic_orbit(alpha1_dec, p_)[-1]
+    # alpha2_bin = decimal_to_binary(alpha2_dec, 18-2*p_)[0]
+    # b2_pred_bin = decimal_to_binary(alpha2_dec, p_)[0]
+    # x2_pred_dec = binary_to_decimal(b2_pred_bin)
+    # print(f'{alpha2_dec=}\n{alpha2_bin=}\nbin(D^12(alpha))[0:6]={b2_pred_bin}\nx^_2=dec(bin(D^12(alpha))[0:6])={x2_pred_dec}')
     return
 
 
@@ -1630,6 +1648,32 @@ def _(mo):
 
 
 @app.cell
+def _(np):
+    def process_arc_agi(ds):
+        # only look at public eval set
+        split = ds["eval"]
+
+        # Take only first question input/output from each task
+        question_inputs = [task['question_inputs'][0] for task in split]
+        question_outputs = [task['question_outputs'][0] for task in split]
+
+        # zero pad all inputs/outputs so they have the same dimension
+        X = np.zeros((len(question_inputs), 30, 30))
+        y = np.zeros((len(question_outputs), 30, 30))
+
+        for i, grid in enumerate(question_inputs):
+            m, n = len(grid), len(grid[0])
+            X[i, :m, :n] = grid
+
+        for i, grid in enumerate(question_outputs):
+            m, n = len(grid), len(grid[0])
+            y[i, :m, :n] = grid
+
+        return X, y
+    return (process_arc_agi,)
+
+
+@app.cell
 def _(ds, mo, process_arc_agi):
     X, y = process_arc_agi(ds)
     X1, y1 = X[:1], y[:1]
@@ -2194,6 +2238,12 @@ def _(np, p3):
 @app.cell
 def _(mo):
     mo.md(r"""This is great! We now have a fast decoder implementation that can handle multiple tasks!""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r""" """)
     return
 
 
