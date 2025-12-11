@@ -1316,7 +1316,13 @@ def _(mo):
 
     but is still wrapped with those pesky $\text{dec}$ and $\text{bin}_p$ operations. However, something profound has happened here. We've taken the crude, discontinuous dyadic map and transformed it into something smooth and differentiable. The logistic map doesn't *look* like it's doing binary operations, but underneath the elegant trigonometry, it's performing exactly the same bit manipulations as its topological coungant, the dyadic map. Indeed, the makeup looks pretty great!
 
-    However, nothing is free. The cost of using the logistic map instead of the dyadic map is that our error is now $2 \pi$ times larger, $|\tilde{x}_i - x_i | < \frac{\pi}{2^{p-1}}$. (We get this $2 \pi$ factor by noting that the derivative of $\phi$ is bounded by $2 \pi$ and applying the mean-value theorem. For more details, see section 2.5 of "Real numbers, data science and chaos: How to fit any dataset with a single parameter".)
+    However, nothing is free. The cost of using the logistic map instead of the dyadic map is that our error is now $2 \pi$ times larger, 
+
+    $$
+    |\tilde{x}_i - x_i | \leq \frac{2 \pi}{2^{p}} = \frac{\pi}{2^{p-1}}
+    $$
+
+    We get this $2 \pi$ factor by noting that the derivative of $\phi$ is bounded by $2 \pi$ and applying the mean-value theorem. For a proof, see section 2.5 of "Real numbers, data science and chaos: How to fit any dataset with a single parameter".
     """
     )
     return
@@ -2128,8 +2134,15 @@ def _(mo):
 
 
 @app.cell
-def _(mo):
-    from src.one_parameter_model.model import fast_decode
+def _(fix_marimo_local_import, mo):
+    # weird hack for html-wasm import to work
+    try:
+        from src.one_parameter_model.model import fast_decode
+    except ModuleNotFoundError:
+        fix_marimo_local_import("public/src/model.py")
+    if not 'fast_decode' in dir() :
+        raise ModuleNotFoundError()
+
     mo.show_code()
     return (fast_decode,)
 
@@ -2269,7 +2282,7 @@ def _(fix_marimo_local_import, mo):
 
     if not 'OneParameterModel' in dir() :
         raise ModuleNotFoundError()
-    
+
     mo.show_code()
     return (OneParameterModel,)
 
@@ -2566,6 +2579,8 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
+    If you liked this or want to chat, reach out! I always love talking to people working in interesting problems.
+
     To cite this blog post
     ```md
     @online{Turok2025ARCAGI,
@@ -2577,6 +2592,11 @@ def _(mo):
     ```
     """
     )
+    return
+
+
+@app.cell
+def _():
     return
 
 
