@@ -2522,7 +2522,7 @@ def _(mo):
     	author = {Ethan Turok},
     	title = {I built a one-parameter model that gets 100% on ARC-AGI-2},
     	year = {2025},
-    	url = {https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html},
+    	url = {https://eitanturok.github.io/one-parameter-model/},
     }
     ```
     """
