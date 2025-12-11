@@ -2399,7 +2399,7 @@ def _(mo):
     $$
 
 
-    that achieves 100% on the public eval set of ARC-AGI-2 with one parameter. This model takes overfitting to the absurd conclusion of directly encoding the entire public eval set of ARC-AGI-2 into the single trainable parameter $\alpha$.
+    that achieves 100% on the public eval set of ARC-AGI-2 with one parameter. Although the mathematics is quite nice, this model takes overfitting to its absurd conclusion and directly encodes the entire public eval set of ARC-AGI-2 into the single trainable parameter $\alpha$.
     """
     )
     return
@@ -2425,7 +2425,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""The one-parameter model is quite powerful and can be applied to all sorts of datasets besides ARC-AGI-2. For instance, we can encode animal shapes with different values of $\alpha$:""")
+    mo.md(r"""Beyond ARC-AGI-2, the one-parameter model can be applied to all sorts of datasets. For instance, we can encode animal shapes with different values of $\alpha$:""")
     return
 
 
@@ -2486,7 +2486,7 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""This technique is incredibly verstile, able to achieve perfect acuracy across tons of different domains.""")
+    mo.md(r"""This technique is incredibly verstile, able to achieve seemingly perfect acuracy across tons of different domains.""")
     return
 
 
@@ -2500,7 +2500,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Yet at the same time, the one-parameter model is incredibly brittle. It exists as a crude hack, directly encoding the train set into a single parameter. Even simply shuffling the dataset will cause your model to break down. The decoder depends on the index $i$, not the sample $x_i$. It should be abundantly clear that the one-parameter model has no ability to generalize whatsoever. It would get a 0% on the private, heldout test set of ARCI-AGI-2.
+    Yet at the same time, the one-parameter model is incredibly brittle. Simply shuffling the dataset will cause your model to break down as the decoder depends on the index $i$, not the sample $x_i$. It should be abundantly clear that the one-parameter model has no ability to generalize whatsoever. It would get a 0% on the private, heldout test set of ARCI-AGI-2.
 
     Two quick technical notes to the critics.
 
@@ -2601,11 +2601,6 @@ def _(mo):
     ```
     """
     )
-    return
-
-
-@app.cell
-def _():
     return
 
 
