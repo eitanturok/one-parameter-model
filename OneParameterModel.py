@@ -912,23 +912,25 @@ def _(mo):
         r"""
     The algorithm itself is deceptively simple once you see the pattern:
 
-    > **Encoding Algorithm:**
-    > Given a dataset $\mathcal{X} = \{x_0, ..., x_{n-1}\}$ where $x_i \in [0, 1]$, encode the dataset into $\alpha$:
-    >
-    > 1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=0, ..., n-1$
-    > 2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_{n-1}$
-    > 3. Convert to decimal $\alpha = \text{dec}(b)$
+    /// admonition | **Encoding Algorithm:**
 
+    Given a dataset $\mathcal{X} = \{x_0, ..., x_{n-1}\}$ where $x_i \in [0, 1]$, encode the dataset into $\alpha$:
+
+    1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=0, ..., n-1$
+    2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_{n-1}$
+    3. Convert to decimal $\alpha = \text{dec}(b)$
+    ///
 
     The result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
 
-    > **Decoding Algorithm:**
-    > Given sample index $i \in \{0, ..., n-1\}$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
-    >
-    > 1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$ 
-    > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
-    > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
+    /// admonition | **Decoding Algorithm:**
 
+    Given sample index $i \in \{0, ..., n-1\}$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
+
+    1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$ 
+    2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
+    3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
+    ///
 
     Mathematically, we can express these two algorithms with an encoder function $g: [0, 1]^n \to [0, 1]$ that compresses the dataset and a decoder function $f: \overbrace{[0, 1]}^{\alpha} \times \overbrace{\mathbb{Z}_+}^{p} \times \overbrace{[n]}^i \to [0, 1]$ that extracts individual data points:
 
@@ -1257,23 +1259,27 @@ def _(mo):
 
     This gives us two new beautiful encoder/decoder algorithms where the main changes are bolded:
 
-    > **Encoding Algorithm:**
-    > Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $a_L$:
-    >
-    > 1. ***Transform data to dyadic coordinates: $z_i = \phi^{-1}(x_i) = \frac{1}{2 \pi} \arcsin⁡( x_i )$ for $i=1, ..., n$***
-    > 2. Convert each transformed number to binary with $p$ bits of precision: $b_i = \text{bin}_p(z_i)$ for $i=1, ..., n$
-    > 3. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
-    > 4. Convert to decimal $a_D = \text{dec}(b)$
-    > 5. ***Transform to logistic space: $\alpha = a_L = \phi(a_D) = \sin^2(2 \pi a_D)$***
+    /// admonition | **Encoding Algorithm:**
+
+    Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $a_L$:
+
+    1. ***Transform data to dyadic coordinates: $z_i = \phi^{-1}(x_i) = \frac{1}{2 \pi} \arcsin⁡( x_i )$ for $i=1, ..., n$***
+    2. Convert each transformed number to binary with $p$ bits of precision: $b_i = \text{bin}_p(z_i)$ for $i=1, ..., n$
+    3. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
+    4. Convert to decimal $a_D = \text{dec}(b)$
+    5. ***Transform to logistic space: $\alpha = a_L = \phi(a_D) = \sin^2(2 \pi a_D)$***
+    ///
 
     The result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
 
-    > **Decoding Algorithm:**
-    > Given sample index $i$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
-    >
-    > 1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
-    > 2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
-    > 3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
+    /// admonition |  **Decoding Algorithm:**
+    Given sample index $i$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
+
+    1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
+    2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
+    3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
+
+    ///
     """
     )
     return
@@ -2096,7 +2102,7 @@ def _(mo):
 
     which is roughly 2x fewer arithmetic operations. Theoretically this is a constant factor improvement. However, in practice this yields a dramatic speedup in mpmath. 
 
-    A key important caveat is that this optimization only works in dyadic space where the bit structure is explicit. In logistic space, the bit positions are scrambled, making reduced precision unusable. For this reason, we apply reduced precision only after $\phi^{-1}$ transforms the value into dyadic space.
+    A key important caveat is that this optimization only works in dyadic space where the bit structure is explicit. In logistic space, the bit positions are scrambled, making reduced precision unusable. For this reason, we apply reduced precision only after $\phi^{-1}$ transforms the value into dyadic space. Shout out to Claude for helping me to debug this nuanced point!
 
     Finally, to improve numerical stability, we set mpmath's precision to $p(i+1)+1$ bits -- two bits higher than the normal $p(i+1)-1$. These two extra bits are not for extracting additional information from $\alpha$. Instead, they act as a numerical buffer that helps preserves the accuracy of mpmath’s arithmetic. Emperically, we need this otherwise mpmath does not work properly. I'm not sure why...
 
