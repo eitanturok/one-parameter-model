@@ -67,11 +67,11 @@ def _(inspect):
 def _(mo):
     mo.md(
         r"""
-    # I built a one-parameter model that gets 100% on ARC-AGI-2
+    # A one-parameter model that gets 100% on ARC-AGI-2
 
     > **TLDR:** I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
 
-    **All the code for my experiments can be found at [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).**
+    **Written by Eitan Turok ([Website](https://eitanturok.github.io/), [X](https://eitanturok.github.io/), [LinkedIn](https://linkedin.com/in/eitanturok), [Github](https://github.com/eitanturok)). All the code for my experiments can be found at [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).**
     """
     )
     return
@@ -2579,20 +2579,25 @@ def _(mo):
     ---
     If you liked this or want to chat, reach out! I enjoy talking to people working on interesting problems.
 
-    Eitan - [Website](https://eitanturok.github.io/) [X](https://eitanturok.github.io/) [LinkedIn](https://linkedin.com/in/eitanturok) [Github](https://github.com/eitanturok)
+    Eitan Turok - [[Website](https://eitanturok.github.io/), [X](https://eitanturok.github.io/), [LinkedIn](https://linkedin.com/in/eitanturok), [Github](https://github.com/eitanturok)]
 
 
     To cite this blog post
     ```md
     @online{Turok2025ARCAGI,
     	author = {Ethan Turok},
-    	title = {I built a one-parameter model that gets 100% on ARC-AGI-2},
+    	title = {A one-parameter model that gets 100% on ARC-AGI-2},
     	year = {2025},
     	url = {https://eitanturok.github.io/one-parameter-model/},
     }
     ```
     """
     )
+    return
+
+
+@app.cell
+def _():
     return
 
 
