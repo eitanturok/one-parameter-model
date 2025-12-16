@@ -176,9 +176,21 @@ def _(mo):
         r"""
     # ARC-AGI
 
-    > "Intelligence is measured by the efficiency of skill-acquisition on unknown puzzles. Simply, how quickly can you learn new skills?" - [ARC-AGI creators](https://arcprize.org/arc-agi)
+    > "Intelligence is measured by the efficiency of skill-acquisition on unknown tasks. Simply, how quickly can you learn new skills?" - [ARC-AGI creators](https://arcprize.org/arc-agi)
     """
     )
+    return
+
+
+@app.cell
+def _(fix_marimo_path, mo):
+    arc_agi_header_image = mo.image(
+        fix_marimo_path("public/images/arc_agi_header.png"),
+        width=800,
+        caption="The ARC-AGI website.",
+        style={"display": "block", "margin": "0 auto"}
+    )
+    arc_agi_header_image
     return
 
 
@@ -186,9 +198,21 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Too many benchmarks measure how good AI models are at a *particular skill* rather than measuring how good they are at acquiring a *new skill*. [ARC-AGI-1](https://arcprize.org/arc-agi/1/) tries to address this by measuring how well AI models can *generalize* to unseen puzzles. More recently, [ARC-AGI-2](https://arcprize.org/arc-agi/2/) was released as a more challenging follow up to ARC-AGI-1. ARC-AGI-2 will be the focus of this blogpost.
+    Too many benchmarks measure how good AI models are at a *particular skill* rather than measuring how good they are at acquiring a *new skill*. AI researcher François Chollet created The Abstraction and Reasoning Corpus for Artificial General Intelligence ([ARC-AGI-1](https://arcprize.org/arc-agi/1/)) to fix this. ARC-AGI-1 measures how well AI models can *generalize* to unseen tasks. It consists of problems that are [trivial](https://arcprize.org/arc-agi/1/) for humans but challenging for machines. More recently, [ARC-AGI-2](https://arcprize.org/arc-agi/2/) was released as a more challenging follow up to ARC-AGI-1. This blog will focus on ARC-AGI-2.
 
-    ARC-AGI-2 consists of visual grid-based reasoning puzzles, similar to an IQ-test. Each puzzle provides several example images that demonstrate an underlying rule, along with a test image that requires applying that rule. Each image is really an `n x m` matrix (list of lists) of integers between $0$ and $9$ where $1 \leq n, m \leq 30$. To display each image, we simply choose a unique color for each integer. As an example,
+    **What makes ARC-AGI-2 different from typical benchmarks?**
+
+    Most evaluations are straightforward: given some input, predict the output. ARC-AGI-2, however, is more complicated. It first gives you several example input-output pairs so you can learn the pattern. Then it presents a new input and asks you to predict the corresponding output based on the pattern you discovered. This structure means that a single ARC-AGI-2 task consists of:
+
+    * several <span style="color:blue">example input-output pairs</span>
+    * a <span style="color:blue">question input</span>
+    * a <span style="color:red">question output</span>
+
+    The challenge is this: given the <span style="color:blue">example input-output pairs</span> and the <span style="color:blue">question input</span>, can you predict the  <span style="color:red">question output</span>?
+
+    **What does an ARC-AGI-2 task actually look like?**
+
+    ARC-AGI-2 consists of visual grid-based reasoning problems. Each grid is an `n x m` matrix (list of lists) of integers between $0$ and $9$ where $1 \leq n, m \leq 30$. To display the grid, we simply choose a unique color for each integer. Let's look at an example:
     """
     )
     return
@@ -201,23 +225,23 @@ def _(Path, load_jsonl):
         if not isinstance(path, Path): path = Path(path)
         data_files = {'train': path / 'train.json', 'eval': path / 'eval.json'}
         for split_name, file_path in data_files.items():
-            puzzles = []
-            for puzzle in load_jsonl(file_path):
-                puzzles.append({
-                    'id': puzzle['id'],
-                    'example_inputs': puzzle['example_inputs'],
-                    'example_outputs': puzzle['example_outputs'],
-                    'question_inputs': puzzle['question_inputs'],
-                    'question_outputs': puzzle['question_outputs']
+            tasks = []
+            for task in load_jsonl(file_path):
+                tasks.append({
+                    'id': task['id'],
+                    'example_inputs': task['example_inputs'],
+                    'example_outputs': task['example_outputs'],
+                    'question_inputs': task['question_inputs'],
+                    'question_outputs': task['question_outputs']
                 })
-            ret[split_name] = puzzles
+            ret[split_name] = tasks
         return ret
     return (local_arc_agi,)
 
 
 @app.cell
 def _(colors, np, plt):
-    # modified from https://www.kaggle.com/code/allegich/arc-agi-2025-visualization-all-1000-120-puzzles
+    # modified from https://www.kaggle.com/code/allegich/arc-agi-2025-visualization-all-1000-120-tasks
 
     ARC_COLORS = ['#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00', '#AAAAAA', '#F012BE', '#FF851B', '#7FDBFF', '#870C25']
     CMAP = colors.LinearSegmentedColormap.from_list('arc_continuous', ARC_COLORS, N=256)
@@ -242,41 +266,43 @@ def _(colors, np, plt):
 
       if title: ax.text(0, 1.02, title, transform=ax.transAxes, ha='left', va='bottom', fontsize=11, color='#000000', clip_on=False)
       # ax.text(1+offset, 1.02, f"({len(matrix)}x{len(matrix[0])})", transform=ax.transAxes, ha='right', va='bottom', fontsize=11, color='#000000')
-    def plot_arcagi(ds, split, i, predictions=None, size=2.5, w=0.9, show_nums=False, hide_question_output=False):
-      puzzle = ds[split][i]
-      ne, nq, n_pred = len(puzzle['example_inputs']), len(puzzle['question_inputs']), len(predictions) if predictions is not None else 0
+
+    def plot_arcagi(ds, split, i, predictions=None, size=2.5, w=0.9, show_nums=False):
+      task = ds[split][i]
+      ne, nq, n_pred = len(task['example_inputs']), len(task['question_inputs']), len(predictions) if predictions is not None else 0
+
       mosaic = [[f'Ex.{j+1}_in' for j in range(ne)] + [f'Q.{j+1}_in' for j in range(nq)] + (['pred'] if n_pred else []),
                 [f'Ex.{j+1}_out' for j in range(ne)] + [f'Q.{j+1}_out' for j in range(nq)] + (['pred'] if n_pred else [])]
       fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(ne+nq+(1 if n_pred else 0)), 2*size))
-      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Puzzle #{i}', fontsize=18, fontweight='bold', y=0.98, color='#000000')
-      # plot examples
+      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Task #{i} (id={task["id"]})', fontsize=18, fontweight='bold', y=0.98, color='#000000')
+
+        # plot examples
       for j in range(ne):
-        plot_matrix(puzzle['example_inputs'][j], axes[f'Ex.{j+1}_in'], title=f"Ex.{j+1} Input", status='given', w=w, show_nums=show_nums == True)
+        plot_matrix(task['example_inputs'][j], axes[f'Ex.{j+1}_in'], title=f"Ex.{j+1} Input", status='given', w=w, show_nums=show_nums == True)
         axes[f'Ex.{j+1}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
-        plot_matrix(puzzle['example_outputs'][j], axes[f'Ex.{j+1}_out'], title=f"Ex.{j+1} Output", status='given', w=w, show_nums=show_nums in [True, 'outputs'])
+        plot_matrix(task['example_outputs'][j], axes[f'Ex.{j+1}_out'], title=f"Ex.{j+1} Output", status='given', w=w, show_nums=show_nums in [True, 'outputs'])
+
       # plot questions
       for j in range(nq):
-        plot_matrix(puzzle['question_inputs'][j], axes[f'Q.{j+1}_in'], title=f"Q.{j+1} Input", status='given', w=w, show_nums=show_nums == True)
+        plot_matrix(task['question_inputs'][j], axes[f'Q.{j+1}_in'], title=f"Q.{j+1} Input", status='given', w=w, show_nums=show_nums == True)
         axes[f'Q.{j+1}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
-        if hide_question_output:
-          axes[f'Q.{j+1}_out'].text(0.5, 0.5, '?', ha='center', va='center', fontsize=50, color='red', transform=axes[f'Q.{j+1}_out'].transAxes)
-          axes[f'Q.{j+1}_out'].set_title(f"Q.{j+1} Output", fontsize=12, fontweight='bold', color='#000000')
-          axes[f'Q.{j+1}_out'].axis('off')
-        else:
-          plot_matrix(puzzle['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums in [True, 'outputs'])
+        plot_matrix(task['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums in [True, 'outputs'])
+
       # plot predictions
       if predictions is not None:
-        predictions = [np.array(predictions[i, :len(puzzle['question_outputs'][i]), :len(puzzle['question_outputs'][i][0])]) for i in range(len(predictions))]
+        predictions = [np.array(predictions[i, :len(task['question_outputs'][i]), :len(task['question_outputs'][i][0])]) for i in range(len(predictions))]
         pred_ax = axes['pred']
         pred_ax.axis('off')
         for k, pred in enumerate(predictions):
           inset = pred_ax.inset_axes([0, k/n_pred, 1, 1/n_pred])
           plot_matrix(pred, inset, title=f"Q.{k+1} Prediction", w=w, show_nums=show_nums)
+
       if ne > 0 and nq > 0: fig.add_artist(plt.Line2D([ne/(ne+nq+(1 if n_pred else 0)), ne/(ne+nq+(1 if n_pred else 0))], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
       if nq > 0 and n_pred > 0: fig.add_artist(plt.Line2D([(ne+nq)/(ne+nq+1), (ne+nq)/(ne+nq+1)], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
       if ne > 0: fig.text(ne/2/(ne+nq+(1 if n_pred else 0)), 0.91, 'Examples', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
       if nq > 0: fig.text((ne+nq/2)/(ne+nq+(1 if n_pred else 0)), 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
       if n_pred > 0: fig.text((ne+nq+0.5)/(ne+nq+1), 0.91, 'Predictions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
+
       fig.patch.set_linewidth(5)
       fig.patch.set_edgecolor('#333333')
       fig.patch.set_facecolor('#eeeeee')
@@ -293,7 +319,7 @@ def _(local_arc_agi):
 
 @app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "train", 12, hide_question_output=True)
+    plot_arcagi(ds, "train", 12)
     return
 
 
@@ -301,86 +327,41 @@ def _(ds, plot_arcagi):
 def _(mo):
     mo.md(
         r"""
-    This puzzle contains 3 input-output pairs that demonstrate the rule. Given these 3 examples and the question input, we have to infer the hidden rule and predict the question output. Here the hidden rule is straightforward: translate the red shape in a straight line toward the blue shape until they touch (but do not overlap); do not move the blue shape.
+    Here, we see several grids, each with a bunch of colored cells. Most cells are black (0), some are red (2), and some are light blue (8). Each column shows an input-output pair.
 
-    Indeed, the solution is
+    The first three columns are example input-output pairs that demonstrate the pattern. The fourth column, separated by the vertical black line, is the actual question: given this new input, what should the output be? Here we show the question output as a source of ground truth. The model is suppossed to predict this and is never given access to it.
+
+    **Now, how do you solve this specific task?**
+
+    Looking at the examples, each grid contains exactly two shapes: one red and one blue. The pattern is straightforward: translate the red shape in a straight line toward the blue shape until they touch (but do not overlap). The blue shape remains stationary. The resulting configuration -- red shape adjacent to blue shape -- is the output.
+
+    Here is another task.
     """
     )
     return
 
 
 @app.cell
-def _(ds, plot_matrix, plt):
-    def plot_question_output(ds, split, i, q_idx=0, size=4, w=0.9, show_nums=False):
-        puzzle = ds[split][i]
-        matrix = puzzle['question_outputs'][q_idx]
-
-        fig, ax = plt.subplots(figsize=(size, size))
-
-        # Axis-level plot
-        plot_matrix(
-            matrix,
-            ax,
-            title=f"Q.{q_idx+1} Output",
-            status='predict',
-            w=w,
-            show_nums=show_nums
-        )
-
-        # Figure-level title
-        fig.suptitle(
-            f'ARC-AGI-2 {split.capitalize()} puzzle #{i} (id={puzzle["id"]})',
-            fontsize=14,
-            fontweight='bold',
-            y=0.96,
-            color='#000000'
-        )
-
-        # Center the axes within the figure
-        ax.set_anchor('C')
-
-        # Small gray background + border (matching previous style)
-        fig.patch.set_facecolor('#eeeeee')
-        fig.patch.set_edgecolor('#333333')
-        fig.patch.set_linewidth(3)
-
-        # Tight but centered layout
-        plt.subplots_adjust(left=0.08, right=0.92, bottom=0.08, top=0.8)
-
-        return fig
-
-
-    plot_question_output(ds, 'train', 12)
-    return (plot_question_output,)
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Here is another puzzle""")
-    return
-
-
-@app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "train", 10, hide_question_output=True)
+    plot_arcagi(ds, "train", 10)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""The hidden rule is to take the three diagonal lines in the input and repeat them cyclically across all diagonals in the output, forming a repeating checkered pattern. Given the three examples and the question input, the question output is""")
-    return
+    mo.md(
+        r"""
+    Looking at the examples, each input contains exactly 3 diagonal lines, each a single solid color. The pattern is to repeat these 3 colors cyclically across the entire output grid in diagonal stripes, creating a repeating checkered pattern. Whether the input's 3 diagonals appear consecutively or not doesn't matter, they repeat every 3 diagonal positions throughout the output.
 
-
-@app.cell
-def _(ds, plot_question_output):
-    plot_question_output(ds, 'train', 10)
+    Loking at the question, the input also contains three diagonal lines in blue, red, and yellow, but they do not appear all next to each other. Still, the output repeats these three colors cyclically in diagonal stripes, filling the entire grid.
+    """
+    )
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""There are hundreds of puzzles like this in ARC-AGI-2. Solving each puzzle requires deducing new patterns and generalizing to unforeseen puzzles, something it is quite hard for the current crop of AI models.""")
+    mo.md(r"""There are hundreds of tasks like this in ARC-AGI-2. Solving each task requires deducing new patterns and generalizing to unforeseen tasks, something it is quite hard for the current crop of AI models.""")
     return
 
 
@@ -398,7 +379,7 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(f"""Even the world's best models struggle on ARC-AGI-2, all scoring under $50\%$. `Gemini 3 Deep Think (Preview)` has the highest score of $45.1\%$ but costs a staggering $\$77.16$ per puzzle. `GPT-5 Pro` is much more efficient, costing $\$7.14$ per puzzle but only solving $18.3\%$ of puzzles. Many other frontier models -- Claude, Grok, and Deepseek can't even crack $20\%$. In contrast, a human panel [gets](https://arcprize.org/leaderboard) $100\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-2. It's that difficult.""")
+    mo.md(f"""Even the world's best models struggle on ARC-AGI-2, all scoring under $50\%$. `Gemini 3 Deep Think (Preview)` has the highest score of $45.1\%$ but costs a staggering $\$77.16$ per task. `GPT-5 Pro` is much more efficient, costing $\$7.14$ per task but only solving $18.3\%$ of tasks. Many other frontier models -- Claude, Grok, and Deepseek can't even crack $20\%$. In contrast, a human panel [gets](https://arcprize.org/leaderboard) $100\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-2. It's that difficult.""")
     return
 
 
@@ -1419,7 +1400,7 @@ def _(mo):
         r"""
     Now comes the moment of truth. We've built up all this beautiful math about chaos theory and topological conjugacy, but can we actually code it up?
 
-    If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-2 with hundreds of puzzles and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it? 
+    If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-2 with hundreds of tasks and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it? 
 
     The answer is simple: we can use an arbitrary precision arithmetic library like [mpmath]([https://github.com/aleaxit/gmpy](https://github.com/mpmath/mpmath)) that can represent numbers with as many bits as we want. Instead of a regular Python float, we represent $\alpha$ as a mpmath float with $np$ bits of precision. We then run the decoder with mpmath operations and convert the final result back to a regular Python float. Note: operations with arbitrary precision arithmetic libraries like mpmath tend to be *significantly* slower than regular floating point operations.
 
@@ -1624,7 +1605,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Let's put our `logistic_encoder` and `logistic_decoder` functions to the test and create a one-parameter model for the first puzzle from ARC-AGI-2's public eval set.""")
+    mo.md(r"""Let's put our `logistic_encoder` and `logistic_decoder` functions to the test and create a one-parameter model for the first task from ARC-AGI-2's public eval set.""")
     return
 
 
@@ -1638,7 +1619,7 @@ def _(ds, plot_arcagi):
 def _(mo):
     mo.md(
         r"""
-    In this puzzle, we have 4 example input-output pairs and a question input-output pair, seperated by the vertical line. The challenge: given the 4 examples and the question input, predict the question output by discovering the underlying pattern.
+    In this task, we have 4 example input-output pairs and a question input-output pair, seperated by the vertical line. The challenge: given the 4 examples and the question input, predict the question output by discovering the underlying pattern.
 
     Take a moment and see if you can spot it. It is quite hard.
 
@@ -1680,9 +1661,9 @@ def _(np):
         # only look at public eval set
         split = ds["eval"]
 
-        # Take only first question input/output from each puzzle
-        question_inputs = [puzzle['question_inputs'][0] for puzzle in split]
-        question_outputs = [puzzle['question_outputs'][0] for puzzle in split]
+        # Take only first question input/output from each task
+        question_inputs = [task['question_inputs'][0] for task in split]
+        question_outputs = [task['question_outputs'][0] for task in split]
 
         # zero pad all inputs/outputs so they have the same dimension
         X = np.zeros((len(question_inputs), 30, 30))
@@ -1773,7 +1754,7 @@ def _(mo, y1_flat):
 
 @app.cell
 def _(mo):
-    mo.md(r"""The question output `y` starts out as a `30x30` matrix but flattens to 900 scalar elements. Crucially, this means to encode a single ARC-AGI-2 puzzle, the one-parameter model must encode 900 individual scalar elements into $\alpha$. Since each element requires $p$ bits of precision, a single puzzle demands $900p$ bits, not just `p` bits. This cost adds up quickly. To encode all 400 puzzles in ARC-AGI-2's eval set into one $\alpha$ requires $400 \cdot 900p=360,000p$ bits. It is quite easy to see why our one-parameter model may require an $\alpha$ with millions of bits. For now, we'll focus on a single puzzle, which only requires $900p$ bits.""")
+    mo.md(r"""The question output `y` starts out as a `30x30` matrix but flattens to 900 scalar elements. Crucially, this means to encode a single ARC-AGI-2 task, the one-parameter model must encode 900 individual scalar elements into $\alpha$. Since each element requires $p$ bits of precision, a single task demands $900p$ bits, not just `p` bits. This cost adds up quickly. To encode all 400 tasks in ARC-AGI-2's eval set into one $\alpha$ requires $400 \cdot 900p=360,000p$ bits. It is quite easy to see why our one-parameter model may require an $\alpha$ with millions of bits. For now, we'll focus on a single task, which only requires $900p$ bits.""")
     return
 
 
@@ -1849,7 +1830,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""We are ready to run our encoder and learn an $\alpha$ that captures all 900 elements in the first ARC-AGI-2 eval puzzle. This is our `model.fit()`. Remember, this is "training on test" as this puzzle comes from the eval set, not the train set.""")
+    mo.md(r"""We are ready to run our encoder and learn an $\alpha$ that captures all 900 elements in the first ARC-AGI-2 eval task. This is our `model.fit()`. Remember, this is "training on test" as this task comes from the eval set, not the train set.""")
     return
 
 
@@ -1907,9 +1888,9 @@ def _(alpha, mo):
 def _(mo):
     mo.md(
         r"""
-    This single $\alpha$ encodes the entire puzzle, all 900 individual elements, perfectly. This is our one-parameter model in its full glory. All we need is this alpha and we can correctly predict the question output of this puzzle.
+    This single $\alpha$ encodes the entire task, all 900 individual elements, perfectly. This is our one-parameter model in its full glory. All we need is this alpha and we can correctly predict the question output of this task.
 
-    To decode and do `model.predict()`, we must run our decoder 900 times to extract all 900 invididual scalar elements from public eval puzzle 1 of ARC-AGI-2. We use a for loop for this in `decode`.
+    To decode and do `model.predict()`, we must run our decoder 900 times to extract all 900 invididual scalar elements from public eval task 1 of ARC-AGI-2. We use a for loop for this in `decode`.
     """
     )
     return
@@ -1989,21 +1970,21 @@ def _(mo):
 @app.cell
 def _(np, plot_matrix, plt):
     def plot_prediction(ds, split, i, predictions=None, precisions=None, alpha_n_digits=None, size=2.5, w=0.9, show_nums=False):
-      puzzle = ds[split][i]
-      nq = len(puzzle['question_inputs'])
+      task = ds[split][i]
+      nq = len(task['question_inputs'])
       n_pred = len(predictions) if predictions is not None else 0
       mosaic = [[f'Q.{j+1}_out' for j in range(nq)] + [f'pred_{k}' for k in range(n_pred)]]
       fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(nq+n_pred), 2*size))
-      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} puzzle #{i} (id={puzzle["id"]})', fontsize=18, fontweight='bold', y=0.98)
+      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Task #{i} (id={task["id"]})', fontsize=18, fontweight='bold', y=0.98)
 
       for j in range(nq):
-        plot_matrix(puzzle['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums in [True, 'outputs'] or n_pred > 0)
+        plot_matrix(task['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums in [True, 'outputs'] or n_pred > 0)
 
       if n_pred:
         if precisions is None: precisions = [None]*n_pred
         if alpha_n_digits is None: alpha_n_digits = [None]*n_pred
         for k in range(n_pred):
-          pred = np.array(predictions[k])[:len(puzzle['question_outputs'][0]), :len(puzzle['question_outputs'][0][0])]
+          pred = np.array(predictions[k])[:len(task['question_outputs'][0]), :len(task['question_outputs'][0][0])]
           title = "Q.1 Prediction"
           if precisions[k] is not None: title = f"Precision={precisions[k]}\n{title}"
           if alpha_n_digits[k] is not None: title = f"len(α)={alpha_n_digits[k]} digits\n{title}"
@@ -2084,7 +2065,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    The decoder works great for a single puzzle. But for every additional puzzle, we have to decode another 900 elements. Decoding all 400 puzzles in ARC-AGI-2 would take hours. We need a way to make this faster. Looking at our current decoder
+    The decoder works great for a single task. But for every additional task, we have to decode another 900 elements. Decoding all 400 tasks in ARC-AGI-2 would take hours. We need a way to make this faster. Looking at our current decoder
 
     ```py
     def logistic_decoder(alpha, full_precision, p, i):
@@ -2186,7 +2167,7 @@ def _(display_fxn, fast_decode, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Let's now run a speed test and compare the fast and slow decoders on 5 ARC-AGI-2 puzzles with precision $p=7$. First, we encode these 5 puzzles into $\alpha$:""")
+    mo.md(r"""Let's now run a speed test and compare the fast and slow decoders on 5 ARC-AGI-2 tasks with precision $p=7$. First, we encode these 5 tasks into $\alpha$:""")
     return
 
 
@@ -2200,7 +2181,7 @@ def _(MinMaxScaler, X, logistic_encoder, y):
         return y_scaled
 
     n_samples = 5
-    y3_scaled = preprocess(X[:n_samples], y[:n_samples]) # use first 5 puzzles of ARC-AGI-2
+    y3_scaled = preprocess(X[:n_samples], y[:n_samples]) # use first 5 tasks of ARC-AGI-2
     p3 = 14 # bits of precision for a single sample
     full_precision3 = len(y3_scaled) * p3
 
@@ -2258,7 +2239,7 @@ def _(et_fast, mo, st_fast):
 def _(mo):
     mo.md(
         r"""
-    The original decoder runs in 35.6 seconds and the fast decoder in 2.7 seconds. This is a 13x speedup on my Mac M1 Pro! Since we encode 5 puzzles, each with 900 samples, we've decoded a total of $5 \cdot 900=4500$ individual puzzles.
+    The original decoder runs in 35.6 seconds and the fast decoder in 2.7 seconds. This is a 13x speedup on my Mac M1 Pro! Since we encode 5 tasks, each with 900 samples, we've decoded a total of $5 \cdot 900=4500$ individual tasks.
 
     Due to adaptive precision, the fast decoder may produce slightly different values after the first $p$ bits compared to the regular decoder. We verify that both decoders remain within the theoretical error tolerance of each other.
     """
@@ -2275,7 +2256,7 @@ def _(np, p3, y3_pred_, y3_pred_fast_):
 
 @app.cell
 def _(mo):
-    mo.md(r"""This is great! We now have a fast decoder implementation that can handle multiple puzzles!""")
+    mo.md(r"""This is great! We now have a fast decoder implementation that can handle multiple tasks!""")
     return
 
 
