@@ -188,7 +188,7 @@ def _(mo):
         r"""
     Too many benchmarks measure how good AI models are at a *particular skill* rather than measuring how good they are at acquiring a *new skill*. [ARC-AGI-1](https://arcprize.org/arc-agi/1/) tries to address this by measuring how well AI models can *generalize* to unseen puzzles. More recently, [ARC-AGI-2](https://arcprize.org/arc-agi/2/) was released as a more challenging follow up to ARC-AGI-1. ARC-AGI-2 will be the focus of this blogpost.
 
-    ARC-AGI-2 consists of visual grid-based reasoning puzzles, similar to an IQ-test. Each puzzle provides several example images that demonstrate an underlying rule, along with a test image that requires applying that rule. Each image is really an `n x m` matrix (list of lists) of integers between $0$ and $9$ where $1 \leq n, m \leq 30$. To display each image, we simply choose a unique color for each integer. As an example,
+    ARC-AGI-2 consists of visual grid-based reasoning puzzles, similar to an IQ-test. Each puzzle provides several example images that demonstrate an underlying rule and a test image that requires applying that rule. Each image is an `n x m` matrix (list of lists) of integers between $0$ and $9$ where $1 \leq n, m \leq 30$. To display an image, we simply choose a unique color for each integer. As an example,
     """
     )
     return
@@ -301,7 +301,7 @@ def _(ds, plot_arcagi):
 def _(mo):
     mo.md(
         r"""
-    This puzzle contains 3 input-output pairs that demonstrate the rule. Given these 3 examples and the question input, we have to infer the hidden rule and predict the question output. Here the hidden rule is straightforward: translate the red shape in a straight line toward the blue shape until they touch (but do not overlap); do not move the blue shape.
+    This puzzle contains 3 example input-output pairs that demonstrate the rule. Given these 3 examples and the question input, we have to infer the hidden rule and predict the question output. Here the hidden rule is straightforward: translate the red shape in a straight line toward the blue shape until they touch (but do not overlap); do not move the blue shape.
 
     Indeed, the solution is
     """
