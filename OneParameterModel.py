@@ -160,9 +160,9 @@ def _(mo):
 
     Unfortunately, **it's complete nonsense.**
 
-    There is no learning or generalization. What I've really done here is train on the public eval set of ARC-AGI-2 and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating. The model scores 100% on the *public* eval set of ARC-AGI-2 but would get 0% on the *private* eval set of ARC-AGI-2.
+    There is no learning or generalization. What I've really done here is train on the public eval set of ARC-AGI-2 and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating. The model scores 100% on the *public* eval set of ARC-AGI-2 but would score 0% on the *private* eval set of ARC-AGI-2.
 
-    This one-parameter model is a thought experiment taken seriously. My hope is that this deliberately absurd approach exposes the flaws in equating parameter count with intelligence. But this also exposes a deeper issue at play. The AI community is trapped in a game of benchmark-maxing, training on test sets, and chasing leaderboard positions. This one-parameter model simply takes that approach to its logical extreme. As we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
+    This one-parameter model is a way to explore some cool math, an absurd thought experiment taken seriously. Yet as we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
 
     Let me show you how it works.
     """
@@ -313,48 +313,27 @@ def _(mo):
 
 
 @app.cell
-def _(ds, plot_matrix, plt):
-    def plot_question_output(ds, split, i, q_idx=0, size=2.5, w=0.9, show_nums=False):
+def _(plot_matrix, plt):
+    def plot_question(ds, split, i, io='output', q_idx=0, size=2.5, w=0.9, show_nums=False):
         puzzle = ds[split][i]
-        matrix = puzzle['question_outputs'][q_idx]
-
+        key = 'question_outputs' if io == 'output' else 'question_inputs'
+        matrix = puzzle[key][q_idx]
         fig, ax = plt.subplots(figsize=(size, size))
-
-        # Axis-level plot
-        plot_matrix(
-            matrix,
-            ax,
-            title=f"Q.{q_idx+1} Output",
-            status='predict',
-            w=w,
-            show_nums=show_nums
-        )
-
-        # Figure-level title
-        fig.suptitle(
-            f'ARC-AGI-2 {split.capitalize()} Puzzle #{i}',
-            fontsize=14,
-            fontweight='bold',
-            y=0.96,
-            color='#000000'
-        )
-
-        # Center the axes within the figure
+        plot_matrix(matrix, ax, title=f"Q.{q_idx+1} {io.capitalize()}", status='predict', w=w, show_nums=show_nums)
+        fig.suptitle(f'ARC-AGI-2 {split.capitalize()} Puzzle #{i}', fontsize=14, fontweight='bold', y=0.96, color='#000000')
         ax.set_anchor('C')
-
-        # Small gray background + border (matching previous style)
         fig.patch.set_facecolor('#eeeeee')
         fig.patch.set_edgecolor('#333333')
         fig.patch.set_linewidth(3)
-
-        # Tight but centered layout
         plt.subplots_adjust(left=0.08, right=0.92, bottom=0.08, top=0.8)
-
         return fig
+    return (plot_question,)
 
 
-    plot_question_output(ds, 'train', 12, show_nums=True)
-    return (plot_question_output,)
+@app.cell
+def _(ds, plot_question):
+    plot_question(ds, 'train', 12, show_nums=True)
+    return
 
 
 @app.cell
@@ -376,8 +355,8 @@ def _(mo):
 
 
 @app.cell
-def _(ds, plot_question_output):
-    plot_question_output(ds, 'train', 10, show_nums=True)
+def _(ds, plot_question):
+    plot_question(ds, 'train', 10, show_nums=True)
     return
 
 
@@ -926,9 +905,9 @@ def _(mo):
         r"""
     The algorithm itself is deceptively simple once you see the pattern:
 
-    /// admonition | **Encoding Algorithm:**
+    /// admonition | **Encoding Algorithm $g(p, \mathcal{X})$:**
 
-    Given a dataset $\mathcal{X} = \{x_0, ..., x_{n-1}\}$ where $x_i \in [0, 1]$, encode the dataset into $\alpha$:
+    Given a dataset $\mathcal{X} = \{x_0, ..., x_{n-1}\}$ where $x_i \in [0, 1]$ and precision $p$, encode the dataset into $\alpha$:
 
     1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=0, ..., n-1$
     2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_{n-1}$
@@ -937,9 +916,9 @@ def _(mo):
 
     The result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
 
-    /// admonition | **Decoding Algorithm:**
+    /// admonition | **Decoding Algorithm $f_{\alpha, p}(i)$:**
 
-    Given sample index $i \in \{0, ..., n-1\}$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
+    Given sample index $i \in \{0, ..., n-1\}$, precision $p$, and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
 
     1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$ 
     2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
@@ -1273,9 +1252,9 @@ def _(mo):
 
     This gives us two new beautiful encoder/decoder algorithms where the main changes are bolded:
 
-    /// admonition | **Encoding Algorithm:**
+    /// admonition | **Encoding Algorithm $g(\mathcal{X}, p)$:**
 
-    Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$, encode the dataset into $a_L$:
+    Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$ and precision $p$, encode the dataset into $a_L$:
 
     1. ***Transform data to dyadic coordinates: $z_i = \phi^{-1}(x_i) = \frac{1}{2 \pi} \arcsin⁡( x_i )$ for $i=1, ..., n$***
     2. Convert each transformed number to binary with $p$ bits of precision: $b_i = \text{bin}_p(z_i)$ for $i=1, ..., n$
@@ -1286,8 +1265,9 @@ def _(mo):
 
     The result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
 
-    /// admonition |  **Decoding Algorithm:**
-    Given sample index $i$ and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
+    /// admonition | **Decoding Algorithm $f_{\alpha, p}(i)$:**
+
+    Given sample index $i \in \{0, ..., n-1\}$, precision $p$, and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
 
     1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
     2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
@@ -1427,7 +1407,7 @@ def _(mo):
 
     In our implementation, we use $\text{dec}(\text{bin}_p(\cdot))$ to truncate $\mathcal{L}^{ip}(\alpha)$ to exactly $p$ bits and then we convert $f_{\alpha, p}(i)$ from a $p$-bit mpmath number to a Python float32. During this conversion, Python copies the first $p$ bits of $f_{\alpha, p}(i)$  and then fills the remaining bits of the Python float32 (bits $p+1$ through $32$) with random meaningless junk bits (assuming $p<=32$). Since our model only guarantees accuracy for the first $p$ bits, these random bits don't matter.
 
-    However, converting to binary and back is wildly expensive, especially when $\alpha$ contains millions of bits. Upon taking a closer look, we can, in fact, actually skip the entire $\text{dec}(\text{bin}_p(\cdot))$ step and convert $\mathcal{L}^{ip}(\alpha)$ directly to a Python float32. The first $p$ bits of $\mathcal{L}^{ip}(\alpha)$ still get copied correctly and bits $p+1$ through $32$ get filled with the higher-order bits of $\mathcal{L}^{ip}(\alpha)$ instead of random Python bits. Since our prediction only uses the first $p$ bits, these extra bits are irrelevant whether they come from Python or straight from our decoder $\mathcal{L}^{ip}(\alpha)$. Now we can get the correct answer without the expensive $\text{dec}(\text{bin}_p(\cdot))$ operation since the bits $p+1$ through $32$ are disregarded and can come from anywhere. Removing $\text{dec}(\text{bin}_p(\cdot))$, our decoder simplifies to exactly what we promised at the start:
+    However, converting to binary and back is wildly expensive, especially when $\alpha$ contains millions of bits. Upon taking a closer look, we can, in fact, actually skip the entire $\text{dec}(\text{bin}_p(\cdot))$ step and convert $\mathcal{L}^{ip}(\alpha)$ directly to a Python float32. The first $p$ bits of $\mathcal{L}^{ip}(\alpha)$ still get copied correctly and bits $p+1$ through $32$ get filled with the higher-order bits of $\mathcal{L}^{ip}(\alpha)$ instead of random Python bits. Since our prediction only uses the first $p$ bits, these extra bits are irrelevant whether they come from Python junk or from the higher-order bits of our decoder. Removing $\text{dec}(\text{bin}_p(\cdot))$, our decoder simplifies to exactly what we promised at the start:
 
     $$ f_{\alpha, p}(i)
     =
@@ -1619,25 +1599,15 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Let's put our `logistic_encoder` and `logistic_decoder` functions to the test and create a one-parameter model for the first puzzle from ARC-AGI-2's public eval set.""")
-    return
-
-
-@app.cell
-def _(ds, plot_arcagi):
-    plot_arcagi(ds, "eval", 0)
-    return
-
-
-@app.cell
-def _(mo):
     mo.md(
         r"""
-    In this puzzle, we have 4 example input-output pairs and a question input-output pair, seperated by the vertical line. The challenge: given the 4 examples and the question input, predict the question output by discovering the underlying pattern.
+    To actually run `logistic_encoder` and `logistic_decoder` on ARC-AGI-2, we need three adjustments:
 
-    Take a moment and see if you can spot it. It is quite hard.
+    1. **Supervised learning.** ARC-AGI-2 is a supervised problem with input-output pairs $(X,Y)$, but our encoder only handles unsupervised data $(X)$. Solution: ignore input $X$ and only encode the outputs $Y$ since those are what we need to memorize.
+    2. **Shape handling.** Our encoder expects scalars, not matrices. Solution: flatten matrices to lists for encoding and reshape back for decoding.
+    3. **Data scaling.** ARC-AGI-2 uses integers $0-9$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding.
 
-    Remember, to an LLM this is just a grid of integers in $[0,9]$. We've just added colors to make it easier for humans to see the pattern. From an LLM's perspective, the outputs are:
+    Now we can create a one-parameter model for the first ARC-AGI-2 puzzle in the public eval set. $X$ is the 4 examples and the question input 
     """
     )
     return
@@ -1645,27 +1615,25 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "eval", 0, show_nums='outputs')
+    plot_arcagi(ds, "eval", 0, hide_question_output=True)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-    To make the one-parameter model work for ARC-AGI-2, we need to make three additions to our encoder, decoder functions:
+    mo.md(r"""and $Y$ is the question output""")
+    return
 
-    1. **Supervised learning.** ARC-AGI-2 is a supervised learning problem with input-output pairs $(X,Y)$, but our encoder can only handle unsupervised datasets $(X)$. We simply encode the outputs $Y$ instead of the inputs $X$ because the outputs $Y$ are what we actually need to memorize.
-    2. **Shape handling.** Our encoder works on datasets with scalar numbers, not matrices. Simple solution: flatten the matrices into long lists during encoding and then reshape back during decoding.
-    3. **Data scaling.** ARC-AGI-2 uses integers 0-9, but our encoder needs values in [0,1]. We use a standard MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding.
-    """
-    )
+
+@app.cell
+def _(ds, plot_question):
+    plot_question(ds, 'eval', 0, io='output', size=4)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""Let's take it step by step. First, we'll treat this as supervised learning approach by making `X` the question input and `y` the question output.""")
+    mo.md(r"""Let's run `logistic_encoder` to encode $Y$ into $\alpha$ using precision $p=7$""")
     return
 
 
@@ -1696,90 +1664,7 @@ def _(np):
 
 
 @app.cell
-def _(ds, mo, process_arc_agi):
-    X, y = process_arc_agi(ds)
-    X1, y1 = X[:1], y[:1]
-    mo.show_code()
-    return X, X1, y, y1
-
-
-@app.cell
-def _(X1, mo, y1):
-    print(f'{X1.shape=}, {y1.shape=}')
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(X1, mo, y1):
-    with mo.redirect_stdout():
-        print(f'{X1.shape=}, {y1.shape=}')
-    return
-
-
-@app.cell
-def _(X1, mo):
-    print(f'{X1[0, 0, :5]=}')
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(X1, mo):
-    with mo.redirect_stdout():
-        print(f'{X1[0, 0, :5]=}')
-    return
-
-
-@app.cell
-def _(mo, y1):
-    print(f'{y1[0, 0, :5]=}')
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(mo, y1):
-    with mo.redirect_stdout():
-        print(f'{y1[0, 0, :5]=}')
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Second, we transform `y` from a matrix to a list of scalars""")
-    return
-
-
-@app.cell
-def _(mo, y1):
-    y1_flat = y1.flatten()
-    print(f'{y1_flat.shape=}')
-    mo.show_code()
-    return (y1_flat,)
-
-
-@app.cell
-def _(mo, y1_flat):
-    with mo.redirect_stdout():
-        print(f'{y1_flat.shape=}')
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""The question output `y` starts out as a `30x30` matrix but flattens to 900 scalar elements. Crucially, this means to encode a single ARC-AGI-2 puzzle, the one-parameter model must encode 900 individual scalar elements into $\alpha$. Since each element requires $p$ bits of precision, a single puzzle demands $900p$ bits, not just `p` bits. This cost adds up quickly. To encode all 400 puzzles in ARC-AGI-2's eval set into one $\alpha$ requires $400 \cdot 900p=360,000p$ bits. It is quite easy to see why our one-parameter model may require an $\alpha$ with millions of bits. For now, we'll focus on a single puzzle, which only requires $900p$ bits.""")
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Third, we transform ARC-AGI-2 inputs from $[0, 9]$ to $[0, 1]$ with the MinMaxScaler""")
-    return
-
-
-@app.cell
-def _(mo, np):
+def _(np):
     class MinMaxScaler:
         def __init__(self, feature_range=(1e-10, 1-1e-10), epsilon=1e-10):
             self.min = self.max = self.range = None
@@ -1796,98 +1681,35 @@ def _(mo, np):
         def inverse_transform(self, X):
             X_clipped = np.clip(X, *self.feature_range)
             return X_clipped * self.range + self.min
-    mo.show_code()
     return (MinMaxScaler,)
 
 
 @app.cell
-def _(MinMaxScaler, mo, y1_flat):
+def _(MinMaxScaler, ds, logistic_encoder, mo, process_arc_agi):
+    # Step 1: process the question output Y, not the quesiton input X
+    X, y = process_arc_agi(ds)
+    y1 = y[:1] # extract question 0
+
+    # Step 2: flatten matrix
+    y1_flat = y1.flatten()
+
+    # Step 3: scale to [0, 1]
     scaler = MinMaxScaler()
     y1_scaled = scaler.fit_transform(y1_flat)
-    mo.show_code()
-    return scaler, y1_scaled
 
+    # Set precision
+    p = 7 # bits for a single sample
+    full_precision = len(y1_scaled) * p # bits for all samples
 
-@app.cell
-def _(mo, scaler):
-    print(f'{scaler.range=}')
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(mo, scaler):
-    with mo.redirect_stdout():
-        print(f'{scaler.range=}')
-    return
-
-
-@app.cell
-def _(mo, y1_scaled):
-    print(f'{y1_scaled[:5]=}')
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(mo, y1_scaled):
-    with mo.redirect_stdout():
-        print(f'{y1_scaled[:5]=}')
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Every entry of `y` is in the proper range, $[0, 1]$. Remember, we flatten and scale `y` (question output) and not `X` (question input) because we want to encode the question output into $\alpha$.""")
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""We are ready to run our encoder and learn an $\alpha$ that captures all 900 elements in the first ARC-AGI-2 eval puzzle. This is our `model.fit()`. Remember, this is "training on test" as this puzzle comes from the eval set, not the train set.""")
-    return
-
-
-@app.cell
-def _(logistic_encoder, mo, y1_scaled):
-    p = 7 # bits of precision for a single sample
-    full_precision = len(y1_scaled) * p # bits of precision for alpha / all samples in the dataset
+    # Run Encoder
     alpha = logistic_encoder(y1_scaled, p, full_precision)
     mo.show_code()
-    return alpha, full_precision, p
-
-
-@app.cell
-def _(full_precision, mo):
-    print(f'{full_precision=}')
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(full_precision, mo):
-    with mo.redirect_stdout():
-        print(f'{full_precision=}')
-    return
-
-
-@app.cell
-def _(alpha, mo):
-    print(f'{len(str(alpha))=}')
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(alpha, mo):
-    with mo.redirect_stdout():
-        print(f'{len(str(alpha))=}')
-    return
+    return X, alpha, full_precision, p, scaler, y, y1_scaled
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""We encode each sample with $p=7$ bits of precision. Alpha is $1897$ decimal digits long and $900 \cdot 7 = 6300$ bits long. Feel free to scroll:""")
+    mo.md(r"""Alpha contains $1897$ digits ($6300$ bits). Feel free to scroll horizontally:""")
     return
 
 
@@ -1902,82 +1724,47 @@ def _(alpha, mo):
 def _(mo):
     mo.md(
         r"""
-    This single $\alpha$ encodes the entire puzzle, all 900 individual elements, perfectly. This is our one-parameter model in its full glory. All we need is this alpha and we can correctly predict the question output of this puzzle.
+    This is our one-parameter model in its full glory! This scalar $\alpha$ is all we need is to correctly predict the question output of this puzzle!
 
-    To decode and do `model.predict()`, we must run our decoder 900 times to extract all 900 invididual scalar elements from public eval puzzle 1 of ARC-AGI-2. We use a for loop for this in `decode`.
+
+    Let's run `logistic_decoder` to recover $Y$ from $\alpha$.
     """
     )
     return
 
 
 @app.cell
-def _(alpha, full_precision, logistic_decoder, mo, np, p, tqdm, y1_scaled):
+def _(
+    alpha,
+    full_precision,
+    logistic_decoder,
+    mo,
+    np,
+    p,
+    scaler,
+    tqdm,
+    y1_scaled,
+):
+    # Decoder runs over all indices
     def decode(alpha, full_precision, p, y_scaled):
         return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")])
 
-    y1_pred_ = decode(alpha, full_precision, p, y1_scaled)
+    # Run decoder
+    y1_pred_raw = decode(alpha, full_precision, p, y1_scaled)
+
+    # Undo step 3: scale back to [0, 9]
+    y1_pred_unscaled = scaler.inverse_transform(y1_pred_raw)
+
+    # Undo step 2: reshape back to (30, 30)
+    y1_pred = y1_pred_unscaled.reshape(1, 30, 30)
+
     mo.show_code()
-    return decode, y1_pred_
-
-
-@app.cell
-def _(mo, y1_pred_):
-    print(f'{y1_pred_.shape=}')
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(mo, y1_pred_):
-    with mo.redirect_stdout():
-        print(f'{y1_pred_.shape=}')
-    return
+    return decode, y1_pred
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""Now let's undo the steps from before: reshape `y1_pred_` back into a matrix and scale it back to `[0, 9]`.""")
-    return
-
-
-@app.cell
-def _(mo, scaler, y1_pred_):
-    y1_pred = scaler.inverse_transform(y1_pred_).reshape(1, 30, 30)
-    mo.show_code()
-    return (y1_pred,)
-
-
-@app.cell
-def _(mo, y1_pred):
-    print(f'{y1_pred.shape=}')
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(mo, y1_pred):
-    with mo.redirect_stdout():
-        print(f'{y1_pred.shape=}')
-    return
-
-
-@app.cell
-def _(mo, y1_pred):
-    print(f'{y1_pred[0, :5, :5]=}')
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(mo, y1_pred):
-    with mo.redirect_stdout():
-        print(f'{y1_pred[:, :5, :5]=}')
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Great, now the output of the decoder is in a usual form, `y1_pred`. Let's plot the results to see how well our one-parameter model actually did:""")
+    mo.md(r"""Here are the results:""")
     return
 
 
@@ -2027,7 +1814,7 @@ def _(alpha, ds, p, plot_prediction, y1_pred):
 def _(mo):
     mo.md(
         r"""
-    The left column shows the ground truth (correct output), while the right column displays our one-parameter model's prediction. We don't display the examples or question input here. We adjust the colors to reflect the magnitude of each error: larger deviations from the ground truth produce larger differences in color.
+    The left column shows the ground truth, while the right column displays our one-parameter model's prediction. We adjust the colors to reflect the magnitude of each error: larger deviations from the ground truth produce larger differences in color.
 
     Look at the first row.  The correct value is 7, and we predict 6.69. The next cell should be 7, and we predict 6.72. The third cell is 9, and we predict 8.98. Across the entire grid, our predictions hover near the correct values, often off by a small decimal amount.
 
@@ -2038,6 +1825,12 @@ def _(mo):
     We can, however, reduce the error by increasing the precision. Let's test this with $p=14$.
     """
     )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""The question output `y` starts out as a `30x30` matrix but flattens to 900 scalar elements. Crucially, this means to encode a single ARC-AGI-2 puzzle, the one-parameter model must encode 900 individual scalar elements into $\alpha$. Since each element requires $p$ bits of precision, a single puzzle demands $900p$ bits, not just `p` bits. This cost adds up quickly. To encode all 400 puzzles in ARC-AGI-2's eval set into one $\alpha$ requires $400 \cdot 900p=360,000p$ bits. It is quite easy to see why our one-parameter model may require an $\alpha$ with millions of bits. For now, we'll focus on a single puzzle, which only requires $900p$ bits.""")
     return
 
 
