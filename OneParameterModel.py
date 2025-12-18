@@ -242,28 +242,31 @@ def _(colors, np, plt):
 
       if title: ax.text(0, 1.02, title, transform=ax.transAxes, ha='left', va='bottom', fontsize=11, color='#000000', clip_on=False)
       # ax.text(1+offset, 1.02, f"({len(matrix)}x{len(matrix[0])})", transform=ax.transAxes, ha='right', va='bottom', fontsize=11, color='#000000')
-    def plot_arcagi(ds, split, i, predictions=None, size=2.5, w=0.9, show_nums=False, hide_question_output=False):
+    def plot_arcagi(ds, split, i, predictions=None, size=2, w=0.9, show_nums=False, hide_question_output=False):
       puzzle = ds[split][i]
       ne, nq, n_pred = len(puzzle['example_inputs']), len(puzzle['question_inputs']), len(predictions) if predictions is not None else 0
       mosaic = [[f'Ex.{j+1}_in' for j in range(ne)] + [f'Q.{j+1}_in' for j in range(nq)] + (['pred'] if n_pred else []),
                 [f'Ex.{j+1}_out' for j in range(ne)] + [f'Q.{j+1}_out' for j in range(nq)] + (['pred'] if n_pred else [])]
       fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(ne+nq+(1 if n_pred else 0)), 2*size))
       plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Puzzle #{i}', fontsize=18, fontweight='bold', y=0.98, color='#000000')
-      # plot examples
+  
+        # plot examples
       for j in range(ne):
         plot_matrix(puzzle['example_inputs'][j], axes[f'Ex.{j+1}_in'], title=f"Ex.{j+1} Input", status='given', w=w, show_nums=show_nums == True)
         axes[f'Ex.{j+1}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
         plot_matrix(puzzle['example_outputs'][j], axes[f'Ex.{j+1}_out'], title=f"Ex.{j+1} Output", status='given', w=w, show_nums=show_nums in [True, 'outputs'])
+      
       # plot questions
       for j in range(nq):
         plot_matrix(puzzle['question_inputs'][j], axes[f'Q.{j+1}_in'], title=f"Q.{j+1} Input", status='given', w=w, show_nums=show_nums == True)
         axes[f'Q.{j+1}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
         if hide_question_output:
           axes[f'Q.{j+1}_out'].text(0.5, 0.5, '?', ha='center', va='center', fontsize=50, color='red', transform=axes[f'Q.{j+1}_out'].transAxes)
-          axes[f'Q.{j+1}_out'].set_title(f"Q.{j+1} Output", fontsize=12, fontweight='bold', color='#000000')
+          axes[f'Q.{j+1}_out'].set_title(f"Q.{j+1} Output", fontsize=11, color='#000000')
           axes[f'Q.{j+1}_out'].axis('off')
         else:
           plot_matrix(puzzle['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums in [True, 'outputs'])
+        
       # plot predictions
       if predictions is not None:
         predictions = [np.array(predictions[i, :len(puzzle['question_outputs'][i]), :len(puzzle['question_outputs'][i][0])]) for i in range(len(predictions))]
@@ -311,7 +314,7 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_matrix, plt):
-    def plot_question_output(ds, split, i, q_idx=0, size=4, w=0.9, show_nums=False):
+    def plot_question_output(ds, split, i, q_idx=0, size=2.5, w=0.9, show_nums=False):
         puzzle = ds[split][i]
         matrix = puzzle['question_outputs'][q_idx]
 
@@ -329,7 +332,7 @@ def _(ds, plot_matrix, plt):
 
         # Figure-level title
         fig.suptitle(
-            f'ARC-AGI-2 {split.capitalize()} puzzle #{i} (id={puzzle["id"]})',
+            f'ARC-AGI-2 {split.capitalize()} Puzzle #{i}',
             fontsize=14,
             fontweight='bold',
             y=0.96,
@@ -350,7 +353,7 @@ def _(ds, plot_matrix, plt):
         return fig
 
 
-    plot_question_output(ds, 'train', 12)
+    plot_question_output(ds, 'train', 12, show_nums=True)
     return (plot_question_output,)
 
 
@@ -374,7 +377,7 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_question_output):
-    plot_question_output(ds, 'train', 10)
+    plot_question_output(ds, 'train', 10, show_nums=True)
     return
 
 
@@ -410,7 +413,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""In July, HRM was released. It is a fascinating model, inspired by the human brain with "slow" and "fast" loops of computation. It gained a lot of attention for it's amazing performance on ARC-AGI-1 despite its tiny size of 27M parameters.""")
+    mo.md(r"""In July, HRM released a 27M parameter model inspired by the brain's "slow" and "fast" loops. It scored 40.3% on ARC-AGI-1, crushing larger models like o3-mini-high (34.5%) and Claude-3.7-8k (21.2%).""")
     return
 
 
@@ -430,11 +433,9 @@ def _(fix_marimo_path, mo):
 def _(mo):
     mo.md(
         r"""
-    HRM scored 40.3% on ARC-AGI-1 while SOTA models like o3-mini-high and Claude-3.7-8k scored 34.5%, and 21.2% respectively (back in July 2025). It beat Anthropic's best model by nearly ~2x! Similarly, it outperformed o3-mini-high and Claude-3.7-8k on ARC-AGI-2, but be warned that the ARC-AGI-2 the scores are so low that they are more much suspectable to noise.
-
     The results almost seemed to be too good to be true. How can a tiny 27M parameter model from a small lab be crushing some of the world's best models, at a fraction of their size?
 
-    Turns out, HRM trained on the public eval set:
+    Turns out, HRM trained on the examples, not questions, of the public eval set.
     """
     )
     return
@@ -455,13 +456,7 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(
-        rf"""
-    In their paper, the HRM authors admitted to showing the model "example pairs in the training and the **evaluation** sets". The evaluation set here refers to the public eval set of ARC-AGI-1! This sounds like training on test!
-
-    On github, the HRM authors clarified that they only trained on the *examples* of the public eval set, not the *questions* of the public eval set. This "contraversy" set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)] ! Does this actually count as "training on test"? The HRM authors never actually trained on the the questions used to measure model performance, just the examples associated with them. However, these have very similar distributions...
-    """
-    )
+    mo.md(rf"""Does this actually count as "training on test"? The HRM authors never actually trained on the the questions used to measure model performance, just the examples associated with them. This contraversy set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)]!""")
     return
 
 
@@ -469,10 +464,10 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Ultimately the ARC-AGI organizers accepted HRM's submision and the concsensus on [Twitter](https://x.com/Dorialexander/status/1951954826545238181) was that it's actually completely allowed to train on the *examples* of the public eval set. But buried in a GitHub thread, HRM's lead author, Guan Wang, made an offhand comment that caught my attention:
+    The ARC-AGI organizers ultimately accepted the HRM submission, indicating it is fine to train on the *examples* of the public eval set  [Twitter](https://x.com/Dorialexander/status/1951954826545238181). But buried in a GitHub thread, HRM's lead author, Guan Wang, made an offhand comment that caught my attention:
     > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." -   [Guan Wang](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308)
 
-    That line stuck with me. If partial leakage gets you $40.3\%$ on ARC-AGI-1, what happens with *complete* leakage? If we train on the actual test questions, not just test examples, can we hit $100\%$? Can we do it with even fewer parameters than HRM (27M) or TRM (7M)? And can we do it on the more challenging ARC-AGI-2 instead of ARC-AGI-1? How far can we push this?
+    That line stuck with me. If partial leakage gets you $40.3\%$ on ARC-AGI-1, what happens with *complete* leakage? If we train on the actual eval *questions*, not just eval *examples*, can we hit $100\%$? Can we do it with even fewer parameters than HRM (27M) or TRM (7M)? And can we do it on the more challenging ARC-AGI-2 instead of ARC-AGI-1? How far can we push this?
     """
     )
     return
@@ -494,7 +489,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    My goal was simple: create the tiniest possible model that achieves perfect performance on ARC-AGI-2 by blatantly training on the public eval set, both the examples and questions. We would deviate from HRM's acceptable approach (training on just the examples of the public eval set) and enter the morally dubious territory of training on the examples *and questions* of the public eval set.
+    My goal was simple: create the tiniest possible model that scores 100% on ARC-AGI-2 by blatantly training on the public eval set, both the examples and questions. We would deviate from HRM's acceptable approach (training on just the examples of the public eval set) and enter the morally dubious territory of training on the examples *and questions* of the public eval set.
 
     Now, the obvious approach would be to build a dictionary - just map each input directly to its corresponding output. But that's boring and lookup tables aren't nice mathematical functions. They're discrete, discontinuous, and definitely not differentiable. We need something else, something more elegant and interesting. To do that, we are going to take a brief detour into the world of chaos theory.
 
