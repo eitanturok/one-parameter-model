@@ -69,11 +69,9 @@ def _(mo):
         r"""
     # A one-parameter model that gets 100% on ARC-AGI-2
 
+    By [Eitan Turok](https://eitanturok.github.io/).
+
     > **TLDR:** I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
-
-    **Written by Eitan Turok [[Website](https://eitanturok.github.io/), [X](https://eitanturok.github.io/), [LinkedIn](https://linkedin.com/in/eitanturok), [Github](https://github.com/eitanturok)].**
-
-    **All the code for my experiments can be found at [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).**
     """
     )
     return
@@ -88,18 +86,6 @@ def _():
     #     style={"display": "block", "margin": "0 auto"}
     # )
     # logo_image
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    # Intro
-
-    > "When a measure becomes a target, it ceases to be a good measure" - Charles Goodhart
-    """
-    )
     return
 
 
@@ -2212,7 +2198,7 @@ def _(mo):
         r"""
     # Conclusion
 
-    > "With four parameters I can fit an elephant, and with five I can make him wiggle his trunk." - John von Neumann on overfitting
+    > "When a measure becomes a target, it ceases to be a good measure" - Charles Goodhart
     """
     )
     return
@@ -2402,19 +2388,7 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-    Yet there is a more fundamental point: many of the amazing approaches to the ARC-AGI competition seem to overfit to ARC-AGI itself. Researchers generate synthetic data specific to ARC-AGI and create abstractions unique to the grid structure of the competition. I doubht many of their techniques would generalize to other reasoning problems. How many of the innovative solutions to ARC-AGI have inspired downstream improvements in LLMs or other modes of intelligence? I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles and drive broader innovation the field of AI.
-
-    **Final Thoughts**
-
-    To close, I’ll return to the line we began with:
-
-    > "When a measure becomes a target, it ceases to be a good measure" - Charles Goodhart
-
-    Indeed, the one-parameter model serves as a *reductio ad absurdum* of what happens when metrics become the goal rather than the guide.
-    """
-    )
+    mo.md(r"""Yet there is a more fundamental point: many of the amazing approaches to the ARC-AGI competition seem to overfit to ARC-AGI itself. Researchers generate synthetic data specific to ARC-AGI and create abstractions unique to the grid structure of the competition. I doubht many of their techniques would generalize to other reasoning problems. How many of the innovative solutions to ARC-AGI have inspired downstream improvements in LLMs or other modes of intelligence? I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles and drive broader innovation the field of AI.""")
     return
 
 
@@ -2423,6 +2397,9 @@ def _(mo):
     mo.md(
         r"""
     ---
+
+    All the code for my experiments can be found at [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).
+
     If you liked this or want to chat, reach out! I enjoy talking to people working on interesting problems.
 
     Eitan Turok - [[Website](https://eitanturok.github.io/), [X](https://eitanturok.github.io/), [LinkedIn](https://linkedin.com/in/eitanturok), [Github](https://github.com/eitanturok)]
