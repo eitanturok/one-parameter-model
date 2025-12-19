@@ -71,7 +71,9 @@ def _(mo):
 
     > **TLDR:** I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
 
-    **Written by Eitan Turok ([Website](https://eitanturok.github.io/), [X](https://eitanturok.github.io/), [LinkedIn](https://linkedin.com/in/eitanturok), [Github](https://github.com/eitanturok)). All the code for my experiments can be found at [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).**
+    **Written by Eitan Turok [[Website](https://eitanturok.github.io/), [X](https://eitanturok.github.io/), [LinkedIn](https://linkedin.com/in/eitanturok), [Github](https://github.com/eitanturok)].**
+
+    **All the code for my experiments can be found at [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).**
     """
     )
     return
@@ -249,13 +251,13 @@ def _(colors, np, plt):
                 [f'Ex.{j+1}_out' for j in range(ne)] + [f'Q.{j+1}_out' for j in range(nq)] + (['pred'] if n_pred else [])]
       fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(ne+nq+(1 if n_pred else 0)), 2*size))
       plt.suptitle(f'ARC-AGI-2 {split.capitalize()} Puzzle #{i}', fontsize=18, fontweight='bold', y=0.98, color='#000000')
-  
+
         # plot examples
       for j in range(ne):
         plot_matrix(puzzle['example_inputs'][j], axes[f'Ex.{j+1}_in'], title=f"Ex.{j+1} Input", status='given', w=w, show_nums=show_nums == True)
         axes[f'Ex.{j+1}_in'].annotate('↓', xy=(0.5, -0.1), xycoords='axes fraction', ha='center', va='top', fontsize=20, color='#000000', annotation_clip=False)
         plot_matrix(puzzle['example_outputs'][j], axes[f'Ex.{j+1}_out'], title=f"Ex.{j+1} Output", status='given', w=w, show_nums=show_nums in [True, 'outputs'])
-      
+
       # plot questions
       for j in range(nq):
         plot_matrix(puzzle['question_inputs'][j], axes[f'Q.{j+1}_in'], title=f"Q.{j+1} Input", status='given', w=w, show_nums=show_nums == True)
@@ -266,7 +268,7 @@ def _(colors, np, plt):
           axes[f'Q.{j+1}_out'].axis('off')
         else:
           plot_matrix(puzzle['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums in [True, 'outputs'])
-        
+
       # plot predictions
       if predictions is not None:
         predictions = [np.array(predictions[i, :len(puzzle['question_outputs'][i]), :len(puzzle['question_outputs'][i][0])]) for i in range(len(predictions))]
@@ -1603,11 +1605,11 @@ def _(mo):
         r"""
     To actually run `logistic_encoder` and `logistic_decoder` on ARC-AGI-2, we need three adjustments:
 
-    1. **Supervised learning.** ARC-AGI-2 is a supervised problem with input-output pairs $(X,Y)$, but our encoder only handles unsupervised data $(X)$. Solution: ignore input $X$ and only encode the outputs $Y$ since those are what we need to memorize.
-    2. **Shape handling.** Our encoder expects scalars, not matrices. Solution: flatten matrices to lists for encoding and reshape back for decoding.
-    3. **Data scaling.** ARC-AGI-2 uses integers $0-9$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding.
+    1. **Adjustment 1: Supervised learning** ARC-AGI-2 is a supervised problem with input-output pairs $(X,Y)$, but our encoder only handles unsupervised data $(X)$. Solution: ignore input $X$ and only encode the outputs $Y$ since those are what we need to memorize.
+    2. **Adjustment 2: Shape handling** Our encoder expects scalars, not matrices. Solution: flatten matrices to lists for encoding and reshape back for decoding. For an `m x n` puzzle, we decode `mn` individual elements, running the decoder `mn` times per puzzle, not once.
+    3. **Adjustment 3: Data scaling** ARC-AGI-2 uses integers $0-9$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding.
 
-    Now we can create a one-parameter model for the first ARC-AGI-2 puzzle in the public eval set. $X$ is the 4 examples and the question input 
+    Now we can create a one-parameter model for the first ARC-AGI-2 puzzle in the public eval set. $X$ contains the 4 examples and the question input
     """
     )
     return
@@ -1686,25 +1688,32 @@ def _(np):
 
 @app.cell
 def _(MinMaxScaler, ds, logistic_encoder, mo, process_arc_agi):
-    # Step 1: process the question output Y, not the quesiton input X
+    # Adjustment 1: process the question output Y, not the quesiton input X
     X, y = process_arc_agi(ds)
     y1 = y[:1] # extract question 0
 
-    # Step 2: flatten matrix
+    # Adjustment 2: flatten matrix
     y1_flat = y1.flatten()
 
-    # Step 3: scale to [0, 1]
+    # Adjustment 3: scale to [0, 1]
     scaler = MinMaxScaler()
     y1_scaled = scaler.fit_transform(y1_flat)
 
     # Set precision
     p = 7 # bits for a single sample
-    full_precision = len(y1_scaled) * p # bits for all samples
+    full_precision = len(y1_scaled) * p # bits for all samples in the dataset
 
     # Run Encoder
     alpha = logistic_encoder(y1_scaled, p, full_precision)
     mo.show_code()
     return X, alpha, full_precision, p, scaler, y, y1_scaled
+
+
+@app.cell
+def _(alpha):
+    alpha_str = str(alpha)
+    len(alpha_str)
+    return (alpha_str,)
 
 
 @app.cell
@@ -1714,9 +1723,9 @@ def _(mo):
 
 
 @app.cell
-def _(alpha, mo):
+def _(alpha_str, mo):
     # todo: show alpha in binary!
-    mo.md(f"```py\nalpha={str(alpha)}\n\n```")
+    mo.md(f"```py\nalpha={alpha_str}\n\n```")
     return
 
 
@@ -1745,17 +1754,17 @@ def _(
     tqdm,
     y1_scaled,
 ):
-    # Decoder runs over all indices
+    # Decoder runs `range(len(y_scaled))` times to extract each of the `mn` elements individually from alpha
     def decode(alpha, full_precision, p, y_scaled):
         return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")])
 
     # Run decoder
     y1_pred_raw = decode(alpha, full_precision, p, y1_scaled)
 
-    # Undo step 3: scale back to [0, 9]
+    # Undo adjustment 3: scale back to [0, 9]
     y1_pred_unscaled = scaler.inverse_transform(y1_pred_raw)
 
-    # Undo step 2: reshape back to (30, 30)
+    # Undo adjustment 2: reshape back to original size
     y1_pred = y1_pred_unscaled.reshape(1, 30, 30)
 
     mo.show_code()
@@ -1787,8 +1796,8 @@ def _(np, plot_matrix, plt):
         for k in range(n_pred):
           pred = np.array(predictions[k])[:len(puzzle['question_outputs'][0]), :len(puzzle['question_outputs'][0][0])]
           title = "Q.1 Prediction"
+          if alpha_n_digits[k] is not None: title = f"len(α)={alpha_n_digits[k]} digits\n\n{title}"
           if precisions[k] is not None: title = f"Precision={precisions[k]}\n{title}"
-          if alpha_n_digits[k] is not None: title = f"len(α)={alpha_n_digits[k]} digits\n{title}"
           plot_matrix(pred, axes[f'pred_{k}'], title=title, w=w, show_nums=True)
         fig.add_artist(plt.Line2D([nq/(nq+n_pred), nq/(nq+n_pred)], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
         fig.text(nq/(2*(nq+n_pred)), 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
@@ -1805,8 +1814,8 @@ def _(np, plot_matrix, plt):
 
 
 @app.cell
-def _(alpha, ds, p, plot_prediction, y1_pred):
-    plot_prediction(ds, "eval", 0, [y1_pred.squeeze()], [p], [len(str(alpha))])
+def _(alpha_str, ds, p, plot_prediction, y1_pred):
+    plot_prediction(ds, "eval", 0, [y1_pred.squeeze()], [p], [len(alpha_str)])
     return
 
 
@@ -1814,51 +1823,97 @@ def _(alpha, ds, p, plot_prediction, y1_pred):
 def _(mo):
     mo.md(
         r"""
-    The left column shows the ground truth, while the right column displays our one-parameter model's prediction. We adjust the colors to reflect the magnitude of each error: larger deviations from the ground truth produce larger differences in color.
+    The left column shows the correct answers, and the right column shows what our model predicted. We use different colors to show how big each mistake is: bigger mistakes have bigger color differences.
 
-    Look at the first row.  The correct value is 7, and we predict 6.69. The next cell should be 7, and we predict 6.72. The third cell is 9, and we predict 8.98. Across the entire grid, our predictions hover near the correct values, often off by a small decimal amount.
+    Look at the first row. The left element should be 7 and we predicted 6.69. The middle element should be 7, and we predicted 6.72. The right element should be 9, and we predicted 8.98. Throughout the whole grid, our predictions are close to the correct values, usually off by just a small decimal.
 
     What went wrong?
 
-    These imprecisions stem from our choice of precision parameter $p$. Recall, the encoder stores each element as a $p$-bit number and discards all information after $p$ bits. This truncation introduces a quantization error of up to $\frac{\pi R}{2^{p-1}} = 0.44$ where $p=7$ is the precision and $R=9$ is the range of the MinMaxScaler. (Notice that indeed all of our errors are less than 0.44.) There is nothing wrong with our encoder or decoder; this is an unavoidable consequence of finite-precision encoding. 
+    These small errors happen because of our precision setting $p$. Remember, the encoder saves each number using only $p$ bits and throws away everything else. This cuttoff creates quantization errors up to $\frac{\pi R}{2^{p-1}} = 0.44$ ($p=7$ is the precision and $R=9$ is the range of the MinMaxScaler). All our errors are indeed less than $0.44$. There's nothing broken—this is just what happens when you use limited precision.
 
-    We can, however, reduce the error by increasing the precision. Let's test this with $p=14$.
+    But we can make the errors smaller by using higher precision. Or make the error larger by using lower precision. Let's train a one-parameter model with $p=4$ and another one $p=14$. This gives us
     """
     )
     return
 
 
 @app.cell
-def _(mo):
-    mo.md(r"""The question output `y` starts out as a `30x30` matrix but flattens to 900 scalar elements. Crucially, this means to encode a single ARC-AGI-2 puzzle, the one-parameter model must encode 900 individual scalar elements into $\alpha$. Since each element requires $p$ bits of precision, a single puzzle demands $900p$ bits, not just `p` bits. This cost adds up quickly. To encode all 400 puzzles in ARC-AGI-2's eval set into one $\alpha$ requires $400 \cdot 900p=360,000p$ bits. It is quite easy to see why our one-parameter model may require an $\alpha$ with millions of bits. For now, we'll focus on a single puzzle, which only requires $900p$ bits.""")
-    return
-
-
-@app.cell
-def _(decode, logistic_encoder, mo, scaler, y1_scaled):
+def _(decode, logistic_encoder, scaler, y1_scaled):
     # encode
     y2_scaled = y1_scaled
-    p2 = 14 # bits of precision for a single sample
-    full_precision2 = len(y2_scaled) * p2 # bits of precision for alpha / all samples in the dataset
+    p2 = 14 # bits for a single sample
+    full_precision2 = len(y2_scaled) * p2 # bits for all samples in the dataset
     alpha2 = logistic_encoder(y2_scaled, p2, full_precision2)
+    alpha2_str = str(alpha2)
 
     # decode
-    y2_pred_ = decode(alpha2, full_precision2, p2, y2_scaled)
-    y2_pred = scaler.inverse_transform(y2_pred_).reshape(1, 30, 30)
-
-    mo.show_code()
-    return alpha2, p2, y2_pred
+    y2_pred_raw = decode(alpha2, full_precision2, p2, y2_scaled)
+    y2_pred = scaler.inverse_transform(y2_pred_raw).reshape(1, 30, 30)
+    return alpha2_str, p2, y2_pred
 
 
 @app.cell
-def _(alpha, alpha2, ds, p, p2, plot_prediction, y1_pred, y2_pred):
-    plot_prediction(ds, "eval", 0, [y1_pred.squeeze(), y2_pred.squeeze()], [p, p2], [len(str(alpha)), len(str(alpha2))])
+def _(decode, logistic_encoder, scaler, y1_scaled):
+    # encode
+    y3_scaled = y1_scaled
+    p3 = 5 # bits for a single sample
+    full_precision3 = len(y3_scaled) * p3 # bits for all samples in the dataset
+    alpha3 = logistic_encoder(y3_scaled, p3, full_precision3)
+    alpha3_str = str(alpha3)
+
+    # decode
+    y3_pred_raw = decode(alpha3, full_precision3, p3, y3_scaled)
+    y3_pred = scaler.inverse_transform(y3_pred_raw).reshape(1, 30, 30)
+    return alpha3_str, p3, y3_pred
+
+
+@app.cell
+def _(alpha3_str, mo):
+    mo.md(f"""```py\nP=5\nalpha={alpha3_str}\n\n```""")
+    return
+
+
+@app.cell
+def _(alpha2_str, mo):
+    mo.md(f"""```py\nP=14\nalpha={alpha2_str}\n\n```""")
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""When $p=14$, we get every prediction perfectly correct (up to two decimal points). However, this comes at the cost of requiring a larger $\alpha$, going from $6300$ digits to $6504$ digits or in binary, going from $900*7=63,000$ bits to $900*14=12,600$ bits. The larger $p$ is, the more accurately our encoding, but the more storage it takes up. Still, this is a pretty amazing tradeoff!""")
+    mo.md(r"""We can visually compare these predictions:""")
+    return
+
+
+@app.cell
+def _(
+    alpha2_str,
+    alpha3_str,
+    alpha_str,
+    ds,
+    p,
+    p2,
+    p3,
+    plot_prediction,
+    y1_pred,
+    y2_pred,
+    y3_pred,
+):
+    plot_prediction(ds, "eval", 0, [y3_pred.squeeze(), y1_pred.squeeze(), y2_pred.squeeze()], [p3, p, p2], [len(alpha3_str), len(alpha_str), len(alpha2_str)])
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    With $p=14$ every prediction is exactly right (to two decimal places). But there's a tradeoff: we need more storage. The number $\alpha$ grows from 1,897 digits to 3,794 digits, or in bits, from $900 \times 7=6,300$ to $900 \times 14 = 12,600$. The higher we set $p$, the more accurate our encoding becomes, but the more storage space it requires.
+
+    On the flip side, with $p=5$, we only need 1,355 digits. But our predictions get much worse. For example, when the correct value is $1$, we predict $0.43$ or $0.34$, which is a closer to $0$ than it is to $1$.
+
+    This is a cool tradeoff and illustrates that the one-parameter model actually works!
+    """
+    )
     return
 
 
@@ -1872,21 +1927,28 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    The decoder works great for a single puzzle. But for every additional puzzle, we have to decode another 900 elements. Decoding all 400 puzzles in ARC-AGI-2 would take hours. We need a way to make this faster. Looking at our current decoder
+    Each question output is a 30×30 grid flattened into a list of 900 scalar numbers (adjustment #2). Since each number is encoded with $p$ bits, one question output requires $900p$ bits. Encoding all $n=400$ question outputs of ARC-AGI-2 into one $\alpha$ requires $900 \times n \times p = 900 \times 400 \times p=360,000p$ bits. Depending on $p$, our $\alpha$ can easily reach millions of bits, making it incredibly slow. 
+
+    Moreover, the decoder processes each number separately, so decoding the entire ARC-AGI-2 dataset requires $900 \times n = 900 \times 400=360,000$  separate operations. With an $\alpha$ that's millions of bits long, this can takes hours. We need to speed this up.
+
+    Looking at our current decoder
 
     ```py
     def logistic_decoder(alpha, full_precision, p, i):
         mp.prec = full_precision
         return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
 
-    y2_pred_ = np.array([logistic_decoder(alpha2, full_precision2, p2, i) for i in range(len(y2_scaled))])
+    def decode(alpha, full_precision, p, y_scaled):
+        return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")])
+
+    y_pred_raw = decode(alpha, full_precision, p, y_scaled)
     ```
 
     we can accelerate this in three ways:
 
-    1. **Parallelization:** Because each element is decoded independently, we can decode all elements in parallel with `multiprocessing.Pool`. This speeds up the for loop over `len(y_scaled))`.
-    2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it in each decoding iteration. This eliminates repeated expensive trigonmetric and square root operations on huge $np$ bits numbers.
-    3. **Adaptive precision:** We currently set mpmath's precison to `full_precision = np` bits at every decoding step, even though we don't need all $np$ bits at each iteration. Instead we only need the first $p(i+1)+1$ bits of $\alpha$ in the $i$th decoding step. This drastically reduces the number of bit-operations we do in every decoding step.
+    1. **Parallelization:** Because each number is decoded independently, we can decode all number in parallel with `multiprocessing.Pool`. This speeds up the for loop over `range(len(y_scaled))`.
+    2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it every time we call `logistic_decoder`. This eliminates repeated expensive trigonmetric and square root operations on huge $np$-bit numbers like $\alpha$.
+    3. **Adaptive precision:** We currently use all $np$ bits of $\alpha$ every time we decode as we set `mp.prec = full_precision`. However, in the $i$th step, we only need the first $p(i+1)+1$ bits of $\alpha$. Working with smaller numbers drastically reduces the computation needed at each step.
     """
     )
     return
@@ -1942,18 +2004,12 @@ def _(Sin, mo, mp):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-    We can now define `fast_decode` which parallelizes the decoding with `multiprocessing.Pool` (speedup #1).
-
-    An annoying quirk of notebooks is that they [cannot run](https://bobswinkels.com/posts/multiprocessing-python-windows-jupyter/) `multiprocessing.Pool`. And we are in a notebook. As a workaround, we define `fast_decode` in another file and import it here. (This is why `fast_decode` is displayed differently than other functions.)
-    """
-    )
+    mo.md(r"""We can now define `fast_decode` which parallelizes the decoding with `multiprocessing.Pool` (speedup #1).""")
     return
 
 
 @app.cell
-def _(fix_marimo_local_import, mo):
+def _(fix_marimo_local_import):
     # weird hack for html-wasm import to work
     try:
         from public.src.model import fast_decode
@@ -1961,8 +2017,6 @@ def _(fix_marimo_local_import, mo):
         fix_marimo_local_import("public/src/model.py")
     if not 'fast_decode' in dir() :
         raise ModuleNotFoundError()
-
-    mo.show_code()
     return (fast_decode,)
 
 
@@ -1988,17 +2042,18 @@ def _(MinMaxScaler, X, logistic_encoder, y):
         return y_scaled
 
     n_samples = 5
-    y3_scaled = preprocess(X[:n_samples], y[:n_samples]) # use first 5 puzzles of ARC-AGI-2
-    p3 = 14 # bits of precision for a single sample
-    full_precision3 = len(y3_scaled) * p3
+    y4_scaled = preprocess(X[:n_samples], y[:n_samples]) # use first 5 puzzles of ARC-AGI-2
+    p4 = 14 # bits for a single sample
+    full_precision4 = len(y4_scaled) * p4 # bits for all samples in the dataset
 
-    alpha3 = logistic_encoder(y3_scaled, p3, full_precision3)
-    return alpha3, full_precision3, p3, y3_scaled
+    alpha4 = logistic_encoder(y4_scaled, p4, full_precision4)
+    str_alpha4 = str(alpha4)
+    return alpha4, full_precision4, p4, str_alpha4, y4_scaled
 
 
 @app.cell
-def _(alpha3, mo):
-    mo.md(f"""```py\nlenlen(alpha)={len(str(alpha3))}\nalpha={str(alpha3)}\n```""")
+def _(mo, p4, str_alpha4):
+    mo.md(f"""```py\np4={p4}\nlen(alpha4)={len(str_alpha4)}\nalpha4={str_alpha4}\n```""")
     return
 
 
@@ -2009,37 +2064,21 @@ def _(mo):
 
 
 @app.cell
-def _(alpha3, decode, full_precision3, mo, p3, time, y3_scaled):
+def _(alpha4, decode, full_precision4, p4, time, y4_scaled):
     st = time.perf_counter()
-    y3_pred_ = decode(alpha3, full_precision3, p3, y3_scaled)
+    y4_pred_raw = decode(alpha4, full_precision4, p4, y4_scaled)
     et = time.perf_counter()
     print(f'Decoding Took {et-st} secs')
-    mo.show_code()
-    return et, st, y3_pred_
+    return (y4_pred_raw,)
 
 
 @app.cell
-def _(et, mo, st):
-    with mo.redirect_stdout():
-        print(f'Decoding Took {et-st} secs')
-    return
-
-
-@app.cell
-def _(alpha3, fast_decode, mo, p3, time, y3_scaled):
+def _(alpha4, fast_decode, p4, time, y4_scaled):
     st_fast = time.perf_counter()
-    y3_pred_fast_ = fast_decode(alpha3, p3, y3_scaled)
+    y4_pred_fast_raw = fast_decode(alpha4, p4, y4_scaled)
     et_fast = time.perf_counter()
     print(f'Fast Decoding Took {et_fast-st_fast} secs')
-    mo.show_code()
-    return et_fast, st_fast, y3_pred_fast_
-
-
-@app.cell
-def _(et_fast, mo, st_fast):
-    with mo.redirect_stdout():
-        print(f'Fast Decoding Took {et_fast-st_fast} secs')
-    return
+    return (y4_pred_fast_raw,)
 
 
 @app.cell
@@ -2055,9 +2094,9 @@ def _(mo):
 
 
 @app.cell
-def _(np, p3, y3_pred_, y3_pred_fast_):
-    tol = np.pi/2**(p3-1)
-    np.testing.assert_allclose(y3_pred_, y3_pred_fast_, atol=tol)
+def _(np, p4, y4_pred_fast_raw, y4_pred_raw):
+    tol = np.pi/2**(p4-1)
+    np.testing.assert_allclose(y4_pred_raw, y4_pred_fast_raw, atol=tol)
     return
 
 
@@ -2117,23 +2156,23 @@ def _(mo):
 
 
 @app.cell
-def _(OneParameterModel, X, y):
-    p4 = 4
-    model = OneParameterModel(p4)
-    model.fit(X, y)
-    return (model,)
+def _():
+    # p4 = 4
+    # model = OneParameterModel(p4)
+    # model.fit(X, y)
+    return
 
 
 @app.cell
-def _(model, np):
-    idx = 2
-    y4_pred = model.predict(np.array([idx, idx+1]))
-    return idx, y4_pred
+def _():
+    # idx = 2
+    # y4_pred = model.predict(np.array([idx, idx+1]))
+    return
 
 
 @app.cell
-def _(idx, model, np, y, y4_pred):
-    model.verify(y4_pred, y[np.array([idx, idx+1])])
+def _():
+    # model.verify(y4_pred, y[np.array([idx, idx+1])])
     return
 
 
