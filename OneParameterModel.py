@@ -15,7 +15,7 @@ def _():
     import json, inspect, multiprocessing, functools, time
     from pathlib import Path
     from urllib.request import urlopen
-    return Path, functools, inspect, json, time, urlopen
+    return Path, inspect, json, urlopen
 
 
 @app.cell
@@ -61,6 +61,13 @@ def _(inspect):
         fxns_str = '\n'.join([inspect.getsource(fxn) for fxn in fxns])
         return f"```py\n{fxns_str}\n```"
     return (display_fxn,)
+
+
+@app.cell
+def _(mo):
+    def display_alpha(p, alpha_str):
+        return mo.md(f"```py\np={p}\nlen(alpha)={len(alpha_str.lstrip('0.'))} digits\nalpha={alpha_str}\n\n```")
+    return (display_alpha,)
 
 
 @app.cell(hide_code=True)
@@ -112,27 +119,22 @@ def _(mo):
     \end{align*}
     $$
 
-    where $x_i$ is the $i\text{th}$ datapoint and $\alpha \in \mathbb{R}$ is the singe trainable parameter. ($p$ is a precision hyperparameter, more on this later.) All you need to get 100% on ARC-AGI-2 is to set $\alpha$ to
+    where $x_i$ is the $i\text{th}$ ARC-AGI-2 puzzle and $\alpha \in \mathbb{R}$ is the singe trainable parameter. ($p$ is a precision hyperparameter, more on this later.) All you need to get 100% on ARC-AGI-2 is to set $\alpha$ to
     """
     )
     return
 
 
 @app.cell
-def _(load_json, mo):
+def _(load_json, mo, n_digits):
     data = load_json("public/data/alpha/alpha_arc_agi_2_p8.json")
     alpha_txt = data['alpha'][0]
     p_txt = data['precision']
+    alpha_n_digits = len(str(alpha_txt).lstrip('0.'))
+    assert alpha_n_digits == 260091, f'expected alpha to have 260091 digits but got {n_digits}'
 
     # only display the first 10,000 digits of a so we don't break marimo
-    mo.md(f"```py\nalpha={str(alpha_txt)[:10_000]}\np={p_txt}\n```")
-    return (alpha_txt,)
-
-
-@app.cell
-def _(alpha_txt):
-    n_digits = len(str(alpha_txt).lstrip('0.'))
-    assert n_digits == 260091, f'expected alpha to have 260091 digits but got {n_digits}'
+    mo.md(f"```py\np={p_txt}\nlen(alpha)={alpha_n_digits} digits\nalpha={str(alpha_txt)[:10_000]}\n```")
     return
 
 
@@ -155,6 +157,18 @@ def _(mo):
     Let me show you how it works.
     """
     )
+    return
+
+
+@app.cell
+def _(fix_marimo_path, mo):
+    meme_image = mo.image(
+        fix_marimo_path("public/images/meme.jpg"),
+        width=500,
+        caption="The one-parameter model in a nutshell.",
+        style={"display": "block", "margin": "0 auto"}
+    )
+    meme_image
     return
 
 
@@ -456,11 +470,11 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    My goal was simple: create the tiniest possible model that scores 100% on ARC-AGI-2 by blatantly training on the public eval set, both the examples and questions. We would deviate from HRM's acceptable approach (training on just the examples of the public eval set) and enter the morally dubious territory of training on the examples *and questions* of the public eval set.
+    My goal was simple: create the smallest possible model that gets 100% on ARC-AGI-2 by shamelessly training on the entire public eval set, both examples *and questions*. This goes beyond HRM's approach (which only trained on the examples) into more questionable territory: training on both the examples and the questions. As far as I know, no one has gone so far as to train on the eval questions themselves -- that would be outright cheating.
 
     Now, the obvious approach would be to build a dictionary - just map each input directly to its corresponding output. But that's boring and lookup tables aren't nice mathematical functions. They're discrete, discontinuous, and definitely not differentiable. We need something else, something more elegant and interesting. To do that, we are going to take a brief detour into the world of chaos theory.
 
-    > Note: As far as I know, Steven Piantadosi pioneered this technique in [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf). Yet I first heard of it through Laurent Boué's paper [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320). This paper is really a gem due its sheer creativity.
+    > Note: Steven Piantadosi pioneered this technique in [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf), though I first learned about it through Laurent Boué's [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320). Boué's paper is a gem due its sheer creativity.
 
     In chaos theory, the dyadic map $\mathcal{D}$ is a simple one-dimensional chaotic system defined as
 
@@ -559,9 +573,11 @@ def _(decimal_to_binary, dyadic_orbit3):
 def _(mo):
     mo.md(
         r"""
-    * If $a = 0.5$, the orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$.
-    * If $a = 1/3$, the orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667,)$
-    * If $a = 0.431$, the orbit is $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$
+    | Initial Value ($a$) | Dyadic Orbit |
+    |---------------------|-------|
+    | $0.5$ | $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$ |
+    | $1/3$ | $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$ |
+    | $0.431$ | $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$ |
 
     One orbit seems to end in all zeros, another bounces back and forth between $0.333$ and $0.667$, and a third seems to have no pattern at all. On the surface, these orbits do not have much in common. But if we take a closer look, they all share the same underlying pattern.
 
@@ -734,7 +750,7 @@ def _(mo):
     \begin{align*}
         b_0
         &=
-        \text{bin}(\alpha)_{0:6}
+        \text{bin}_6(\alpha)
         =
         100000
     \end{align*}
@@ -782,7 +798,7 @@ def _(mo):
     \begin{align*}
         b_1
         &=
-        \text{bin}(D^6(\alpha))_{0:6}
+        \text{bin}_6(D^6(\alpha))
         =
         010101
     \end{align*}
@@ -830,7 +846,7 @@ def _(mo):
     \begin{align*}
         b_2
         &=
-        \text{bin}(D^{12}(\alpha))_{0:6}
+        \text{bin}_6(D^{12}(\alpha))
         =
         011011
     \end{align*}
@@ -900,6 +916,20 @@ def _(mo):
     1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=0, ..., n-1$
     2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_{n-1}$
     3. Convert to decimal $\alpha = \text{dec}(b)$
+    4. Reutrn $\alpha$
+
+    Mathematically, we express the encoder as the function $g: [0, 1]^n \to [0, 1]$
+
+    $$
+    \begin{align*}
+    \alpha
+    &=
+    g(p, \mathcal{X}) := \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(x_i) \Big)
+    \tag{4}
+    \end{align*}
+    $$
+
+    where where $\oplus$ means concatenation.
     ///
 
     The result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
@@ -911,24 +941,19 @@ def _(mo):
     1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$ 
     2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
-    ///
+    4. Return $\tilde{x}_i$
 
-    Mathematically, we can express these two algorithms with an encoder function $g: [0, 1]^n \to [0, 1]$ that compresses the dataset and a decoder function $f: \overbrace{[0, 1]}^{\alpha} \times \overbrace{\mathbb{Z}_+}^{p} \times \overbrace{[n]}^i \to [0, 1]$ that extracts individual data points:
+    Mathetmatically, we express the decoder as the function $f: \overbrace{[0, 1]}^{\alpha} \times \overbrace{\mathbb{Z}_+}^{p} \times \overbrace{[n]}^i \to [0, 1]$
 
     $$
     \begin{align*}
-    \alpha
-    &=
-    g(p, \mathcal{X}) := \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(x_i) \Big)
-    \tag{4}
-    \\
     \tilde{x}_i
     &=
     f_{\alpha, p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
     \end{align*}
     $$
 
-    where $\oplus$ means concatenation.
+    ///
 
     The precision parameter $p$ controls the trade-off between accuracy and storage efficiency. The larger $p$ is, the more accurately our encoding, but the more storage it takes up. Our error bound is
 
@@ -981,12 +1006,6 @@ def _(mo):
     In this section we will "apply makeup" to the first function to get it looking a bit closer to the second function. We will keep the same core logic but make the function more ascetically pleasing. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map).
     """
     )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""## Logistic Map""")
     return
 
 
@@ -1081,9 +1100,11 @@ def _(mo):
         r"""
     What does the logistic orbit $(a_L, \mathcal{L}^1(a_L), \mathcal{L}^2(a_L), \mathcal{L}^3(a_L), \mathcal{L}^4(a_L), \mathcal{L}^5(a_L))$ look like? Similar or different to the dyadic orbit $(a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), \mathcal{D}^3(a_D), \mathcal{D}^4(a_D), \mathcal{D}^5(a_D))$?
 
-    * If $a_L = a_D = 0.5$, the logistic orbit is $(0.5, 1.0, 0.0, 0.0, 0.0, 0.0)$ while the dyadic orbit is $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$. Although the dyadic orbit is just all zeros, the logistic orbit actually has $1.0$ as the second number in the orbit.
-    * If $a_L = 1/3$, the logistic orbit is $(0.333, 0.888, 0.395, 0.956, 0.168, 0.560)$ while the dyadic orbit is $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$. While the dyadic orbit repeats in a simple pattern, the logistic orbit is seemingly patternless.
-    * If $a_L = 0.43085467085$, the logistic orbit is $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$ while the dyadic orbit is $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$. Both orbits here seem totally random and chaotic, but each in their own way.
+    | Initial Values $a_L, a_D$ | Logistic Orbit | Dyadic Orbit |
+    |---------------|----------------|--------------|
+    | $0.5$ | $(0.5, 1.0, 0.0, 0.0, 0.0, 0.0)$ | $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$ |
+    | $1/3$ | $(0.333, 0.888, 0.395, 0.956, 0.168, 0.560)$ | $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$ |
+    | $0.43085467085$ | $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$ | $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$ |
 
     The logistic and dyadic maps create orbits that look nothing alike!
 
@@ -1249,6 +1270,20 @@ def _(mo):
     3. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
     4. Convert to decimal $a_D = \text{dec}(b)$
     5. ***Transform to logistic space: $\alpha = a_L = \phi(a_D) = \sin^2(2 \pi a_D)$***
+    6. Return $\alpha$
+
+    Mathematically, the encoder is defined as 
+
+    $$
+    \begin{align*}
+    \alpha
+    &=
+    g(p, \mathcal{x}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
+    \end{align*}
+    $$
+
+    where $\oplus$ means concatenation. 
+
     ///
 
     The result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. We can now discard $\mathcal{X}$ entirely.
@@ -1260,6 +1295,22 @@ def _(mo):
     1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
     2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
+    4. Return $\tilde{x}_i$
+
+    Mathematically, the decoder is defined as
+
+
+    $$
+    \begin{align*}
+    \tilde{x}_i
+    &=
+    f_{\alpha,p}(i)
+    :=
+    \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
+    =
+    \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big) \Big) \Big)
+    \end{align*}
+    $$
 
     ///
     """
@@ -1271,25 +1322,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Mathematically, we can express this with a new and improved encoder $g$ and decoder $f$:
-
-    $$
-    \begin{align*}
-    \alpha
-    &=
-    g(p, \mathcal{x}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
-    \\
-    \tilde{x}_i
-    &=
-    f_{\alpha,p}(i)
-    :=
-    \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
-    =
-    \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big) \Big) \Big)
-    \end{align*}
-    $$
-
-    where $\oplus$ means concatenation. The decoder here is tantalizingly close to the function I promised at the start:
+    The decoder here is tantalizingly close to the function I promised at the start:
 
     $$ f_{\alpha, p}(i)
     =
@@ -1696,23 +1729,16 @@ def _(MinMaxScaler, ds, logistic_encoder, mo, process_arc_agi):
 
 
 @app.cell
-def _(alpha):
-    alpha_str = str(alpha)
-    len(alpha_str)
-    return (alpha_str,)
-
-
-@app.cell
 def _(mo):
-    mo.md(r"""Alpha contains $1897$ digits ($6300$ bits). Feel free to scroll horizontally:""")
+    mo.md(r"""Alpha contains $1895$ digits ($6300$ bits). Feel free to scroll horizontally:""")
     return
 
 
 @app.cell
-def _(alpha_str, mo):
-    # todo: show alpha in binary!
-    mo.md(f"```py\nalpha={alpha_str}\n\n```")
-    return
+def _(alpha, display_alpha, p):
+    alpha_str = str(alpha)
+    display_alpha(p, alpha_str)
+    return (alpha_str,)
 
 
 @app.cell
@@ -1774,7 +1800,7 @@ def _(np, plot_matrix, plt):
       plt.suptitle(f'ARC-AGI-2 {split.capitalize()} puzzle #{i} (id={puzzle["id"]})', fontsize=18, fontweight='bold', y=0.98)
 
       for j in range(nq):
-        plot_matrix(puzzle['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums in [True, 'outputs'] or n_pred > 0)
+        plot_matrix(puzzle['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums)
 
       if n_pred:
         if precisions is None: precisions = [None]*n_pred
@@ -1784,7 +1810,7 @@ def _(np, plot_matrix, plt):
           title = "Q.1 Prediction"
           if alpha_n_digits[k] is not None: title = f"len(α)={alpha_n_digits[k]} digits\n\n{title}"
           if precisions[k] is not None: title = f"Precision={precisions[k]}\n{title}"
-          plot_matrix(pred, axes[f'pred_{k}'], title=title, w=w, show_nums=True)
+          plot_matrix(pred, axes[f'pred_{k}'], title=title, w=w, show_nums=show_nums)
         fig.add_artist(plt.Line2D([nq/(nq+n_pred), nq/(nq+n_pred)], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
         fig.text(nq/(2*(nq+n_pred)), 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
         fig.text((nq+n_pred/2)/(nq+n_pred), 0.91, 'Predictions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
@@ -1801,7 +1827,7 @@ def _(np, plot_matrix, plt):
 
 @app.cell
 def _(alpha_str, ds, p, plot_prediction, y1_pred):
-    plot_prediction(ds, "eval", 0, [y1_pred.squeeze()], [p], [len(alpha_str)])
+    plot_prediction(ds, "eval", 0, [y1_pred.squeeze()], [p], [len(alpha_str)], show_nums=True)
     return
 
 
@@ -1854,14 +1880,14 @@ def _(decode, logistic_encoder, scaler, y1_scaled):
 
 
 @app.cell
-def _(alpha3_str, mo):
-    mo.md(f"""```py\nP=5\nalpha={alpha3_str}\n\n```""")
+def _(alpha2_str, display_alpha, p2):
+    display_alpha(p2, alpha2_str)
     return
 
 
 @app.cell
-def _(alpha2_str, mo):
-    mo.md(f"""```py\nP=14\nalpha={alpha2_str}\n\n```""")
+def _(alpha3_str, display_alpha, p3):
+    display_alpha(p3, alpha3_str)
     return
 
 
@@ -1885,7 +1911,7 @@ def _(
     y2_pred,
     y3_pred,
 ):
-    plot_prediction(ds, "eval", 0, [y3_pred.squeeze(), y1_pred.squeeze(), y2_pred.squeeze()], [p3, p, p2], [len(alpha3_str), len(alpha_str), len(alpha2_str)])
+    plot_prediction(ds, "eval", 0, [y3_pred.squeeze(), y1_pred.squeeze(), y2_pred.squeeze()], [p3, p, p2], [len(alpha3_str.strip('0.')), len(alpha_str.strip('0.')), len(alpha2_str.strip('0.'))], show_nums=True)
     return
 
 
@@ -1893,9 +1919,9 @@ def _(
 def _(mo):
     mo.md(
         r"""
-    With $p=14$ every prediction is exactly right (to two decimal places). But there's a tradeoff: we need more storage. The number $\alpha$ grows from 1,897 digits to 3,794 digits, or in bits, from $900 \times 7=6,300$ to $900 \times 14 = 12,600$. The higher we set $p$, the more accurate our encoding becomes, but the more storage space it requires.
+    With $p=14$ every prediction is exactly right (to two decimal places). But there's a tradeoff: we need more storage. The number $\alpha$ grows from 1,895 digits to 3,792 digits. The higher we set $p$, the more accurate our encoding becomes, but the more storage space it requires.
 
-    On the flip side, with $p=5$, we only need 1,355 digits. But our predictions get much worse. For example, when the correct value is $1$, we predict $0.43$ or $0.34$, which is a closer to $0$ than it is to $1$.
+    On the flip side, with $p=5$, we only need 1,353 digits. But our predictions get much worse. For example, when the correct value is $1$, we predict $0.43$ or $0.34$, which is a closer to $0$ than it is to $1$.
 
     This is a cool tradeoff and illustrates that the one-parameter model actually works!
     """
@@ -2014,81 +2040,7 @@ def _(display_fxn, fast_decode, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Let's now run a speed test and compare the fast and slow decoders on 5 ARC-AGI-2 puzzles with precision $p=7$. First, we encode these 5 puzzles into $\alpha$:""")
-    return
-
-
-@app.cell
-def _(MinMaxScaler, X, logistic_encoder, y):
-    # encode
-    def preprocess(X, y):
-        y_flat = y.flatten()
-        scaler = MinMaxScaler()
-        y_scaled = scaler.fit_transform(y_flat)
-        return y_scaled
-
-    n_samples = 5
-    y4_scaled = preprocess(X[:n_samples], y[:n_samples]) # use first 5 puzzles of ARC-AGI-2
-    p4 = 14 # bits for a single sample
-    full_precision4 = len(y4_scaled) * p4 # bits for all samples in the dataset
-
-    alpha4 = logistic_encoder(y4_scaled, p4, full_precision4)
-    str_alpha4 = str(alpha4)
-    return alpha4, full_precision4, p4, str_alpha4, y4_scaled
-
-
-@app.cell
-def _(mo, p4, str_alpha4):
-    mo.md(f"""```py\np4={p4}\nlen(alpha4)={len(str_alpha4)}\nalpha4={str_alpha4}\n```""")
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Both the original decoder and the fast decoder use the same $\alpha$, which has 543 digits. Now let's run the decoders.""")
-    return
-
-
-@app.cell
-def _(alpha4, decode, full_precision4, p4, time, y4_scaled):
-    st = time.perf_counter()
-    y4_pred_raw = decode(alpha4, full_precision4, p4, y4_scaled)
-    et = time.perf_counter()
-    print(f'Decoding Took {et-st} secs')
-    return (y4_pred_raw,)
-
-
-@app.cell
-def _(alpha4, fast_decode, p4, time, y4_scaled):
-    st_fast = time.perf_counter()
-    y4_pred_fast_raw = fast_decode(alpha4, p4, y4_scaled)
-    et_fast = time.perf_counter()
-    print(f'Fast Decoding Took {et_fast-st_fast} secs')
-    return (y4_pred_fast_raw,)
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-    The original decoder runs in 35.6 seconds and the fast decoder in 2.7 seconds. This is a 13x speedup on my Mac M1 Pro! Since we encode 5 puzzles, each with 900 samples, we've decoded a total of $5 \cdot 900=4500$ individual puzzles.
-
-    Due to adaptive precision, the fast decoder may produce slightly different values after the first $p$ bits compared to the regular decoder. We verify that both decoders remain within the theoretical error tolerance of each other.
-    """
-    )
-    return
-
-
-@app.cell
-def _(np, p4, y4_pred_fast_raw, y4_pred_raw):
-    tol = np.pi/2**(p4-1)
-    np.testing.assert_allclose(y4_pred_raw, y4_pred_fast_raw, atol=tol)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""This is great! We now have a fast decoder implementation that can handle multiple puzzles!""")
+    mo.md(r"""These three optimizations give a 13x speedup on my Mac M1 Pro when decoding 5 ARC-AGI-2 puzzles with precision $p=7$. Because of adaptive precision, the fast decoder may produce slightly different values beyond the first $p$ bits compared to the regular decoder. However, we verified that both decoders stay within the theoretical error tolerance of each other. We now have a fast decoder that can handle multiple puzzles efficiently!""")
     return
 
 
@@ -2100,12 +2052,12 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""We are now ready to create the final implementation of the one-parameter model. (Again, because `multiprocessing.Pool` fails in notebooks we define `OneParameterModel` in another file and import it here.)""")
+    mo.md(r"""We are now ready to create the final implementation of the one-parameter model.""")
     return
 
 
 @app.cell
-def _(fix_marimo_local_import, mo):
+def _(fix_marimo_local_import):
     # weird hack for html-wasm import to work
     try:
         from public.src.model import OneParameterModel
@@ -2114,8 +2066,6 @@ def _(fix_marimo_local_import, mo):
 
     if not 'OneParameterModel' in dir() :
         raise ModuleNotFoundError()
-
-    mo.show_code()
     return (OneParameterModel,)
 
 
@@ -2132,63 +2082,46 @@ def _(mo):
     The code is quite simple and looks like a standard scikit-learn ML model:
 
     * `model.fit` runs the encoder. It also scales and reshapes the data.
-    * `model.predict` runs the (fast) decoder. It runs the decoder in parallel and reverses the data scaling, reshaping.
+    * `model.predict` runs the (fast) decoder. It runs the decoder in parallel and reverses the data scaling and reshaping.
     * `model.verfiy` checks that the outputted predictions are within the theoretical error bounds we derived.
 
-    The one-parameter model is quite elegant. `OneParameterModel` itself is ~50 lines of code and the math functions it uses are probably another ~50 lines of code (`phi`, `phi_inverse`, `decimal_to_binary`, `binary_to_decimal`, `logistic_encoder`, and `logistic_decoder`). Only around 100 lines to get a perfect score on ARC-AGI-2!
+    The one-parameter model is quite elegant. `OneParameterModel` itself is ~50 lines of code and the math functions it uses are probably another ~50 lines of code. Only around 100 lines to get a perfect score on ARC-AGI-2!
+
+    Let's run the one-parameter model on all 400 puzzles of ARC-AGI-2.
     """
     )
     return
 
 
 @app.cell
-def _():
-    # p4 = 4
-    # model = OneParameterModel(p4)
-    # model.fit(X, y)
+def _(OneParameterModel, X, mo, np, y):
+    p5 = 14
+    idx = np.array([10])
+
+    # run encoder
+    model = OneParameterModel(p5)
+    model.fit(X, y)
+    alpha5_str = str(model.alpha)
+
+    # run decoder
+    y5_pred = model.predict(idx)
+
+    # check answer
+    model.verify(y5_pred, y[idx])
+
+    mo.show_code()
+    return alpha5_str, idx, p5, y5_pred
+
+
+@app.cell
+def _(alpha5_str, display_alpha, p5):
+    display_alpha(p5, alpha5_str)
     return
 
 
 @app.cell
-def _():
-    # idx = 2
-    # y4_pred = model.predict(np.array([idx, idx+1]))
-    return
-
-
-@app.cell
-def _():
-    # model.verify(y4_pred, y[np.array([idx, idx+1])])
-    return
-
-
-@app.cell
-def _(
-    OneParameterModel,
-    X,
-    ds,
-    functools,
-    np,
-    plot_arcagi,
-    plt,
-    process_arc_agi,
-    y,
-):
-    @functools.cache # pylint: disable=method-cache-max-size-none
-    def cached_fit(p):
-        model = OneParameterModel(p)
-        model.fit(X, y)
-        return model
-
-    @functools.cache # pylint: disable=method-cache-max-size-none
-    def run(idx, p):
-        X, y = process_arc_agi(ds)
-        model = cached_fit(p)
-        y_pred = model.predict(np.array([idx]))
-        model.verify(y_pred, y[np.array([idx])])
-        plot_arcagi(ds, "eval", idx, y_pred, show_nums=False)
-        plt.show()
-        print(f"p={p}\nalpha={str(model.alpha)[:10_000]}")
+def _(alpha5_str, ds, idx, p5, plot_prediction, y5_pred):
+    plot_prediction(ds, "eval", idx.item(), [y5_pred.squeeze()], [p5], [len(alpha5_str.strip('0.'))], size=3, show_nums=True)
     return
 
 
@@ -2208,44 +2141,90 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    We've built a beautiful model 
+    **Training on test.**
 
-    $$
-    f_{\alpha, p}(i)
-    =
-    \sin^2 \Big(
-        2^{i p} \arcsin(\sqrt{\alpha})
-    \Big)
-    $$
+    The one-parameter model takes the idea of "training on test" to the extreme: it encodes the question outputs of the entire public eval set directly into $\alpha$, achieving 100% accuracy while learning nothing. Simply shuffling the dataset will cause this model to break down as the decoder depends on the index $i$, not the sample $x_i$. It should be abundantly clear that the one-parameter model has no ability to generalize whatsoever. It would get a 0% on the private, heldout eval set of ARCI-AGI-2.
 
+    The one-parameter model is utterly impractical and, frankly, an absurd hack. But that's precisely the point: it is absurd to train on the test set just to get to the top of a leaderboard.
 
-    that achieves 100% on the public eval set of ARC-AGI-2 with one parameter. Although the mathematics is quite nice, this model takes overfitting to its absurd conclusion and directly encodes the entire public eval set of ARC-AGI-2 into the single trainable parameter $\alpha$.
+    Yet this is exactly what occurs in the AI community.
+
+    Top AI labs quietly train on their test sets. It is rumoured these labs have entire teams who generate synthetic dataset for the sole purpose of succeeding on a specific benchmark. I've also heard that at certain labs, your pay is based on getting a particular score on a particular benchmark. Though it is important to incentivize progress, behavior like this can create a culture of benchmark maxing. 
+
+    **Intelligence is not parameter count.**
+
+    The existence of such a simple equation with such powerful expressivity deomonstrates that model complexity cannot be determined by counting parameters alone. The one-parameter model exploits a often-overlooked fact: a single real-valued parameter can encode an unbounded amount of information by hiding complexity in its digits rather than in parameter count. Larger models should not be assumed to be strictly smarter.
+
+    That said, parameter count still matters for what it actually measures: memory and compute. FLOPs scale with parameters and precision, so parameter count remains a useful proxy for computational cost—often the real bottleneck. It just may be a poor proxy for intelligence.
+
+    Of course we would never train a model by shoving all the information into one parameter. Because we use arbitrary floating point arithmetic, it is requires much more FLOPs to compute everything. And in practice, parameter counts usually assume finite-precision weights (e.g. fp32), not infinite precision. That's why the one-parameter model is more of a thought experiment than a practical proposal.
+
+    **Intelligence is compression.**
+
+    To compress data, you must find regularities in it and finding regularities fundamentally requires intelligent pattern matching. If [intelligence is compression]((https://en.wikipedia.org/wiki/Hutter_Prize)), then our one-parameter model has all the intelligence of a phonebook. It achieves zero compression and is just a nice lookup table. It cannot discover patterns or extract structure. The one-parameter model simply stores the raw data and uses the precision $p$ as a tunable recovery knob.
+
+    Real compression requires understanding. If you want to measure the complexity and expressivity of machine learning models, measure their compression. Use minimum description length or Kolmogorov complexity. These techniques capture whether a model has actually learned the underlying patterns. They cut through the illusion of parameter counts and reveal what the model truly understands.
+
+    Prof. Albert Gu's paper [ARC-AGI without pretraining](https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html) actually does this right. They used a general-purpose compression algorithm to solve ARC-AGI without training on the test set. Our one-parameter model is a degenerate version of the same idea.
+
+    **The ARC-AGI Benchmark**
+
+    ARC-AGI was intentionally designed to resist overfitting. It uses a private test set for official scoring, making training on test impossible. (Our one-parameter model only trained on the public eval set, not the private one.) 
+
+    Yet modern reasoning models may still be overfitting on ARC-AGI, just not in the traditional sense. Instead of training directly on the test set, reasoning models are clever enough to exploit distributional similarities between public and private splits, a meta-level form of overfitting to the benchmark's structural patterns. The ARC-AGI organizers [acknowledge](https://arcprize.org/blog/arc-prize-2025-results-analysis) this phenomenon, raising concerns about overfitting on their own benchmark.
+
+    However, the fundamental problem runs deeper. Many ARC-AGI solutions appear benchmark-specific, using synthetic data and abstractions tailored to these visual-grid puzzles. How many of these solutions have inspired downstream improvements in LLMs or other modes of intelligence? I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles and drive broader innovation the field of AI.
+
+    **Closing Thoughts**
+
+    This one-parameter model is a ridiclous thought experiment taken seriously. It suggests that parameter count is an incomplete measure of capability and encourages us to look beyond benchmark-maxing. Perfect scores mean nothing without generalization. By pushing overfitting to its absurd limit, the one-parameter model forces us to rethink generalization, overfitting, and how we can actually measure real intelligence.
     """
     )
     return
 
 
 @app.cell
-def _(fix_marimo_path, mo):
-    meme_image = mo.image(
-        fix_marimo_path("public/images/meme.jpg"),
-        width=500,
-        caption="The one-parameter model in a nutshell.",
-        style={"display": "block", "margin": "0 auto"}
+def _(mo):
+    mo.md(
+        r"""
+    ---
+
+    All the code for my experiments can be found here: [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).
+
+    If you liked this or want to chat, [reach out](https://eitanturok.github.io/)! I always enjoy talking to people working on interesting problems.
+
+    Lastly, thanks to all those who gave me helpful feedback on this post: [Jacob Portes](https://x.com/JacobianNeuro), [Isaac Liao](https://x.com/LiaoIsaac91893).
+
+
+    To cite this blog post
+    ```md
+    @online{Turok2025ARCAGI,
+    	author = {Eitan Turok},
+    	title = {A one-parameter model that gets 100% on ARC-AGI-2},
+    	year = {2025},
+    	url = {https://eitanturok.github.io/one-parameter-model/},
+    }
+    ```
+    """
     )
-    meme_image
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Other uses for the one-parameter model""")
+    mo.md(r"""# Appendeix""")
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""Beyond ARC-AGI-2, the one-parameter model can be applied to all sorts of datasets. For instance, we can encode animal shapes with different values of $\alpha$, including the elephant John von Neumann mentioned:""")
+    mo.md(r"""## Appendix A""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""The one-parameter model can be applied to all sorts of datasets beyond ARC-AGI-2. For instance, we can encode animal shapes with different values of $\alpha$""")
     return
 
 
@@ -2261,7 +2240,7 @@ def _(fix_marimo_path, mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -2306,22 +2285,20 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""This technique is incredibly verstile, able to achieve seemingly perfect acuracy across tons of different domains.""")
+    mo.md(r"""Indeed, the one parameter model is incredibly versatile, able to train on all sorts of test sets.""")
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## To the critics""")
+    mo.md(r"""## Appendix B""")
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
-    Yet at the same time, the one-parameter model is incredibly brittle. Simply shuffling the dataset will cause your model to break down as the decoder depends on the index $i$, not the sample $x_i$. It should be abundantly clear that the one-parameter model has no ability to generalize whatsoever. It would get a 0% on the private, heldout test set of ARCI-AGI-2.
-
     Two quick technical notes to the critics.
 
     **For the complexity theorists**, yes, this is cheating. We've violated the fundamental assumption of bounded-precision arithmetic. Most complexity problems assume we operate on a machine with an $\omega$-bit word-size. However, my one-parameter model assumes we can operate on a machine with infinite bit word-size.
@@ -2329,98 +2306,6 @@ def _(mo):
     **For the deep learning theorists**, of course our one-parameter model can memorize any dataset. Our decoder contains $\sin$ which has an [infinite VC dimension](https://cseweb.ucsd.edu/classes/fa12/cse291-b/vcnotes.pdf), i.e. an unbounded hypothesis class, and is therefore infinitely expressive. It can learn anything. What is interesting about the one-parameter model is that it offers a tangible construction, not merely a claim of existence, for learning any dataset.
     """
     )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""## Lessons""")
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-    A couple of key takeaways here.
-
-    **Intelligence is not parameter count.**
-
-    The existence of such a simple equation with such powerful expressivity deomonstrates that model complexity cannot be determined by counting parameters alone. The one-parameter model exploits a often-overlooked fact: a single real-valued parameter can encode an unbounded amount of information by hiding complexity in its digits rather than in parameter count. In other words, don't automatically assume that a bigger model is a smarter model. Parameter count can be a poor proxy for intelligence.
-
-    **Intelligence is compression.**
-
-    To compress data, you must find regularities in it and finding regularities fundamentally requires intelligent pattern matching. If [intelligence is compression]((https://en.wikipedia.org/wiki/Hutter_Prize)), then our one-parameter model has all the intelligence of a phonebook. It achieves zero compression and is just a nice lookup table. It cannot discover patterns or extract structure. The one-parameter model simply stores the raw data and uses the precision $p$ as a tunable recovery knob.
-
-    Real compression requires understanding. If you want to measure the complexity and expressivity of machine learning models, measure their compression. Use minimum description length or Kolmogorov complexity. These techniques capture whether a model has actually learned the underlying patterns. They cut through the illusion of parameter counts and reveal what the model truly understands.
-
-    Prof. Albert Gu's paper [ARC-AGI without pretraining](https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html) actually does this right. They used a general-purpose compression algorithm to solve ARC-AGI without training on the test set. That's the real deal. Our one-parameter model is a degenerate version of the same idea.
-
-    **Training on Test**
-
-    Our one-parameter model takes the idea of "training on test" to the extreme: it encodes the entire test set directly into $\alpha$, achieving 100% accuracy while learning nothing. The one-parameter model is utterly impractical and, frankly, an absurd hack. But that's precisely the point: it is absurd to train on the test set just to get to the top of a leaderboard.
-
-    Yet this is exactly what occurs in the AI community.
-
-    Top AI labs quietly train on their test sets. The one-parameter model does it proudly.
-
-    It is rumoured these labs have entire teams who generate synthetic dataset for the sole purpose of succeeding on a specific benchmark. This is overfitting taken to the extreme.
-
-    **The ARC-AGI Benchmark**
-
-    ARC-AGI was intentionally designed to resist overfitting. It uses a private test set for official scoring, making training on test impossible. (Our one-parameter model only trained on the public eval set.) Yet even ARC-AGI's organizers have raised concerns about test contamination creeping into modern AI development.
-    """
-    )
-    return
-
-
-@app.cell
-def _(fix_marimo_path, mo):
-    arc_agi_overfitting_image = mo.image(
-        fix_marimo_path("public/images/arc_agi_overfitting.png"),
-        width=800,
-        caption="Mike Knoop on ARC-AGI overfitting. Retreived from https://arcprize.org/blog/arc-prize-2025-results-analysis on December 9th, 2025.",
-        style={"display": "block", "margin": "0 auto"}
-    )
-    arc_agi_overfitting_image
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""Yet there is a more fundamental point: many of the amazing approaches to the ARC-AGI competition seem to overfit to ARC-AGI itself. Researchers generate synthetic data specific to ARC-AGI and create abstractions unique to the grid structure of the competition. I doubht many of their techniques would generalize to other reasoning problems. How many of the innovative solutions to ARC-AGI have inspired downstream improvements in LLMs or other modes of intelligence? I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles and drive broader innovation the field of AI.""")
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-    ---
-
-    All the code for my experiments can be found at [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).
-
-    If you liked this or want to chat, reach out! I enjoy talking to people working on interesting problems.
-
-    Eitan Turok - [[Website](https://eitanturok.github.io/), [X](https://eitanturok.github.io/), [LinkedIn](https://linkedin.com/in/eitanturok), [Github](https://github.com/eitanturok)]
-
-
-    To cite this blog post
-    ```md
-    @online{Turok2025ARCAGI,
-    	author = {Ethan Turok},
-    	title = {A one-parameter model that gets 100% on ARC-AGI-2},
-    	year = {2025},
-    	url = {https://eitanturok.github.io/one-parameter-model/},
-    }
-    ```
-    """
-    )
-    return
-
-
-@app.cell
-def _():
     return
 
 
