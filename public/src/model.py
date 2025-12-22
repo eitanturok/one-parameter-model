@@ -48,7 +48,7 @@ def decimal_to_binary(x_decimal:np.ndarray|float|int|list|tuple, precision:int):
 
 def binary_to_decimal(x_binary:np.ndarray):
     # converts an arbitrary-precision scalar from binary to decimal
-    return mp.fsum(int(b) * mp.mpf(0.5) ** (i+1) for i, b in enumerate(x_binary))
+    return mp.fsum(int(b) * mp.mpf(0.5) ** (i+1) for i, b in tqdm(enumerate(x_binary), desc="Encoding", total=len(x_binary)))
 
 #***** math *****
 
@@ -62,22 +62,6 @@ def logistic_decoder(alpha, full_precision, p, i):
     mp.prec = full_precision
     return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
 
-# This is 10x+ faster than logistic_decoder because:
-# 1) arcsin(sqrt(alpha)) is precomputed once instead of every iteration
-# 2) mp.prec is set to minimum needed precision per iteration instead of full precision
-
-# Explanation:
-# 1) Why is mp.prec = p * (i + 1) + 1?
-#    Each iteration decodes another p bits of alpha.
-#    So in iteration i, we need the first (i+1)*p bits of alpha (i is 0-indexed).
-#    The +1 at the end adds an extra bit for numerical stability.
-#    This is instead of using mp.prec = full_precision = p*len(X) bits.
-# 2) When can we use lower precision?
-#    Alpha is stored in logistic space and requires full precision.
-#    We transform alpha to dyadic space by computing arcsin_sqrt_alpha = φ⁻¹(alpha) in full precision.
-#    In dyadic space, iteration i only needs the first (i+1)*p bits of alpha.
-#    Therefore, we can compute everything else using p*(i+1) bits instead of full_precision = p*len(X) bits.
-#    Note: we can only use this reduced precision in dyadic space, not logistic space.
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
     mp.prec = p * (i + 1) + 1
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
@@ -121,6 +105,17 @@ def logistic_encoder(X, precision, full_precision):
     alpha = phi(phi_inv_decimal_scalar)
     return alpha
 
+def decode(alpha, full_precision, p, y_scaled):
+    y_idxs = list(range(len(y_scaled)))
+    return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(y_idxs, total=len(y_idxs), desc="Decoding")], dtype=np.float32)
+
+def fast_decode(alpha, p, y_scaled, n_workers=8):
+    y_idxs = list(range(len(y_scaled)))
+    decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(alpha)), p)
+    with multiprocessing.Pool(n_workers) as p:
+        y_pred = np.array(list(tqdm(p.imap(decoder, y_idxs), total=len(y_idxs), desc="Decoding")), dtype=np.float32)
+    return y_pred
+
 #***** model *****
 
 class OneParameterModel:
@@ -129,7 +124,6 @@ class OneParameterModel:
         self.n_workers = n_workers
         self.scaler = MinMaxScaler()
 
-    @Timing("fit: ")
     def fit(self, X:np.ndarray, y:np.ndarray|None=None):
         # if the dataset is unsupervised, treat X like the y
         if y is None: y = X
@@ -147,7 +141,6 @@ class OneParameterModel:
         self.alpha = logistic_encoder(y_scaled, self.precision, self.full_precision) # pylint: disable=attribute-defined-outside-init
         return self
 
-    @Timing("predict: ")
     def predict(self, idxs:np.ndarray, fast:bool=True):
         full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
 
@@ -160,22 +153,10 @@ class OneParameterModel:
             y_pred = np.array([decoder(idx) for idx in tqdm(full_idxs)])
         else:
             with multiprocessing.Pool(self.n_workers) as p:
-                y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding")))
+                y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding")), dtype=np.float32)
         return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
-    @Timing("verify: ")
     def verify(self, y: np.ndarray, y_pred: np.ndarray):
         # check logistic decode error is within theoretical bounds (section 2.5 https://arxiv.org/pdf/1904.12320)
-        # |y - y_pred| <= π / 2^(p-1) when y, y_pred ∈ [0, 1]
-        # |y - y_pred| <= (π / 2^(p-1)) * range when y, y_pred ∈ [min, max], range = max - min
-
-        # multiply the tolerance by the scaler range to account for scaling
         tolerance = np.pi / 2 ** (self.precision - 1) * self.scaler.range
         np.testing.assert_allclose(y_pred, y, atol=tolerance, rtol=0)
-
-def fast_decode(alpha, p, y_scaled, n_workers=8):
-    y_idxs = list(range(len(y_scaled)))
-    decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(alpha)), p)
-    with multiprocessing.Pool(n_workers) as p:
-        y_pred = np.array(list(tqdm(p.imap(decoder, y_idxs), total=len(y_idxs), desc="Decoding")))
-    return y_pred

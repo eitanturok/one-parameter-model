@@ -12,10 +12,10 @@ def _():
 
 @app.cell
 def _():
-    import json, inspect, multiprocessing, functools, time
+    import json, inspect, multiprocessing, functools, time, math
     from pathlib import Path
     from urllib.request import urlopen
-    return Path, inspect, json, urlopen
+    return Path, inspect, json, math, urlopen
 
 
 @app.cell
@@ -106,7 +106,7 @@ def _(mo):
 
     **So I built a one parameter model that scores 100% on ARC-AGI-2.** 
 
-    This is on ARC-AGI-2, the harder, newer version of ARC-AGI-1. The model is not a deep learning model and is quite simple:
+    This is on ARC-AGI-2, the harder, newer version of ARC-AGI-1. The model is *not* a deep learning model and is quite simple:
 
     $$
     \begin{align*}
@@ -579,9 +579,7 @@ def _(mo):
     | $1/3$ | $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$ |
     | $0.431$ | $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$ |
 
-    One orbit seems to end in all zeros, another bounces back and forth between $0.333$ and $0.667$, and a third seems to have no pattern at all. On the surface, these orbits do not have much in common. But if we take a closer look, they all share the same underlying pattern.
-
-    Let's revisit the third orbit for $a = 0.431$ but this time we will analyze its binary representation:
+    The first orbit seems to end in all zeros, the second bounces back and forth between $0.333$ and $0.667$, and the third seems to have no pattern at all. On the surface, these orbits do not have much in common. But if we take a closer look, they all share the same underlying pattern. Let's revisit the third orbit for $a = 0.431$ but this time we will analyze its binary representation:
 
     | Iterations | Decimal | Binary | Observation |
     |------------|------------------------|----------------------|-------------|
@@ -985,6 +983,12 @@ def _(mo):
 
 @app.cell
 def _(mo):
+    mo.md(r"""## Logistic Map""")
+    return
+
+
+@app.cell
+def _(mo):
     mo.md(
         r"""
     How do we go from the ugly, discontinuous decoder function
@@ -1278,7 +1282,7 @@ def _(mo):
     \begin{align*}
     \alpha
     &=
-    g(p, \mathcal{x}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
+    g(p, \mathcal{X}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x_i)) \Big) \bigg)
     \end{align*}
     $$
 
@@ -1298,7 +1302,6 @@ def _(mo):
     4. Return $\tilde{x}_i$
 
     Mathematically, the decoder is defined as
-
 
     $$
     \begin{align*}
@@ -1417,7 +1420,7 @@ def _(mo):
 
     If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-2 with hundreds of puzzles and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it? 
 
-    The answer is simple: we can use an arbitrary precision arithmetic library like [mpmath]([https://github.com/aleaxit/gmpy](https://github.com/mpmath/mpmath)) that can represent numbers with as many bits as we want. Instead of a regular Python float, we represent $\alpha$ as a mpmath float with $np$ bits of precision. We then run the decoder with mpmath operations and convert the final result back to a regular Python float. Note: operations with arbitrary precision arithmetic libraries like mpmath tend to be *significantly* slower than regular floating point operations.
+    The answer is simple: we can use an arbitrary precision arithmetic library like [mpmath]([https://github.com/aleaxit/gmpy](https://github.com/mpmath/mpmath)) that can represent numbers with as many bits as we want. Instead of a regular Python float, we represent $\alpha$ as a mpmath float with $np$ bits of precision. We then run the decoder with mpmath operations and convert the final result back to a regular Python float. However, operations with arbitrary precision arithmetic libraries like mpmath tend to be *significantly* slower than regular floating point operations.
 
     But mpmath gives us another gift: it actually removes the pesky $\text{dec}(\text{bin}_p(\cdot))$ operations from our decoder
 
@@ -1488,13 +1491,7 @@ def _(dyadic_map, mo, np):
         bits = []
         for _ in range(precision):
             bits.append(np.round(x_decimal))
-            # bit = np.zeros_like(x_decimal)
-            # bit[x_decimal > 0.5] = 1
-            # bits.append(bit)
-            # print(f'{x_decimal=}')
             x_decimal = dyadic_map(x_decimal)
-        # print(f'{bits=}')
-        # print('np(bits)=', np.array(bits).astype(int).T.ravel())
         return ''.join(map(str, np.array(bits).astype(int).T.ravel()))
     mo.show_code()
     return (decimal_to_binary,)
@@ -1538,9 +1535,9 @@ def _(mo):
     $$
     \alpha
     =
-    g(p, \mathcal{x})
+    g(p, \mathcal{X})
     =
-    \phi \bigg( \text{dec} \Big( \bigoplus_{x \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x)) \Big) \bigg)
+    \phi \bigg( \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x_i)) \Big) \bigg)
     $$
 
     in code
@@ -1624,11 +1621,11 @@ def _(mo):
         r"""
     To actually run `logistic_encoder` and `logistic_decoder` on ARC-AGI-2, we need three adjustments:
 
-    1. **Adjustment 1: Supervised learning** ARC-AGI-2 is a supervised problem with input-output pairs $(X,Y)$, but our encoder only handles unsupervised data $(X)$. Solution: ignore input $X$ and only encode the outputs $Y$ since those are what we need to memorize.
-    2. **Adjustment 2: Shape handling** Our encoder expects scalars, not matrices. Solution: flatten matrices to lists for encoding and reshape back for decoding. For an `m x n` puzzle, we decode `mn` individual elements, running the decoder `mn` times per puzzle, not once.
-    3. **Adjustment 3: Data scaling** ARC-AGI-2 uses integers $0-9$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding.
+    1. **Adjustment 1: Supervised learning.** ARC-AGI-2 is a supervised problem with input-output pairs $(X,Y)$, but our encoder only handles unsupervised data $(X)$. Solution: ignore the input $X$ and only encode the outputs $Y$ since those are what we need to memorize.
+    2. **Adjustment 2: Shape handling.** Our encoder expects scalars, not matrices. Solution: flatten matrices to lists for encoding and reshape back for decoding. For an `m x n` puzzle, we decode `mn` individual elements, running the decoder `mn` times per puzzle, not once.
+    3. **Adjustment 3: Data scaling.** ARC-AGI-2 uses integers $0-9$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding.
 
-    Now we can create a one-parameter model for the first ARC-AGI-2 puzzle in the public eval set. $X$ contains the 4 examples and the question input
+    Now we can create a one-parameter model for the first ARC-AGI-2 puzzle in the public eval set. We ignore $X$ which contains the 4 examples and the question input
     """
     )
     return
@@ -1642,7 +1639,7 @@ def _(ds, plot_arcagi):
 
 @app.cell
 def _(mo):
-    mo.md(r"""and $Y$ is the question output""")
+    mo.md(r"""and focus on the question output $Y$""")
     return
 
 
@@ -1669,8 +1666,8 @@ def _(np):
         question_outputs = [puzzle['question_outputs'][0] for puzzle in split]
 
         # zero pad all inputs/outputs so they have the same dimension
-        X = np.zeros((len(question_inputs), 30, 30))
-        y = np.zeros((len(question_outputs), 30, 30))
+        X = np.zeros((len(question_inputs), 30, 30), dtype=np.float32)
+        y = np.zeros((len(question_outputs), 30, 30), dtype=np.float32)
 
         for i, grid in enumerate(question_inputs):
             m, n = len(grid), len(grid[0])
@@ -1730,7 +1727,7 @@ def _(MinMaxScaler, ds, logistic_encoder, mo, process_arc_agi):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Alpha contains $1895$ digits ($6300$ bits). Feel free to scroll horizontally:""")
+    mo.md(r"""Alpha contains $1895$ digits ($6300$ bits). (Feel free to scroll horizontally.)""")
     return
 
 
@@ -1746,7 +1743,6 @@ def _(mo):
     mo.md(
         r"""
     This is our one-parameter model in its full glory! This scalar $\alpha$ is all we need is to correctly predict the question output of this puzzle!
-
 
     Let's run `logistic_decoder` to recover $Y$ from $\alpha$.
     """
@@ -1768,7 +1764,7 @@ def _(
 ):
     # Decoder runs `range(len(y_scaled))` times to extract each of the `mn` elements individually from alpha
     def decode(alpha, full_precision, p, y_scaled):
-        return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")])
+        return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")], dtype=np.float32)
 
     # Run decoder
     y1_pred_raw = decode(alpha, full_precision, p, y1_scaled)
@@ -1793,7 +1789,7 @@ def _(mo):
 def _(np, plot_matrix, plt):
     def plot_prediction(ds, split, i, predictions=None, precisions=None, alpha_n_digits=None, size=2.5, w=0.9, show_nums=False):
       puzzle = ds[split][i]
-      nq = len(puzzle['question_inputs'])
+      nq = 1 # len(puzzle['question_inputs'])
       n_pred = len(predictions) if predictions is not None else 0
       mosaic = [[f'Q.{j+1}_out' for j in range(nq)] + [f'pred_{k}' for k in range(n_pred)]]
       fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(nq+n_pred), 2*size))
@@ -1835,7 +1831,7 @@ def _(alpha_str, ds, p, plot_prediction, y1_pred):
 def _(mo):
     mo.md(
         r"""
-    The left column shows the correct answers, and the right column shows what our model predicted. We use different colors to show how big each mistake is: bigger mistakes have bigger color differences.
+    The left column shows the correct answers, and the right column shows what our model predicted. Remember, the colors are just for display purposes, the model only sees the numerical values. We use different colors to show how big each mistake is: bigger mistakes have bigger color differences.
 
     Look at the first row. The left element should be 7 and we predicted 6.69. The middle element should be 7, and we predicted 6.72. The right element should be 9, and we predicted 8.98. Throughout the whole grid, our predictions are close to the correct values, usually off by just a small decimal.
 
@@ -1930,6 +1926,80 @@ def _(mo):
 
 
 @app.cell
+def _(mo, y, y2_pred):
+    mo.md(
+        rf"""
+    Looking closer at our $p=14$ predictions, they're not perfectly accurate—they only match the ground truth to about 2 decimal places:
+
+    ```py
+    {y2_pred[0, 0, 0]=}
+    ```
+
+    ```py
+    {y[0, 0, 0]=}
+    ```
+    """
+    )
+    return
+
+
+@app.cell
+def _(math):
+    R = 9
+    p_star = math.ceil(33 + math.log2(R * math.pi))
+    p_star
+    return (p_star,)
+
+
+@app.cell
+def _(p_star):
+    n_bits_star = 900 * 400 * p_star
+    n_bits_star
+    return (n_bits_star,)
+
+
+@app.cell
+def _(math, n_bits_star):
+    n_digits_star = math.floor(n_bits_star / math.log2(10))
+    n_digits_star
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    This raises the question: what precision $p$ do we actually need to be accurate up to 32 bits? (Our `np.ndarray`'s use 32-bit precision.)
+
+    Recall the error bound for the one-parameter model is
+
+    $$
+    |\tilde{x}_i - x_i| \leq \frac{R \pi}{2^{p-1}}
+    $$
+
+    To ensure this errors stays below $2^{-32}$, we solve for $p$:
+
+    $$
+    p \geq \lceil 33 + \log_2(R \pi) \rceil
+    $$
+
+    With $R=9$ (our MinMaxScaler range), we get
+
+    $$p^* = 38$$
+
+    bits per number. This means each of the $900$ numbers in our $30 \times 30$ image needs 38 bits of precision. For all $n=400$ puzzles, we need
+
+    $$
+    900 \times 400 \times 38 = 13{,}680{,}000 \text{ bits} \approx 0.00171 \text{ GB}
+    $$
+
+    In decimal notation, $\alpha$ must store approximately **4,118,000 digits**. This number is immense! Since mpmath operations are slower than regular operations, this will take hours! We need a faster approach.
+    """
+    )
+    return
+
+
+@app.cell
 def _(mo):
     mo.md(r"""## Faster Implementation""")
     return
@@ -1939,11 +2009,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Each question output is a 30×30 grid flattened into a list of 900 scalar numbers (adjustment #2). Since each number is encoded with $p$ bits, one question output requires $900p$ bits. Encoding all $n=400$ question outputs of ARC-AGI-2 into one $\alpha$ requires $900 \times n \times p = 900 \times 400 \times p=360,000p$ bits. Depending on $p$, our $\alpha$ can easily reach millions of bits, making it incredibly slow. 
-
-    Moreover, the decoder processes each number separately, so decoding the entire ARC-AGI-2 dataset requires $900 \times n = 900 \times 400=360,000$  separate operations. With an $\alpha$ that's millions of bits long, this can takes hours. We need to speed this up.
-
-    Looking at our current decoder
+    Looking at our decoder
 
     ```py
     def logistic_decoder(alpha, full_precision, p, i):
@@ -1960,7 +2026,7 @@ def _(mo):
 
     1. **Parallelization:** Because each number is decoded independently, we can decode all number in parallel with `multiprocessing.Pool`. This speeds up the for loop over `range(len(y_scaled))`.
     2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it every time we call `logistic_decoder`. This eliminates repeated expensive trigonmetric and square root operations on huge $np$-bit numbers like $\alpha$.
-    3. **Adaptive precision:** We currently use all $np$ bits of $\alpha$ every time we decode as we set `mp.prec = full_precision`. However, in the $i$th step, we only need the first $p(i+1)+1$ bits of $\alpha$. Working with smaller numbers drastically reduces the computation needed at each step.
+    3. **Adaptive precision:** We currently use all $np$ bits of $\alpha$ every time we decode as we set `mp.prec = full_precision`. However, in the $i$th step, we only need the first $p(i+1)+1$ bits of $\alpha$. Working with fewer bits drastically reduces the computation needed at each step.
     """
     )
     return
@@ -1995,13 +2061,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-    Let's implement these three speedups in our code.
-
-    We define `logistic_decoder_fast` which takes in `arcsin_sqrt_alpha` instead of `alpha` (speedup #2) and sets the precision to `mp.prec = p * (i + 1) + 1` instead of `mp.prec = full_precision` (speedup #3).
-    """
-    )
+    mo.md(r"""It is simple to implement these three speedups in our code.""")
     return
 
 
@@ -2011,12 +2071,6 @@ def _(Sin, mo, mp):
         mp.prec = p * (i + 1) + 1
         return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
     mo.show_code()
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""We can now define `fast_decode` which parallelizes the decoding with `multiprocessing.Pool` (speedup #1).""")
     return
 
 
@@ -2040,19 +2094,21 @@ def _(display_fxn, fast_decode, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""These three optimizations give a 13x speedup on my Mac M1 Pro when decoding 5 ARC-AGI-2 puzzles with precision $p=7$. Because of adaptive precision, the fast decoder may produce slightly different values beyond the first $p$ bits compared to the regular decoder. However, we verified that both decoders stay within the theoretical error tolerance of each other. We now have a fast decoder that can handle multiple puzzles efficiently!""")
+    mo.md(r"""These three optimizations give a $10\times$+ speedup on my Mac M1 Pro. Because of adaptive precision, the fast decoder may produce slightly different values beyond the first $p$ bits compared to the regular decoder. However, the fast decoder is still guaranteed to  stay within the theoretical error tolerance. We now have a decoder that is fast enough we can encode the entire ARC-AGI-2 dataset.""")
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Final Implementation""")
-    return
+    mo.md(
+        r"""
+    We are now ready to create the final implementation of the one-parameter model. The code is quite simple and looks like a standard scikit-learn ML model:
 
-
-@app.cell
-def _(mo):
-    mo.md(r"""We are now ready to create the final implementation of the one-parameter model.""")
+    * `model.fit` runs the encoder. It also scales and reshapes the data.
+    * `model.predict` runs the (fast) decoder. It runs the decoder in parallel and reverses the data scaling and reshaping.
+    * `model.verfiy` checks that the outputted predictions are within the theoretical error bounds we derived.
+    """
+    )
     return
 
 
@@ -2079,38 +2135,25 @@ def _(OneParameterModel, display_fxn, mo):
 def _(mo):
     mo.md(
         r"""
-    The code is quite simple and looks like a standard scikit-learn ML model:
+    `OneParameterModel` itself is ~50 lines of code and the math functions it uses are probably another ~50 lines of code. Only around 100 lines to get a perfect score on ARC-AGI-2!
 
-    * `model.fit` runs the encoder. It also scales and reshapes the data.
-    * `model.predict` runs the (fast) decoder. It runs the decoder in parallel and reverses the data scaling and reshaping.
-    * `model.verfiy` checks that the outputted predictions are within the theoretical error bounds we derived.
-
-    The one-parameter model is quite elegant. `OneParameterModel` itself is ~50 lines of code and the math functions it uses are probably another ~50 lines of code. Only around 100 lines to get a perfect score on ARC-AGI-2!
-
-    Let's run the one-parameter model on all 400 puzzles of ARC-AGI-2.
+    Let's train the one-parameter model on all 400 puzzles of ARC-AGI-2.
     """
     )
     return
 
 
 @app.cell
-def _(OneParameterModel, X, mo, np, y):
-    p5 = 14
-    idx = np.array([10])
+def _(OneParameterModel, X, mo, y):
+    p5 = 3
 
     # run encoder
     model = OneParameterModel(p5)
     model.fit(X, y)
     alpha5_str = str(model.alpha)
 
-    # run decoder
-    y5_pred = model.predict(idx)
-
-    # check answer
-    model.verify(y5_pred, y[idx])
-
     mo.show_code()
-    return alpha5_str, idx, p5, y5_pred
+    return alpha5_str, model, p5
 
 
 @app.cell
@@ -2120,8 +2163,61 @@ def _(alpha5_str, display_alpha, p5):
 
 
 @app.cell
+def _(mo):
+    mo.md(r"""This is our perfect one-parameter model! Let's take another look at our prediction for the first puzzle of the public eval dataset.""")
+    return
+
+
+@app.cell
+def _(mo, model, np, y):
+    idx = np.array([0])
+    y5_pred = model.predict(idx)
+    model.verify(y5_pred, y[idx])
+
+    mo.show_code()
+    return idx, y5_pred
+
+
+@app.cell
 def _(alpha5_str, ds, idx, p5, plot_prediction, y5_pred):
     plot_prediction(ds, "eval", idx.item(), [y5_pred.squeeze()], [p5], [len(alpha5_str.strip('0.'))], size=3, show_nums=True)
+    return
+
+
+@app.cell
+def _(mo, y, y5_pred):
+    mo.md(
+        rf"""
+    With $p=38$ our predictions perfectly match the ground truth for all 32 bits.
+
+    ```py
+    {y5_pred[0, 0, 0]=}
+    ```
+
+    ```py
+    {y[0, 0, 0]=}
+    ```
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    Claiming a one-parameter model is a bit tounge and cheek as parameter counts usually assumes finite-precision weights (e.g. fp32), not infinite precision. A more accurate form of measurement would be to compare the number of bytes in our one-parameter model to other models. 
+
+    a strawman. What's more interesting is comparing the number of bytes in a regular model vs our model.
+    That's why the one-parameter model is more of a thought experiment than a practical proposal. What's more interesting is comparing the size of the model vs the size of the dataset.
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""A skeptic may point out that the one-parameter model hides complexity in its digits rather than in parameter count. In practice parameter counts usually assumes finite-precision weights (e.g. fp32) -- we cannot just use infinite precision as a workaround. To that skeptic, I suggest we simply measure the model's bytes.""")
     return
 
 
@@ -2149,16 +2245,30 @@ def _(mo):
 
     Yet this is exactly what occurs in the AI community.
 
-    Top AI labs quietly train on their test sets. It is rumoured these labs have entire teams who generate synthetic dataset for the sole purpose of succeeding on a specific benchmark. I've also heard that at certain labs, your pay is based on getting a particular score on a particular benchmark. Though it is important to incentivize progress, behavior like this can create a culture of benchmark maxing. 
+    Top AI labs quietly train on their test sets. It is rumoured these labs have entire teams who generate synthetic dataset for the sole purpose of succeeding on a specific benchmark. I've also heard that at certain labs, your pay is based on getting a particular score on a particular benchmark. Though it is important to incentivize progress, behavior like this can create a culture of benchmark maxing.
+    """
+    )
+    return
 
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
     **Intelligence is not parameter count.**
 
-    The existence of such a simple equation with such powerful expressivity deomonstrates that model complexity cannot be determined by counting parameters alone. The one-parameter model exploits a often-overlooked fact: a single real-valued parameter can encode an unbounded amount of information by hiding complexity in its digits rather than in parameter count. Larger models should not be assumed to be strictly smarter.
+    The existence of a simple equation with such powerful expressivity deomonstrates that model complexity cannot be determined by counting parameters alone. The one-parameter model exploits a often-overlooked fact: a single real-valued parameter can encode an unbounded amount of information by hiding complexity in its digits rather than in parameter count. Larger models should not be assumed to be strictly smarter. Instead, what parameter count actually measures is computational cost, not intelligence. FLOPs scale with parameters and precision, making parameter count a useful proxy for the limiting resources in ML: compute and memory.
 
-    That said, parameter count still matters for what it actually measures: memory and compute. FLOPs scale with parameters and precision, so parameter count remains a useful proxy for computational cost—often the real bottleneck. It just may be a poor proxy for intelligence.
+    Of course we would never train a model by shoving all the information into one parameter. In practice, parameter counts usually assumes finite-precision weights (e.g. fp32), not infinite precision. That's why the one-parameter model is more of a thought experiment than a practical proposal.
+    """
+    )
+    return
 
-    Of course we would never train a model by shoving all the information into one parameter. Because we use arbitrary floating point arithmetic, it is requires much more FLOPs to compute everything. And in practice, parameter counts usually assume finite-precision weights (e.g. fp32), not infinite precision. That's why the one-parameter model is more of a thought experiment than a practical proposal.
 
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
     **Intelligence is compression.**
 
     To compress data, you must find regularities in it and finding regularities fundamentally requires intelligent pattern matching. If [intelligence is compression]((https://en.wikipedia.org/wiki/Hutter_Prize)), then our one-parameter model has all the intelligence of a phonebook. It achieves zero compression and is just a nice lookup table. It cannot discover patterns or extract structure. The one-parameter model simply stores the raw data and uses the precision $p$ as a tunable recovery knob.
@@ -2166,7 +2276,15 @@ def _(mo):
     Real compression requires understanding. If you want to measure the complexity and expressivity of machine learning models, measure their compression. Use minimum description length or Kolmogorov complexity. These techniques capture whether a model has actually learned the underlying patterns. They cut through the illusion of parameter counts and reveal what the model truly understands.
 
     Prof. Albert Gu's paper [ARC-AGI without pretraining](https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html) actually does this right. They used a general-purpose compression algorithm to solve ARC-AGI without training on the test set. Our one-parameter model is a degenerate version of the same idea.
+    """
+    )
+    return
 
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
     **The ARC-AGI Benchmark**
 
     ARC-AGI was intentionally designed to resist overfitting. It uses a private test set for official scoring, making training on test impossible. (Our one-parameter model only trained on the public eval set, not the private one.) 
@@ -2174,7 +2292,15 @@ def _(mo):
     Yet modern reasoning models may still be overfitting on ARC-AGI, just not in the traditional sense. Instead of training directly on the test set, reasoning models are clever enough to exploit distributional similarities between public and private splits, a meta-level form of overfitting to the benchmark's structural patterns. The ARC-AGI organizers [acknowledge](https://arcprize.org/blog/arc-prize-2025-results-analysis) this phenomenon, raising concerns about overfitting on their own benchmark.
 
     However, the fundamental problem runs deeper. Many ARC-AGI solutions appear benchmark-specific, using synthetic data and abstractions tailored to these visual-grid puzzles. How many of these solutions have inspired downstream improvements in LLMs or other modes of intelligence? I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles and drive broader innovation the field of AI.
+    """
+    )
+    return
 
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
     **Closing Thoughts**
 
     This one-parameter model is a ridiclous thought experiment taken seriously. It suggests that parameter count is an incomplete measure of capability and encourages us to look beyond benchmark-maxing. Perfect scores mean nothing without generalization. By pushing overfitting to its absurd limit, the one-parameter model forces us to rethink generalization, overfitting, and how we can actually measure real intelligence.
@@ -2193,7 +2319,7 @@ def _(mo):
 
     If you liked this or want to chat, [reach out](https://eitanturok.github.io/)! I always enjoy talking to people working on interesting problems.
 
-    Lastly, thanks to all those who gave me helpful feedback on this post: [Jacob Portes](https://x.com/JacobianNeuro), [Isaac Liao](https://x.com/LiaoIsaac91893).
+    Lastly, thanks to all those who gave me helpful feedback on this post: [Jacob Portes](https://x.com/JacobianNeuro), [Isaac Liao](https://x.com/LiaoIsaac91893), [spike](https://x.com/spikedoanz).
 
 
     To cite this blog post
