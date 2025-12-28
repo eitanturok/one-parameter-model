@@ -3,42 +3,7 @@ import numpy as np
 from mpmath import mp, asin as Arcsin, sqrt as Sqrt, sin as Sin, pi as Pi
 from tqdm import tqdm
 
-
 #***** utilities *****
-
-# class MinMaxScaler:
-#     def __init__(self, feature_range=(1e-20, 1-1e-20), epsilon=1e-20):
-#         self.min = self.max = self.range = None
-#         self.feature_range, self.epsilon = feature_range, epsilon
-#     def fit(self, X):
-#         self.min, self.max = X.min(axis=0), X.max(axis=0)
-#         self.range = np.maximum(self.max - self.min, self.epsilon)  # Prevent div by zero
-#         return self
-#     def transform(self, X):
-#         X_scaled = (X - self.min) / self.range
-#         return np.clip(X_scaled, *self.feature_range)  # Keep away from exact boundaries
-#     def fit_transform(self, X):
-#         return self.fit(X).transform(X)
-#     def inverse_transform(self, X):
-#         X_clipped = np.clip(X, *self.feature_range)
-#         return X_clipped * self.range + self.min
-
-# class MinMaxScaler:
-#     def __init__(self, epsilon=1e-20):
-#         self.min = self.max = self.range = None
-#         self.epsilon = epsilon
-#     def fit(self, X):
-#         self.min, self.max = X.min(axis=0), X.max(axis=0)
-#         self.range = np.maximum(self.max - self.min, self.epsilon)  # Prevent div by zero
-#         return self
-#     def transform(self, X):
-#         X_scaled = (X - self.min) / self.range
-#         return np.clip(X_scaled, self.epsilon, 1 - self.epsilon)  # Keep away from exact 0 and 1
-#     def fit_transform(self, X):
-#         return self.fit(X).transform(X)
-#     def inverse_transform(self, X):
-#         # No clipping needed here - transform already ensures proper range
-#         return X * self.range + self.min
 
 class MinMaxScaler:
     def __init__(self, epsilon=1e-10):
@@ -181,7 +146,7 @@ class OneParameterModel:
         return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
     def verify(self, y_pred:np.ndarray, y:np.ndarray):
-        # check logistic decode error is within theoretical bounds (section 2.5 https://arxiv.org/pdf/1904.12320)
-        tolerance = self.scaler.range * np.pi / 2 ** (self.precision - 1) + self.scaler.epsilon * self.scaler.range
-        print(f'{tolerance=}')
-        np.testing.assert_allclose(y_pred, y, atol=tolerance, rtol=0)
+        # check logistic decoder error is within the theoretical bounds (section 2.5 https://arxiv.org/pdf/1904.12320)
+        # compare in scaled space because error bounds are only defined in [0, 1]
+        tolerance = np.pi / 2 ** (self.precision - 1)
+        np.testing.assert_allclose(self.scaler.transform(y_pred), self.scaler.transform(y), atol=tolerance, rtol=0)

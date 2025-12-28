@@ -5,9 +5,6 @@ import numpy as np
 from public.src.model import OneParameterModel
 from public.src.data import DATASET, plot_data
 
-from icecream import install
-install()
-
 def main(args):
     # load dataset
     X, y = DATASET[args.dataset]()
