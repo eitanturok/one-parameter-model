@@ -470,11 +470,11 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    My goal was simple: create the smallest possible model that gets 100% on ARC-AGI-2 by shamelessly training on the entire public eval set, both examples *and questions*. This goes beyond HRM's approach (which only trained on the examples) into more questionable territory: training on both the examples and the questions. As far as I know, no one has gone so far as to train on the eval questions themselves -- that would be outright cheating.
+    My goal was simple: create the smallest possible model that gets 100% on ARC-AGI-2 by shamelessly training on the entire public eval set, both examples *and questions*. This goes beyond HRM's approach (which only trained on the examples) into more questionable territory: training on both the examples and the questions of the public eval set.
 
     Now, the obvious approach would be to build a dictionary - just map each input directly to its corresponding output. But that's boring and lookup tables aren't nice mathematical functions. They're discrete, discontinuous, and definitely not differentiable. We need something else, something more elegant and interesting. To do that, we are going to take a brief detour into the world of chaos theory.
 
-    > Note: Steven Piantadosi pioneered this technique in [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf), though I first learned about it through Laurent Boué's [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320). Boué's paper is a gem due its sheer creativity.
+    > Note: Steven Piantadosi pioneered this technique in [One parameter is always enough](https://colala.berkeley.edu/papers/piantadosi2018one.pdf), though I first learned about it through Laurent Boué's [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320). Both papers are true gems due to their sheer creativity.
 
     In chaos theory, the dyadic map $\mathcal{D}$ is a simple one-dimensional chaotic system defined as
 
@@ -595,15 +595,6 @@ def _(mo):
     What is going on here?
 
     Each time we call $D(a) = (2a) \mod 1$, we double and truncate $a$. The doubling shifts every binary digit one place to the left and the truncation throws away whatever digit lands in the one's place. In other words, each application of $\mathcal{D}$ peels off the first binary digit and throws it away. **If we apply the dyadic map $k$ times, we remove the first $k$ bits of $a$.**
-
-    We can see this process also holds for our other orbits:
-
-    * If $a = 0.5$, we get the orbit $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$ because $\text{bin}(a) = 0.100000...$ and after discarding the first bit, which is a $1$, we are left with all zeros.
-    * If $a = 1/3$, we get the orbit $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$ because $\text{bin}(a) = 0.010101...$, an infinite sequence of bits alternating between $1$ and $0$. When the bits start with a 0, we get $0.010101...$ which is $1/3 = 0.333$ in decimal. And when the bits start with a $1$, $0.10101...$, we get $2/3 = 0.667$ in decimal.
-
-    Remarkably, these orbits are all governed by the same rule: remove one bit of information every time the dyadic map is applied. As each application of $\mathcal{D}$ removes another bit, this moves us deeper into the less significant digits of our original number -- the digits that are most sensitive to noise and measurement errors. A tiny change in $a$ due to noise, affecting the least significant bits of $a$, would eventually bubble up to the surface and completely change the orbit. That's why this system is so chaotic -- it is incredibly sensitive to even the smallest changes in the initial value $a$.
-
-    (Note: we always compute the dyadic map on *decimal* numbers, not binary numbers; however, conceptually it is helpful to think about the binary representations of the orbit.)
     """
     )
     return
@@ -669,7 +660,7 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(r"""We've discovered something remarkable: each application of $\mathcal{D}$ peels away exactly one bit. But here's the question: if the dyadic map can systematically extract a number's bits, is it possible to put information in those bits in the first place? **What if we encode our dataset into a number's bits (`model.fit`) and then use the dyadic map as the core of a predictive model, extracting out the answer bit by bit (`model.predict`)?** In other words, can we turn the dyadic map into an ML model?""")
+    mo.md(r"""We've discovered something remarkable: each application of $\mathcal{D}$ peels away exactly one bit. But if the dyadic map can systematically extract bits, is it possible to put information in those bits in the first place? Can we encode our dataset's bits into a number (`model.fit`) and then use the dyadic map as the core of a predictive model, extracting out the answer bit by bit (`model.predict`)? In other words, can we turn the dyadic map into an ML model?""")
     return
 
 
@@ -724,7 +715,7 @@ def _(mo):
 
     The number $\alpha$ is carefully engineered so that it is a decimal number whose bits contain our entire dataset's binary representation. That's right: **we've just compressed our entire dataset into a single decimal number!** We only have one parameter, not billions here! This is a very simple, stupid version of $\alpha = \text{model.fit}(\mathcal{X})$.
 
-    But here's the question: given $\alpha$, how do we get our data $\mathcal{X}$ back out? How do we do $\tilde{x}_i = \text{model.predict}(\alpha)$? This is where the dyadic map becomes our extraction tool.
+    But here's the question: given $\alpha$, how do we get our data $\mathcal{X}$ back out? How do we do $\tilde{x}_i = \text{model.predict}(i, \alpha)$? This is where the dyadic map becomes our extraction tool.
 
     *Step 1.* Trivially, we know the first 6 bits of $\alpha$ contains $b_0$.
 
@@ -914,7 +905,7 @@ def _(mo):
     1. Convert each number to binary with $p$ bits of precision $b_i = \text{bin}_p(x_i)$ for $i=0, ..., n-1$
     2. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_{n-1}$
     3. Convert to decimal $\alpha = \text{dec}(b)$
-    4. Reutrn $\alpha$
+    4. Return $\alpha$
 
     Mathematically, we express the encoder as the function $g: [0, 1]^n \to [0, 1]$
 
@@ -961,9 +952,7 @@ def _(mo):
 
     because we don't encode anything after the first $p$ bits of precision.
 
-    What makes this profound is the realization that we're not really "learning" anything in any conventional sense. We're encoding it directly into the bits of a real number, exploiting it's infinite precision, and then using the dyadic map to navigate through that number and extract exactly what we need, when we need it.
-
-    From this perspective, the dyadic map resembles a classical ML model where the encoder $g$ acts as `model.fit()` and the decoder $f$ acts as `model.predict()`.
+    What makes this profound is the realization that we're not really "learning" anything in any conventional sense. We're encoding it directly into the bits of a real number, exploiting it's infinite precision, and then using the dyadic map to navigate through that number and extract exactly what we need, when we need it. From this perspective, the dyadic map resembles a classical ML model where the encoder $g$ acts as `model.fit()` and the decoder $f$ acts as `model.predict()`.
     """
     )
     return
@@ -978,12 +967,6 @@ def _(mo):
     > "You don’t want to overdo it with too much makeup" - Heidi Klum
     """
     )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""## Logistic Map""")
     return
 
 
@@ -1007,17 +990,7 @@ def _(mo):
     ?
     $$
 
-    In this section we will "apply makeup" to the first function to get it looking a bit closer to the second function. We will keep the same core logic but make the function more ascetically pleasing. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map).
-    """
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    The logistic-map at $r=4$ on the unit interval is defined as
+    In this section we will "apply makeup" to the first function to get it looking a bit closer to the second function. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map). The logistic-map at $r=4$ on the unit interval is defined as
 
     $$
     \begin{align*}
@@ -1112,23 +1085,25 @@ def _(mo):
 
     The logistic and dyadic maps create orbits that look nothing alike!
 
-    However, [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us these two maps are *actually* the same. Not similar. Not analgous. The same. They have identical orbits, the exact same chaotic trajectories, simply expressed in different coordinates. The logistic map, for all its smooth curves and elegant form, is actually doing discrete binary operations under the hood, just like the dyadic map (and vice versa). Formally, two functions are topologically conjugate if there exists a homeomorphism, fancy talk for a change of coordinates, that perfectly takes you from one map to another. The change of coordinates here is
+    However, [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us these two maps are *actually* the same. 
+
+    The logistic and dyadic maps have identical orbits, the exact same chaotic trajectories, simply expressed in different coordinates. The logistic map, for all its smooth curves and elegant form, is actually doing discrete binary operations under the hood, just like the dyadic map (and vice versa). Formally, two functions are topologically conjugate if there exists a homeomorphism, fancy talk for a change of coordinates, that perfectly takes you from one map to another. The change of coordinates here is
 
     $$
     \begin{align*}
-    a_L = \phi(a_D) &= \sin^2(2 \pi a_D)
+    \phi: [0, 1] \rightarrow [0, 1]
+    &&
+    \phi(a_D) &= \sin^2(2 \pi a_D)
     \tag{7}
     \\
-    a_D
-    =
+    \phi^{-1}: [0, 1] \rightarrow [0, 1]
+    &&
     \phi^{-1}(a_L)
     &=
     \frac{1}{2 \pi} \arcsin (\sqrt{a_L})
     \tag{8}
     \end{align*}
     $$
-
-    where $\phi: [0, 1] -> [0, 1]$ and $\phi^{-1}: [0, 1] -> [0, 1]$. We can map any $a_L$ to an $a_D$ and any $a_D$ to an $a_L$.
     """
     )
     return
@@ -1159,44 +1134,9 @@ def _(np, plt):
 def _(mo):
     mo.md(
         r"""
-    Looking at the plot, the function $\phi$ has a period of 1, meaning it repeats the same values every time $a_D$ increases by $1$. This periodicity is crucial because it allows us to drop the modulo operation from the dyadic map $\mathcal{D}(a_D) = (2 a_D) \mod 1$ when transforming from the dyadic space to the logistic space. Formally,
+    Intuitively, the function $\phi(a_D) = \sin^2(2 \pi a_D)$ oscillates between $0$ and $1$ with a period of $1$, completing a cycle everytime $a_D$ reaches a new integer value. This behaviour mimics the modulo operation from the dyadic map $\mathcal{D}(a_D) = (2 a_D) \mod 1$ which similarly keeps outputs bounded within $[0,1)$ and repeats at each integer boundary. 
 
-    $$
-    \begin{align*}
-    \phi(a_D \mod 1) = \phi(a_D)
-    \tag{9}
-    \end{align*}
-    $$
-
-    which will be important later on. To go back and forth between the dyadic and logistic maps, we apply $\phi$ to the output $\mathcal{D}$ and get $\mathcal{L}$; we can also apply $\phi^{-1}$ to the input $a_L$ to get $\mathcal{D}$. Mathemtically,
-
-    $$
-    \begin{align*}
-    \mathcal{L}(a_L)
-    &=
-    \phi(\mathcal{D}(a_D))
-    \\
-    \mathcal{D}(a_D)
-    &=
-    \mathcal{L}(\phi^{-1}(a_L))
-    \end{align*}
-    $$
-
-    Here $\phi$ takes us to the logistic space and $\phi^{-1}$ takes us back to the dyadic space. This is astonishing! $\phi$ is just a sin wave squared and with a period of one. It's inverse, $\phi^{-1}$ is even weirder looking with an $\arcsin$. But somehow these functions allow us to bridge the two maps $\mathcal{D}$ and $\mathcal{L}$!
-
-    Moreover, $\phi$ and $\phi^{-1}$ perfectly relate *every* single point in the infinite orbits of $\mathcal{D}$ and $\mathcal{L}$:
-
-    $$
-    (a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), ...) = (a_L, \mathcal{L}^1(\phi^{-1}((a_L)), \mathcal{L}^2(\phi^{-1}((a_L)), ...)
-    $$
-
-    or it can be expressed as
-
-    $$
-    (a_L, \mathcal{L}^1(a_L), \mathcal{L}^2(a_L), ...) = (a_D, \phi(\mathcal{D}^1(a_D)), \phi(\mathcal{D}^2(a_D)), ...)
-    $$
-
-    depending on if we want to be natively using the coordinate system of $\mathcal{D}$ or $\mathcal{L}$. What appears as chaos in one coordinate system manifests as the exact same chaos in the other, *no matter how many iterations we apply*. Mathematically, this suggests something stronger:
+    We go back and forth between the dyadic and logistic spaces with these key equations
 
     $$
     \begin{align*}
@@ -1212,7 +1152,7 @@ def _(mo):
     \end{align*}
     $$
 
-    Think of these two orbits existing in parallel universes with $\phi$ and $\phi^{-1}$ acting as the bridges between $\mathcal{D}$ and $\mathcal{L}$.
+    To transform dyadic space into logistic space, we apply $\phi$ to the dyadic *outputs* $\mathcal{D}^k(a_D)$ and get $\mathcal{L}^k(a_L)$. To transform logistic space into dyadic space, we apply the inverse $\phi^{-1}$ to the *input* $a_L$ before applying the logistic map $\mathcal{L}$ and get $\mathcal{D}^k(a_D)$. These equations hold for all iterations $k$ , meaning $\phi$ and $\phi^{-1}$ perfectly relate *every* single point in the dyadic and logistic orbits. Think of these two orbits existing in parallel universes with $\phi$ and $\phi^{-1}$ acting as the bridges between $\mathcal{D}$ and $\mathcal{L}$.
     """
     )
     return
@@ -1234,13 +1174,12 @@ def _(fix_marimo_path, mo):
 def _(mo):
     mo.md(
         r"""
-    We can now revist the dyadic and logistic orbits when $a_D = a_L = 0.431$.
+    Previously the dyadic and logistic oribits appeared totally unrelated. But let's now revist the orbits for $a_D = a_L = 0.431$.
 
-    * When $a_D = a_L = 0.431$, we know the **dyadic orbit** is $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$. If we apply $\phi$ to every output element $\phi(\mathcal{D}^k(a_D))$, we get $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$. This is exactly the logistic orbit  we saw in eqn. (10)!
-    * When $a_D = a_L = 0.431$,, we know the **logistic orbit** $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$. If we apply $\phi^{-1}$
-    to every input element before the logistic map $\mathcal{L}(\phi^{-1}(a_L)))$ we get the dyadic orbit $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$.
+    * Starting from the **dyadic orbit** $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$, applying $\phi$ to *after* each dyadic map (eq 10) yields the logistic orbit $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$.
+    * Starting from the **logistic orbit** $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$, applying $\phi^{-1}$ *before* each logistic map (eq 11) yields the dyadic orbit $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$.
 
-    We see that although both these orbits look completly unrelated, these two orbits are perfectly connected to one another through $\phi$ and $\phi^{-1}$.
+    Although both these orbits look completly unrelated, they are perfectly connected to one another through $\phi$ and $\phi^{-1}$.
     """
     )
     return
@@ -1248,17 +1187,22 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""## A New Algorithm""")
-    return
-
-
-@app.cell
-def _(mo):
     mo.md(
         r"""
-    **Can we use the topological conjugacy of $\mathcal{D}$ and $\mathcal{L}$ as makeup?**
+    While $\mathcal{D}$ is ugly and discontinuous, $\mathcal{L}$ is smooth and differentiable. 
 
-    While $\mathcal{D}$ is ugly and discontinuous, $\mathcal{L}$ is smooth and differentiable. We can use the logistic map as "makeup" to hide the crude dyadic operations. We want our decoder to use $\mathcal{L}$ instead of $\mathcal{D}$. But for the encoder to glue together the bits of our dataset, we needs to be in the dyadic space so our clever bit manipulations will still work out. Here's the strategy:
+    Let's now use the  smooth and differentiable logistic map as "makeup" to hide the ugly and discontinuous dyadic operations. Recall our decoder is
+
+    $$
+    \begin{align*}
+    \tilde{x}_i
+    &=
+    f_{\alpha, p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
+    \end{align*}
+    $$
+
+
+    We want our decoder to use $\mathcal{L}$ instead of $\mathcal{D}$. But for the encoder to glue together the bits of our dataset, we needs to be in the dyadic space so our clever bit manipulations will still work out. Here's the strategy:
 
     1. Encoder: Work in dyadic space where bit manipulation works (use $\phi$) but output parameter in logistic space (use $\phi^{-1}$)
     2. Decoder: Work entirely in smooth logistic space using the conjugacy relationship
@@ -1666,8 +1610,11 @@ def _(np):
         question_outputs = [puzzle['question_outputs'][0] for puzzle in split]
 
         # zero pad all inputs/outputs so they have the same dimension
-        X = np.zeros((len(question_inputs), 30, 30), dtype=np.float32)
-        y = np.zeros((len(question_outputs), 30, 30), dtype=np.float32)
+        # X = np.zeros((len(question_inputs), 30, 30), dtype=np.float32)
+        # y = np.zeros((len(question_outputs), 30, 30), dtype=np.float32)
+        X = np.zeros((len(question_inputs), 30, 30))
+        y = np.zeros((len(question_outputs), 30, 30))
+
 
         for i, grid in enumerate(question_inputs):
             m, n = len(grid), len(grid[0])
@@ -1684,7 +1631,7 @@ def _(np):
 @app.cell
 def _(np):
     class MinMaxScaler:
-        def __init__(self, feature_range=(1e-10, 1-1e-10), epsilon=1e-10):
+        def __init__(self, feature_range=(1e-20, 1-1e-20), epsilon=1e-20):
             self.min = self.max = self.range = None
             self.feature_range, self.epsilon = feature_range, epsilon
         def fit(self, X):
@@ -1764,7 +1711,9 @@ def _(
 ):
     # Decoder runs `range(len(y_scaled))` times to extract each of the `mn` elements individually from alpha
     def decode(alpha, full_precision, p, y_scaled):
-        return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")], dtype=np.float32)
+        # return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")], dtype=np.float32)
+        return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")])
+
 
     # Run decoder
     y1_pred_raw = decode(alpha, full_precision, p, y1_scaled)
@@ -2145,7 +2094,7 @@ def _(mo):
 
 @app.cell
 def _(OneParameterModel, X, mo, y):
-    p5 = 3
+    p5 = 35
 
     # run encoder
     model = OneParameterModel(p5)
@@ -2291,7 +2240,7 @@ def _(mo):
 
     Yet modern reasoning models may still be overfitting on ARC-AGI, just not in the traditional sense. Instead of training directly on the test set, reasoning models are clever enough to exploit distributional similarities between public and private splits, a meta-level form of overfitting to the benchmark's structural patterns. The ARC-AGI organizers [acknowledge](https://arcprize.org/blog/arc-prize-2025-results-analysis) this phenomenon, raising concerns about overfitting on their own benchmark.
 
-    However, the fundamental problem runs deeper. Many ARC-AGI solutions appear benchmark-specific, using synthetic data and abstractions tailored to these visual-grid puzzles. How many of these solutions have inspired downstream improvements in LLMs or other modes of intelligence? I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles and drive broader innovation the field of AI.
+    However, the fundamental problem runs deeper. Many ARC-AGI solutions appear benchmark-specific, using synthetic data and abstractions tailored to these visual-grid puzzles. How many of these solutions have inspired downstream improvements in LLMs or other modes of intelligence? I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles and drive broader innovation the field of AI. ARC-AGI is a necessary but not sufficent condition for AGI, but I worry everyone is focusong on the wrong path.
     """
     )
     return
@@ -2344,7 +2293,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Appendix A""")
+    mo.md(r"""## Appendix A: Other Uses of the One-Parameter Model""")
     return
 
 
@@ -2417,7 +2366,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Appendix B""")
+    mo.md(r"""## Appendix B: Some Technical Critiques""")
     return
 
 

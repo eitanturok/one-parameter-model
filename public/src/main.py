@@ -2,14 +2,19 @@
 import json, argparse
 import numpy as np
 
-from .model import OneParameterModel
-from .data import DATASET, plot_data
+from public.src.model import OneParameterModel
+from public.src.data import DATASET, plot_data
+
+from icecream import install
+install()
 
 def main(args):
     # load dataset
     X, y = DATASET[args.dataset]()
-    if "arc-agi" in args.dataset: X, y = X[:5], y[:5]
     X_idxs = np.arange(len(X))
+    if "arc-agi" in args.dataset:
+        X, y = X[:5], y[:5]
+        X_idxs = np.array([0])
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
     # fit the model

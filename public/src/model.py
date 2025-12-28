@@ -3,33 +3,54 @@ import numpy as np
 from mpmath import mp, asin as Arcsin, sqrt as Sqrt, sin as Sin, pi as Pi
 from tqdm import tqdm
 
+
 #***** utilities *****
 
+# class MinMaxScaler:
+#     def __init__(self, feature_range=(1e-20, 1-1e-20), epsilon=1e-20):
+#         self.min = self.max = self.range = None
+#         self.feature_range, self.epsilon = feature_range, epsilon
+#     def fit(self, X):
+#         self.min, self.max = X.min(axis=0), X.max(axis=0)
+#         self.range = np.maximum(self.max - self.min, self.epsilon)  # Prevent div by zero
+#         return self
+#     def transform(self, X):
+#         X_scaled = (X - self.min) / self.range
+#         return np.clip(X_scaled, *self.feature_range)  # Keep away from exact boundaries
+#     def fit_transform(self, X):
+#         return self.fit(X).transform(X)
+#     def inverse_transform(self, X):
+#         X_clipped = np.clip(X, *self.feature_range)
+#         return X_clipped * self.range + self.min
+
+# class MinMaxScaler:
+#     def __init__(self, epsilon=1e-20):
+#         self.min = self.max = self.range = None
+#         self.epsilon = epsilon
+#     def fit(self, X):
+#         self.min, self.max = X.min(axis=0), X.max(axis=0)
+#         self.range = np.maximum(self.max - self.min, self.epsilon)  # Prevent div by zero
+#         return self
+#     def transform(self, X):
+#         X_scaled = (X - self.min) / self.range
+#         return np.clip(X_scaled, self.epsilon, 1 - self.epsilon)  # Keep away from exact 0 and 1
+#     def fit_transform(self, X):
+#         return self.fit(X).transform(X)
+#     def inverse_transform(self, X):
+#         # No clipping needed here - transform already ensures proper range
+#         return X * self.range + self.min
+
 class MinMaxScaler:
-    def __init__(self, feature_range=(1e-10, 1-1e-10), epsilon=1e-10):
+    def __init__(self, epsilon=1e-20):
         self.min = self.max = self.range = None
-        self.feature_range, self.epsilon = feature_range, epsilon
+        self.epsilon = epsilon
     def fit(self, X):
         self.min, self.max = X.min(axis=0), X.max(axis=0)
         self.range = np.maximum(self.max - self.min, self.epsilon)  # Prevent div by zero
         return self
-    def transform(self, X):
-        X_scaled = (X - self.min) / self.range
-        return np.clip(X_scaled, *self.feature_range)  # Keep away from exact boundaries
-    def fit_transform(self, X):
-        return self.fit(X).transform(X)
-    def inverse_transform(self, X):
-        X_clipped = np.clip(X, *self.feature_range)
-        return X_clipped * self.range + self.min
-
-# https://github.com/tinygrad/tinygrad/blob/44bc7dc73d7d03a909f0cc5c792c3cdd2621d787/tinygrad/helpers.py
-class Timing(contextlib.ContextDecorator):
-    def __init__(self, prefix="", on_exit=None, enabled=True): self.prefix, self.on_exit, self.enabled = prefix, on_exit, enabled
-    def __enter__(self): self.st = time.perf_counter() # pylint: disable=attribute-defined-outside-init
-    def __exit__(self, *exc):
-        self.et = time.perf_counter() - self.st # pylint: disable=attribute-defined-outside-init
-        if self.enabled: print(f"{self.prefix}{self.et:6.3f} sec"+(self.on_exit(self.et) if self.on_exit else ""), file=sys.stderr)
-
+    def transform(self, X): return (X - self.min) / self.range
+    def fit_transform(self, X): return self.fit(X).transform(X)
+    def inverse_transform(self, X): return X * self.range + self.min
 
 #***** binary *****
 
@@ -60,11 +81,15 @@ def dyadic_decoder(alpha, p, i): return float((2 ** (i * p) * alpha) % 1)
 
 def logistic_decoder(alpha, full_precision, p, i):
     mp.prec = full_precision
-    return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
+    ret = Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2
+    # print(f'{i=} \n{ret=}\n{float(ret)=}')
+    return float(ret)
 
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
-    mp.prec = p * (i + 1) + 1
-    return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
+    mp.prec = p * (i + 1) + 2  # extra bits to reduce numerical errors ??
+    ret = Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2
+    # print(f'{i=} \n{ret=}\n{float(ret)=}')
+    return float(ret)
 
 # todo: fix this
 def dyadic_encoder(X, precision, full_precision):
@@ -109,13 +134,6 @@ def decode(alpha, full_precision, p, y_scaled):
     y_idxs = list(range(len(y_scaled)))
     return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(y_idxs, total=len(y_idxs), desc="Decoding")], dtype=np.float32)
 
-def fast_decode(alpha, p, y_scaled, n_workers=8):
-    y_idxs = list(range(len(y_scaled)))
-    decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(alpha)), p)
-    with multiprocessing.Pool(n_workers) as p:
-        y_pred = np.array(list(tqdm(p.imap(decoder, y_idxs), total=len(y_idxs), desc="Decoding")), dtype=np.float32)
-    return y_pred
-
 #***** model *****
 
 class OneParameterModel:
@@ -145,6 +163,7 @@ class OneParameterModel:
         full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
 
         # choose the fast or slow logistic decoder
+        mp.prec = self.full_precision # compute arcsin(sqrt(alpha)) with full precision
         if fast: decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(self.alpha)), self.precision)
         else: decoder = functools.partial(logistic_decoder, self.alpha, self.full_precision, self.precision)
 
@@ -153,10 +172,12 @@ class OneParameterModel:
             y_pred = np.array([decoder(idx) for idx in tqdm(full_idxs)])
         else:
             with multiprocessing.Pool(self.n_workers) as p:
-                y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding")), dtype=np.float32)
+                # y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding")), dtype=np.float32)
+                y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding")))
         return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
-    def verify(self, y: np.ndarray, y_pred: np.ndarray):
+    def verify(self, y_pred:np.ndarray, y:np.ndarray):
         # check logistic decode error is within theoretical bounds (section 2.5 https://arxiv.org/pdf/1904.12320)
-        tolerance = np.pi / 2 ** (self.precision - 1) * self.scaler.range
+        tolerance = np.pi / 2 ** (self.precision - 1) * self.scaler.range + self.scaler.epsilon * self.scaler.range
+        print(f'{tolerance=}')
         np.testing.assert_allclose(y_pred, y, atol=tolerance, rtol=0)
