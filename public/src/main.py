@@ -11,10 +11,8 @@ install()
 def main(args):
     # load dataset
     X, y = DATASET[args.dataset]()
+    if "arc-agi" in args.dataset: X, y = X[:5], y[:5]
     X_idxs = np.arange(len(X))
-    if "arc-agi" in args.dataset:
-        X, y = X[:5], y[:5]
-        X_idxs = np.array([0])
     print(f'dataset={args.dataset}\n{X.shape=} {y.shape=}')
 
     # fit the model
@@ -26,13 +24,9 @@ def main(args):
             json.dump({'precision': model.precision, 'alpha': (str(model.alpha), model.alpha.precision)}, f)
             print(f'Saved alpha to {fn}')
 
-    # predict
+    # predict, verify, and plot the answer
     y_pred = model.predict(X_idxs)
-
-    # check theoretical error bounds are satisfied
     model.verify(y, y_pred)
-
-    # plot
     plot_data(X, y, y_pred)
 
 

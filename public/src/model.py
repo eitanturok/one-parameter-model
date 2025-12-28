@@ -41,16 +41,20 @@ from tqdm import tqdm
 #         return X * self.range + self.min
 
 class MinMaxScaler:
-    def __init__(self, epsilon=1e-20):
+    def __init__(self, epsilon=1e-10):
         self.min = self.max = self.range = None
         self.epsilon = epsilon
     def fit(self, X):
         self.min, self.max = X.min(axis=0), X.max(axis=0)
         self.range = np.maximum(self.max - self.min, self.epsilon)  # Prevent div by zero
         return self
-    def transform(self, X): return (X - self.min) / self.range
+    def transform(self, X):
+        X_scaled = (X - self.min) / self.range
+        return np.clip(X_scaled, self.epsilon, 1 - self.epsilon)  # Keep away from exact boundaries
     def fit_transform(self, X): return self.fit(X).transform(X)
-    def inverse_transform(self, X): return X * self.range + self.min
+    def inverse_transform(self, X):
+        X_clipped = np.clip(X, self.epsilon, 1 - self.epsilon)
+        return X_clipped * self.range + self.min
 
 #***** binary *****
 
@@ -87,6 +91,7 @@ def logistic_decoder(alpha, full_precision, p, i):
 
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
     mp.prec = p * (i + 1) + 2  # extra bits to reduce numerical errors ??
+    return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
     ret = Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2
     # print(f'{i=} \n{ret=}\n{float(ret)=}')
     return float(ret)
@@ -172,12 +177,11 @@ class OneParameterModel:
             y_pred = np.array([decoder(idx) for idx in tqdm(full_idxs)])
         else:
             with multiprocessing.Pool(self.n_workers) as p:
-                # y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding")), dtype=np.float32)
                 y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding")))
         return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
     def verify(self, y_pred:np.ndarray, y:np.ndarray):
         # check logistic decode error is within theoretical bounds (section 2.5 https://arxiv.org/pdf/1904.12320)
-        tolerance = np.pi / 2 ** (self.precision - 1) * self.scaler.range + self.scaler.epsilon * self.scaler.range
+        tolerance = self.scaler.range * np.pi / 2 ** (self.precision - 1)
         print(f'{tolerance=}')
         np.testing.assert_allclose(y_pred, y, atol=tolerance, rtol=0)
