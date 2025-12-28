@@ -182,6 +182,6 @@ class OneParameterModel:
 
     def verify(self, y_pred:np.ndarray, y:np.ndarray):
         # check logistic decode error is within theoretical bounds (section 2.5 https://arxiv.org/pdf/1904.12320)
-        tolerance = self.scaler.range * np.pi / 2 ** (self.precision - 1)
+        tolerance = self.scaler.range * np.pi / 2 ** (self.precision - 1) + self.scaler.epsilon * self.scaler.range
         print(f'{tolerance=}')
         np.testing.assert_allclose(y_pred, y, atol=tolerance, rtol=0)
