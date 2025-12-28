@@ -42,7 +42,7 @@ def _(Path, json, mo, urlopen):
 
     def load_jsonl(p):
       with fix_marimo_open(p) as f: return [json.loads(line) for line in f.read().decode().strip().split('\n') if line.strip()]
-    return fix_marimo_local_import, fix_marimo_path, load_json, load_jsonl
+    return fix_marimo_path, load_json, load_jsonl
 
 
 @app.cell
@@ -52,7 +52,26 @@ def _():
     import matplotlib.pyplot as plt
     from matplotlib import colors
     from tqdm import tqdm
-    return colors, np, plt, tqdm
+    return colors, np, plt
+
+
+@app.cell
+def _():
+    from public.src.model import dyadic_map, decimal_to_binary, binary_to_decimal, phi, phi_inverse, logistic_encoder, logistic_decoder, logistic_decoder_fast, MinMaxScaler, decode, fast_decode, OneParameterModel
+    return (
+        MinMaxScaler,
+        OneParameterModel,
+        binary_to_decimal,
+        decimal_to_binary,
+        decode,
+        dyadic_map,
+        fast_decode,
+        logistic_decoder,
+        logistic_decoder_fast,
+        logistic_encoder,
+        phi,
+        phi_inverse,
+    )
 
 
 @app.cell
@@ -1408,7 +1427,7 @@ def _(mo):
 def _(mo):
     from mpmath import mp, asin as Arcsin, sqrt as Sqrt, sin as Sin, pi as Pi
     mo.show_code()
-    return Arcsin, Pi, Sin, Sqrt, mp
+    return
 
 
 @app.cell
@@ -1418,36 +1437,17 @@ def _(mo):
 
 
 @app.cell
-def _(mo, np):
-    def dyadic_map(X:np.ndarray): return (2 * X) % 1
-    mo.show_code()
-    return (dyadic_map,)
+def _(binary_to_decimal, decimal_to_binary, display_fxn, dyadic_map, mo):
+    mo.md(
+        rf"""
+    {display_fxn(dyadic_map)}
 
+    {display_fxn(decimal_to_binary)}
 
-@app.cell
-def _(dyadic_map, mo, np):
-    def decimal_to_binary(x_decimal:np.ndarray|float|int|list|tuple, precision:int):
-        # converts a 1D sequence from decimal to binary, assume all values in [0, 1]
-        if isinstance(x_decimal, (float, int)): x_decimal = np.array([x_decimal], dtype=float)
-        elif isinstance(x_decimal, (list, tuple)): x_decimal = np.array(x_decimal, dtype=float)
-        # elif isinstance(x_decimal, mp.mpf): x_decimal = np.array([x_decimal])
-        assert 0 <= x_decimal.min() <= x_decimal.max() <= 1, f"expected x_decimal to be in [0, 1] but got [{x_decimal.min()}, {x_decimal.max()}]"
-        bits = []
-        for _ in range(precision):
-            bits.append(np.round(x_decimal))
-            x_decimal = dyadic_map(x_decimal)
-        return ''.join(map(str, np.array(bits).astype(int).T.ravel()))
-    mo.show_code()
-    return (decimal_to_binary,)
-
-
-@app.cell
-def _(mo, mp, np):
-    def binary_to_decimal(x_binary:np.ndarray):
-        # converts an arbitrary-precision scalar from binary to decimal
-        return mp.fsum(int(b) * mp.mpf(0.5) ** (i+1) for i, b in enumerate(x_binary))
-    mo.show_code()
-    return (binary_to_decimal,)
+    {display_fxn(binary_to_decimal)}
+    """
+    )
+    return
 
 
 @app.cell
@@ -1457,17 +1457,15 @@ def _(mo):
 
 
 @app.cell
-def _(Pi, Sin, mo):
-    def phi(x): return Sin(2 * Pi * x) ** 2
-    mo.show_code()
-    return (phi,)
+def _(display_fxn, mo, phi, phi_inverse):
+    mo.md(
+        rf"""
+    {display_fxn(phi)}
 
-
-@app.cell
-def _(mo, np):
-    def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
-    mo.show_code()
-    return (phi_inverse,)
+    {display_fxn(phi_inverse)}
+    """
+    )
+    return
 
 
 @app.cell
@@ -1491,30 +1489,9 @@ def _(mo):
 
 
 @app.cell
-def _(binary_to_decimal, decimal_to_binary, mo, mp, phi, phi_inverse):
-    def logistic_encoder(X, p, full_precision):
-        # set the mpmath arbitrary precision before computing anything
-        mp.prec = full_precision
-
-        # 1. apply φ^(-1) for all x in X
-        phi_inv_decimal_list = phi_inverse(X)
-
-        # 2. convert to binary for all x in X
-        phi_inv_binary_list = decimal_to_binary(phi_inv_decimal_list, p)
-
-        # 3. concatenate all binary strings together into a scalar
-        phi_inv_binary_scalar = ''.join(phi_inv_binary_list)
-        if len(phi_inv_binary_scalar) != full_precision:
-            raise ValueError(f"Expected {full_precision} bits but got {len(phi_inv_binary_scalar)} bits.")
-
-        # 4. convert to decimal
-        phi_inv_decimal_scalar = binary_to_decimal(phi_inv_binary_scalar)
-
-        # 5. apply φ
-        alpha = phi(phi_inv_decimal_scalar)
-        return alpha
-    mo.show_code()
-    return (logistic_encoder,)
+def _(display_fxn, logistic_encoder, mo):
+    mo.md(rf"""{display_fxn(logistic_encoder)}""")
+    return
 
 
 @app.cell
@@ -1538,18 +1515,14 @@ def _(mo):
 
 
 @app.cell
-def _(Arcsin, Sin, Sqrt, mo, mp):
-    def logistic_decoder(alpha, full_precision, p, i):
-        # set the mpmath arbitrary precision
-        mp.prec = full_precision
-        return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
-    mo.show_code()
-    return (logistic_decoder,)
+def _(display_fxn, logistic_decoder, mo):
+    mo.md(rf"""{display_fxn(logistic_decoder)}""")
+    return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""Again, we set the mpmath precision to $np$ bits and implement the decoder in a single line using mpmath's arbitrary-precision functions: `Sin`, `Arcsin`, and `Sqrt`. That's it. Our entire encoder and decoder, the heart of our one-parameter model, is just a handful of lines and a bit of beautiful mathematics.""")
+    mo.md(r"""Again, we set the mpmath precision to $np$ bits and implement the decoder in a single line using mpmath's arbitrary-precision functions `Sin`, `Arcsin`, and `Sqrt`. That's it. Our entire encoder and decoder, the heart of our one-parameter model, is just a handful of lines and a bit of beautiful mathematics.""")
     return
 
 
@@ -1629,27 +1602,6 @@ def _(np):
 
 
 @app.cell
-def _(np):
-    class MinMaxScaler:
-        def __init__(self, feature_range=(1e-20, 1-1e-20), epsilon=1e-20):
-            self.min = self.max = self.range = None
-            self.feature_range, self.epsilon = feature_range, epsilon
-        def fit(self, X):
-            self.min, self.max = X.min(axis=0), X.max(axis=0)
-            self.range = np.maximum(self.max - self.min, self.epsilon)  # Prevent div by zero
-            return self
-        def transform(self, X):
-            X_scaled = (X - self.min) / self.range
-            return np.clip(X_scaled, *self.feature_range)  # Keep away from exact boundaries
-        def fit_transform(self, X):
-            return self.fit(X).transform(X)
-        def inverse_transform(self, X):
-            X_clipped = np.clip(X, *self.feature_range)
-            return X_clipped * self.range + self.min
-    return (MinMaxScaler,)
-
-
-@app.cell
 def _(MinMaxScaler, ds, logistic_encoder, mo, process_arc_agi):
     # Adjustment 1: process the question output Y, not the quesiton input X
     X, y = process_arc_agi(ds)
@@ -1698,23 +1650,13 @@ def _(mo):
 
 
 @app.cell
-def _(
-    alpha,
-    full_precision,
-    logistic_decoder,
-    mo,
-    np,
-    p,
-    scaler,
-    tqdm,
-    y1_scaled,
-):
-    # Decoder runs `range(len(y_scaled))` times to extract each of the `mn` elements individually from alpha
-    def decode(alpha, full_precision, p, y_scaled):
-        # return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")], dtype=np.float32)
-        return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")])
+def _(decode, display_fxn, mo):
+    mo.md(rf"""{display_fxn(decode)}""")
+    return
 
 
+@app.cell
+def _(alpha, decode, full_precision, mo, p, scaler, y1_scaled):
     # Run decoder
     y1_pred_raw = decode(alpha, full_precision, p, y1_scaled)
 
@@ -1725,7 +1667,7 @@ def _(
     y1_pred = y1_pred_unscaled.reshape(1, 30, 30)
 
     mo.show_code()
-    return decode, y1_pred
+    return (y1_pred,)
 
 
 @app.cell
@@ -1797,21 +1739,6 @@ def _(mo):
 @app.cell
 def _(decode, logistic_encoder, scaler, y1_scaled):
     # encode
-    y2_scaled = y1_scaled
-    p2 = 14 # bits for a single sample
-    full_precision2 = len(y2_scaled) * p2 # bits for all samples in the dataset
-    alpha2 = logistic_encoder(y2_scaled, p2, full_precision2)
-    alpha2_str = str(alpha2)
-
-    # decode
-    y2_pred_raw = decode(alpha2, full_precision2, p2, y2_scaled)
-    y2_pred = scaler.inverse_transform(y2_pred_raw).reshape(1, 30, 30)
-    return alpha2_str, p2, y2_pred
-
-
-@app.cell
-def _(decode, logistic_encoder, scaler, y1_scaled):
-    # encode
     y3_scaled = y1_scaled
     p3 = 5 # bits for a single sample
     full_precision3 = len(y3_scaled) * p3 # bits for all samples in the dataset
@@ -1825,14 +1752,29 @@ def _(decode, logistic_encoder, scaler, y1_scaled):
 
 
 @app.cell
-def _(alpha2_str, display_alpha, p2):
-    display_alpha(p2, alpha2_str)
+def _(alpha3_str, display_alpha, p3):
+    display_alpha(p3, alpha3_str)
     return
 
 
 @app.cell
-def _(alpha3_str, display_alpha, p3):
-    display_alpha(p3, alpha3_str)
+def _(decode, logistic_encoder, scaler, y1_scaled):
+    # encode
+    y2_scaled = y1_scaled
+    p2 = 14 # bits for a single sample
+    full_precision2 = len(y2_scaled) * p2 # bits for all samples in the dataset
+    alpha2 = logistic_encoder(y2_scaled, p2, full_precision2)
+    alpha2_str = str(alpha2)
+
+    # decode
+    y2_pred_raw = decode(alpha2, full_precision2, p2, y2_scaled)
+    y2_pred = scaler.inverse_transform(y2_pred_raw).reshape(1, 30, 30)
+    return alpha2_str, p2, y2_pred
+
+
+@app.cell
+def _(alpha2_str, display_alpha, p2):
+    display_alpha(p2, alpha2_str)
     return
 
 
@@ -1862,15 +1804,7 @@ def _(
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-    With $p=14$ every prediction is exactly right (to two decimal places). But there's a tradeoff: we need more storage. The number $\alpha$ grows from 1,895 digits to 3,792 digits. The higher we set $p$, the more accurate our encoding becomes, but the more storage space it requires.
-
-    On the flip side, with $p=5$, we only need 1,353 digits. But our predictions get much worse. For example, when the correct value is $1$, we predict $0.43$ or $0.34$, which is a closer to $0$ than it is to $1$.
-
-    This is a cool tradeoff and illustrates that the one-parameter model actually works!
-    """
-    )
+    mo.md(r"""With $p=14$ every prediction is exactly right (to two decimal places). But there's a tradeoff: we need more storage. The number $\alpha$ grows from 1,895 digits to 3,792 digits. The higher we set $p$, the more accurate our encoding becomes, but the more storage space it requires. On the flip side, with $p=5$, we only need 1,353 digits. But our predictions get much worse. For example, when the correct value is $1$, we predict $0.43$ or $0.34$, which is a closer to $0$ than it is to $1$. It is quite cool to see this tradeoff and show that the one-parameter model actually works!""")
     return
 
 
@@ -1896,21 +1830,21 @@ def _(mo, y, y2_pred):
 def _(math):
     R = 9
     p_star = math.ceil(33 + math.log2(R * math.pi))
-    p_star
+    print(p_star)
     return (p_star,)
 
 
 @app.cell
 def _(p_star):
     n_bits_star = 900 * 400 * p_star
-    n_bits_star
+    print(n_bits_star)
     return (n_bits_star,)
 
 
 @app.cell
 def _(math, n_bits_star):
     n_digits_star = math.floor(n_bits_star / math.log2(10))
-    n_digits_star
+    print(n_digits_star)
     return
 
 
@@ -1973,7 +1907,7 @@ def _(mo):
 
     we can accelerate this in three ways:
 
-    1. **Parallelization:** Because each number is decoded independently, we can decode all number in parallel with `multiprocessing.Pool`. This speeds up the for loop over `range(len(y_scaled))`.
+    1. **Parallelization:** Because each number is decoded independently, we can decode all number in parallel with `multiprocessing.Pool`. This speeds up the for loop over the indices `range(len(y_scaled))`.
     2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it every time we call `logistic_decoder`. This eliminates repeated expensive trigonmetric and square root operations on huge $np$-bit numbers like $\alpha$.
     3. **Adaptive precision:** We currently use all $np$ bits of $\alpha$ every time we decode as we set `mp.prec = full_precision`. However, in the $i$th step, we only need the first $p(i+1)+1$ bits of $\alpha$. Working with fewer bits drastically reduces the computation needed at each step.
     """
@@ -2010,29 +1944,14 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""It is simple to implement these three speedups in our code.""")
+    mo.md(r"""It is simple to implement these three speedups in our decoder.""")
     return
 
 
 @app.cell
-def _(Sin, mo, mp):
-    def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
-        mp.prec = p * (i + 1) + 1
-        return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
-    mo.show_code()
+def _(display_fxn, logistic_decoder_fast, mo):
+    mo.md(rf"""{display_fxn(logistic_decoder_fast)}""")
     return
-
-
-@app.cell
-def _(fix_marimo_local_import):
-    # weird hack for html-wasm import to work
-    try:
-        from public.src.model import fast_decode
-    except ModuleNotFoundError:
-        fix_marimo_local_import("public/src/model.py")
-    if not 'fast_decode' in dir() :
-        raise ModuleNotFoundError()
-    return (fast_decode,)
 
 
 @app.cell
@@ -2062,19 +1981,6 @@ def _(mo):
 
 
 @app.cell
-def _(fix_marimo_local_import):
-    # weird hack for html-wasm import to work
-    try:
-        from public.src.model import OneParameterModel
-    except ModuleNotFoundError:
-        fix_marimo_local_import("public/src/model.py")
-
-    if not 'OneParameterModel' in dir() :
-        raise ModuleNotFoundError()
-    return (OneParameterModel,)
-
-
-@app.cell
 def _(OneParameterModel, display_fxn, mo):
     mo.md(rf"""{display_fxn(OneParameterModel)}""")
     return
@@ -2094,7 +2000,7 @@ def _(mo):
 
 @app.cell
 def _(OneParameterModel, X, mo, y):
-    p5 = 35
+    p5 = 38
 
     # run encoder
     model = OneParameterModel(p5)
@@ -2152,21 +2058,15 @@ def _(mo, y, y5_pred):
 
 
 @app.cell
-def _(mo):
-    mo.md(
-        r"""
+def _():
+    msg = """
     Claiming a one-parameter model is a bit tounge and cheek as parameter counts usually assumes finite-precision weights (e.g. fp32), not infinite precision. A more accurate form of measurement would be to compare the number of bytes in our one-parameter model to other models. 
 
     a strawman. What's more interesting is comparing the number of bytes in a regular model vs our model.
     That's why the one-parameter model is more of a thought experiment than a practical proposal. What's more interesting is comparing the size of the model vs the size of the dataset.
+
+    Critics may point out that the one-parameter model is nothing but a cheap trick. It hides its complexity in its digits rather than in its parameter count. In practice parameter counts usually assumes finite-precision weights (e.g. fp32) -- we cannot just use infinite precision as a workaround. To that skeptic, I suggest we simply measure the model's bytes.
     """
-    )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""A skeptic may point out that the one-parameter model hides complexity in its digits rather than in parameter count. In practice parameter counts usually assumes finite-precision weights (e.g. fp32) -- we cannot just use infinite precision as a workaround. To that skeptic, I suggest we simply measure the model's bytes.""")
     return
 
 

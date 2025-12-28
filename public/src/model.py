@@ -50,16 +50,11 @@ def dyadic_decoder(alpha, p, i): return float((2 ** (i * p) * alpha) % 1)
 
 def logistic_decoder(alpha, full_precision, p, i):
     mp.prec = full_precision
-    ret = Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2
-    # print(f'{i=} \n{ret=}\n{float(ret)=}')
-    return float(ret)
+    return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
 
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
     mp.prec = p * (i + 1) + 2  # extra bits to reduce numerical errors ??
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
-    ret = Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2
-    # print(f'{i=} \n{ret=}\n{float(ret)=}')
-    return float(ret)
 
 # todo: fix this
 def dyadic_encoder(X, precision, full_precision):
@@ -104,6 +99,14 @@ def decode(alpha, full_precision, p, y_scaled):
     y_idxs = list(range(len(y_scaled)))
     return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(y_idxs, total=len(y_idxs), desc="Decoding")], dtype=np.float32)
 
+def fast_decode(alpha, p, y_scaled, n_workers=8):
+    y_idxs = list(range(len(y_scaled)))
+    mp.prec = p * len(y_scaled) # compute arcsin(sqrt(alpha)) with full precision
+    decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(alpha)), p)
+    with multiprocessing.Pool(n_workers) as p:
+        y_pred = np.array(list(tqdm(p.imap(decoder, y_idxs), total=len(y_idxs), desc="Decoding")), dtype=np.float32)
+    return y_pred
+
 #***** model *****
 
 class OneParameterModel:
@@ -142,7 +145,7 @@ class OneParameterModel:
             y_pred = np.array([decoder(idx) for idx in tqdm(full_idxs)])
         else:
             with multiprocessing.Pool(self.n_workers) as p:
-                y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding")))
+                y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding"))) # dtype=np.float32?
         return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
     def verify(self, y_pred:np.ndarray, y:np.ndarray):
