@@ -163,15 +163,13 @@ def _(mo):
         r"""
     and you'll get a perfect score on the public eval set of ARC-AGI-2! (Feel free to scroll horizontally. Only the first 10,000 digits of $\alpha$ are shown.)
 
-    This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time.
-
-    Sounds pretty impressive, right?
+    This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. Sounds pretty impressive, right?
 
     Unfortunately, **it's complete nonsense.**
 
     There is no learning or generalization. What I've really done here is train on the public eval set of ARC-AGI-2 and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating. The model scores 100% on the *public* eval set of ARC-AGI-2 but would score 0% on the *private* eval set of ARC-AGI-2.
 
-    This one-parameter model is a way to explore some cool math, an absurd thought experiment taken seriously. Yet as we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
+    Using chaos theory, topological conjuancy, and arbtirary precision arithmetic, the one-parameter model takes overfitting to the extreme. It is an absurd thought experiment taken seriously. As we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
 
     Let me show you how it works.
     """
@@ -1812,7 +1810,7 @@ def _(mo):
 def _(mo, y, y2_pred):
     mo.md(
         rf"""
-    Looking closer at our $p=14$ predictions, they're not perfectly accurate—they only match the ground truth to about 2 decimal places:
+    Looking closer at our $p=14$ predictions, they're not perfectly accurate—they only match the ground truth to about 2 decimal places (assuming rounding):
 
     ```py
     {y2_pred[0, 0, 0]=}
@@ -1821,8 +1819,25 @@ def _(mo, y, y2_pred):
     ```py
     {y[0, 0, 0]=}
     ```
+
+    In binary,
     """
     )
+    return
+
+
+@app.function
+def diff(a, b, name_a="", name_b=""):
+    from IPython.display import HTML, display
+    def line(s, t): return ''.join(f'<span style="color:{"green" if x==y else "red"}">{x}</span>  ' for x, y in zip(s, t))
+    nums = ''.join(f'{i:<3}' for i in range(1, len(a)+1))
+    pad = max(len(name_a), len(name_b))
+    display(HTML(f'<div style="white-space:pre; font-family:monospace">{"":<{pad}} {nums}<br>{name_a:>{pad}} {line(a, b)}<br>{name_b:>{pad}} {line(b, a)}</div>'))
+
+
+@app.cell
+def _(decimal_to_binary, scaler, y, y2_pred):
+    diff(decimal_to_binary(scaler.transform(y[0, 0, 0]), 32), decimal_to_binary(scaler.transform(y2_pred[0, 0, 0]), 32), "y", "y_pred")
     return
 
 
@@ -2058,16 +2073,97 @@ def _(mo, y, y5_pred):
 
 
 @app.cell
-def _():
-    msg = """
-    Claiming a one-parameter model is a bit tounge and cheek as parameter counts usually assumes finite-precision weights (e.g. fp32), not infinite precision. A more accurate form of measurement would be to compare the number of bytes in our one-parameter model to other models. 
-
-    a strawman. What's more interesting is comparing the number of bytes in a regular model vs our model.
-    That's why the one-parameter model is more of a thought experiment than a practical proposal. What's more interesting is comparing the size of the model vs the size of the dataset.
-
-    Critics may point out that the one-parameter model is nothing but a cheap trick. It hides its complexity in its digits rather than in its parameter count. In practice parameter counts usually assumes finite-precision weights (e.g. fp32) -- we cannot just use infinite precision as a workaround. To that skeptic, I suggest we simply measure the model's bytes.
-    """
+def _(decimal_to_binary, scaler, y, y5_pred):
+    diff(decimal_to_binary(scaler.transform(y[0, 0, 0]), 32), decimal_to_binary(scaler.transform(y5_pred[0, 0, 0]), 32))
     return
+
+
+@app.cell
+def _(decimal_to_binary, model, y5_pred):
+    y5_pred_binary = decimal_to_binary(model.scaler.transform(y5_pred[0, 0, 0]), 32)
+    y5_pred_binary
+    return (y5_pred_binary,)
+
+
+@app.cell
+def _(decimal_to_binary, model, y):
+    y_binary = decimal_to_binary(model.scaler.transform(y[0, 0, 0]), 32)
+    y_binary
+    return (y_binary,)
+
+
+@app.cell
+def _(y5_pred_binary, y_binary):
+    assert y5_pred_binary == y_binary
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""## Bytes on Bytes""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    Wait a minute, you might say. The one-parameter model is nothing but a cheap hack. It merely hides its complexity in digits rather than its parameter count. Parameter counts usually assumes finite-precision weights (e.g. fp32), not infinite precision. You are changing what it means to count parameters.
+
+    True. We need a more fundamental way to measure the size of the model: bytes. For each model, let's plot its ARC-AGI-2 public eval score of models VS the bytes of its weights.
+
+    [HRM](https://huggingface.co/sapientinc/HRM-checkpoint-ARC-2/blob/main/checkpoint) is 27M parameters, but this does not include a giant embedding lookup table with 300M parameters.
+    """
+    )
+    return
+
+
+@app.cell
+def _():
+    from huggingface_hub import snapshot_download
+
+    repo_path = snapshot_download(
+        repo_id="sapientinc/HRM-checkpoint-ARC-2"
+    )
+
+    repo_path
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""The one-parameter model sits at the top of the prato frontier. It requires ?? bytes while the next smallest model needs ?? bytes. The one-parameter model expresses the minimum number of bytes needed to overfit on this data. All the other bytes these models have are used to encode generalization. This is totally different if we plot the ARC-AGI-2 performance on the private eval set.""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    [Source](https://arcprize.org/media/data/leaderboard/evaluations.json)
+
+
+    |model | public score| private score | parameters | bytes |
+    |-----|--------------|-----|--------------|---------|
+    | ChatGPT 5.2 Poteiq | 75% ([source](https://x.com/poetiq_ai/status/2003546910427361402)) | ?| ? | ?|
+    | Gemini 3 Pro Poetiq | 60.14% ([source](https://poetiq.ai/posts/arcagi_announcement/)) | 54.0% ([source](https://arcprize.org/leaderboard))|  ? | ?|
+    | Claude Opus 4.5 (Thinking, 64k) |  37.64% | 37.6% ([source](https://arcprize.org/leaderboard)) | ? | ?|
+    | TRM | 5.0%  ([source](https://arcprize.org/media/data/leaderboard/evaluations.json)) | 6.3% ([source](https://arcprize.org/leaderboard)) | ? | ?|
+    | Deepseek R1 | 0.29% ([source](https://arcprize.org/media/data/leaderboard/evaluations.json)) | 1.3% ([source](https://arcprize.org/leaderboard)) | ? | ? |
+    | Gemini 3 Deep Think (Preview) | ? | 45.1% ([source](https://arcprize.org/leaderboard)) | ? | ?|
+    | HRM | 5.0% ([source](https://arxiv.org/pdf/2506.21734v1)) | 2.0% ([source](https://arcprize.org/leaderboard)) | ? | ? |
+    | NVARC | 27.64% ([source](https://drive.google.com/file/d/1vkEluaaJTzaZiJL69TkZovJUkPSDH5Xc/view)) | 
+    """
+    )
+    return
+
+
+app._unparsable_cell(
+    r"""
+    parameters = {'HRM': '2.25GB', 'one-parameter': }
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -2140,7 +2236,7 @@ def _(mo):
 
     Yet modern reasoning models may still be overfitting on ARC-AGI, just not in the traditional sense. Instead of training directly on the test set, reasoning models are clever enough to exploit distributional similarities between public and private splits, a meta-level form of overfitting to the benchmark's structural patterns. The ARC-AGI organizers [acknowledge](https://arcprize.org/blog/arc-prize-2025-results-analysis) this phenomenon, raising concerns about overfitting on their own benchmark.
 
-    However, the fundamental problem runs deeper. Many ARC-AGI solutions appear benchmark-specific, using synthetic data and abstractions tailored to these visual-grid puzzles. How many of these solutions have inspired downstream improvements in LLMs or other modes of intelligence? I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles and drive broader innovation the field of AI. ARC-AGI is a necessary but not sufficent condition for AGI, but I worry everyone is focusong on the wrong path.
+    However, the fundamental problem runs deeper. Many ARC-AGI solutions appear benchmark-specific, using synthetic data and abstractions tailored to these visual-grid puzzles. How many of these solutions have inspired downstream improvements in LLMs or other modes of intelligence? ARC-AGI is a necessary but not sufficent condition for AGI. I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles, driving broader innovation the field of AI.
     """
     )
     return
@@ -2152,7 +2248,7 @@ def _(mo):
         r"""
     **Closing Thoughts**
 
-    This one-parameter model is a ridiclous thought experiment taken seriously. It suggests that parameter count is an incomplete measure of capability and encourages us to look beyond benchmark-maxing. Perfect scores mean nothing without generalization. By pushing overfitting to its absurd limit, the one-parameter model forces us to rethink generalization, overfitting, and how we can actually measure real intelligence.
+    This one-parameter model is a ridiclous thought experiment taken seriously. By pushing overfitting to its absurd limit, the one-parameter model forces us to rethink generalization, overfitting, and how we can actually measure real intelligence.
     """
     )
     return

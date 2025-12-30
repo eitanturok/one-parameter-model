@@ -136,8 +136,9 @@ class OneParameterModel:
         full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
 
         # choose the fast or slow logistic decoder
-        mp.prec = self.full_precision # compute arcsin(sqrt(alpha)) with full precision
-        if fast: decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(self.alpha)), self.precision)
+        if fast:
+            mp.prec = self.full_precision # compute arcsin(sqrt(alpha)) with full precision
+            decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(self.alpha)), self.precision)
         else: decoder = functools.partial(logistic_decoder, self.alpha, self.full_precision, self.precision)
 
         # run the decoder sequentially/in parallel and then unscale+reshape y_pred
