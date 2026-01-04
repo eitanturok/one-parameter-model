@@ -21,7 +21,7 @@ def _():
 @app.cell
 def _(Path, json, mo, urlopen):
     # marimo notebooks must work with both
-    # 1) regular python files 
+    # 1) regular python files
     # 2) html-wasm in the browser
     # in python, mo.notebook_location() is the local directory containing the notebook. This is a regular path.
     # in html-wasm, mo.notebook_location() is a url, e.g. http://localhost:8000/ or https://eitanturok.github.io/one-parameter-model/
@@ -30,7 +30,7 @@ def _(Path, json, mo, urlopen):
     def fix_marimo_path(p):
         return str(mo.notebook_location() / p)
 
-    def fix_marimo_open(p): 
+    def fix_marimo_open(p):
         path = fix_marimo_path(p)
         return urlopen(path if path.startswith(('http://', 'https://', 'file://')) else str(Path(path).as_uri()))
 
@@ -42,7 +42,7 @@ def _(Path, json, mo, urlopen):
 
     def load_jsonl(p):
       with fix_marimo_open(p) as f: return [json.loads(line) for line in f.read().decode().strip().split('\n') if line.strip()]
-    return fix_marimo_path, load_json, load_jsonl
+    return fix_marimo_path, load_json
 
 
 @app.cell
@@ -123,7 +123,7 @@ def _(mo):
 
     Naturally, I wondered: how small can we go?
 
-    **So I built a one parameter model that scores 100% on ARC-AGI-2.** 
+    **So I built a one parameter model that scores 100% on ARC-AGI-2.**
 
     This is on ARC-AGI-2, the harder, newer version of ARC-AGI-1. The model is *not* a deep learning model and is quite simple:
 
@@ -214,24 +214,24 @@ def _(mo):
 
 
 @app.cell
-def _(Path, load_jsonl):
-    def local_arc_agi(path):
-        ret = {}
-        if not isinstance(path, Path): path = Path(path)
-        data_files = {'train': path / 'train.json', 'eval': path / 'eval.json'}
-        for split_name, file_path in data_files.items():
-            puzzles = []
-            for puzzle in load_jsonl(file_path):
-                puzzles.append({
-                    'id': puzzle['id'],
-                    'example_inputs': puzzle['example_inputs'],
-                    'example_outputs': puzzle['example_outputs'],
-                    'question_inputs': puzzle['question_inputs'],
-                    'question_outputs': puzzle['question_outputs']
-                })
-            ret[split_name] = puzzles
-        return ret
-    return (local_arc_agi,)
+def _():
+    # def local_arc_agi(path):
+    #     ret = {}
+    #     if not isinstance(path, Path): path = Path(path)
+    #     data_files = {'train': path / 'train.json', 'eval': path / 'eval.json'}
+    #     for split_name, file_path in data_files.items():
+    #         puzzles = []
+    #         for puzzle in load_jsonl(file_path):
+    #             puzzles.append({
+    #                 'id': puzzle['id'],
+    #                 'example_inputs': puzzle['example_inputs'],
+    #                 'example_outputs': puzzle['example_outputs'],
+    #                 'question_inputs': puzzle['question_inputs'],
+    #                 'question_outputs': puzzle['question_outputs']
+    #             })
+    #         ret[split_name] = puzzles
+    #     return ret
+    return
 
 
 @app.cell
@@ -260,7 +260,7 @@ def _(colors, np, plt):
             ax.text(j, i, txt, ha='center', va='center', color='#ffffff', fontsize=8)
 
       if title: ax.text(0, 1.02, title, transform=ax.transAxes, ha='left', va='bottom', fontsize=11, color='#000000', clip_on=False)
-      # ax.text(1+offset, 1.02, f"({len(matrix)}x{len(matrix[0])})", transform=ax.transAxes, ha='right', va='bottom', fontsize=11, color='#000000')
+
     def plot_arcagi(ds, split, i, predictions=None, size=2, w=0.9, show_nums=False, hide_question_output=False):
       puzzle = ds[split][i]
       ne, nq, n_pred = len(puzzle['example_inputs']), len(puzzle['question_inputs']), len(predictions) if predictions is not None else 0
@@ -308,14 +308,26 @@ def _(colors, np, plt):
 
 
 @app.cell
-def _(local_arc_agi):
-    ds = local_arc_agi("public/data/ARC-AGI-2")
+def _():
+    from public.src.data import load_arc_agi_2
+    return (load_arc_agi_2,)
+
+
+@app.cell
+def _(load_arc_agi_2):
+    ds = {'train': load_arc_agi_2('train'), 'eval': load_arc_agi_2('eval')}
     return (ds,)
 
 
 @app.cell
+def _():
+    # ds = local_arc_agi("public/data/ARC-AGI-2")
+    return
+
+
+@app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "train", 12, hide_question_output=True)
+    plot_arcagi(ds, 'train', 12, hide_question_output=True)
     return
 
 
@@ -824,7 +836,7 @@ def _(mo):
 
     Here our prediction $\tilde{x}_1 = 0.328125$ is slightly off from the true value $x_1 = 1/3$ due to the limits of $6$-bit precision. If we'd have more digits of precision and increase $p$, $\tilde{x}_1$ would be closer to $x_1$.
 
-    *Step 3.* To get the next number, $b_2$, apply $\mathcal{D}$ another 6 times to remove a total of $12$ bits from $\alpha$, 
+    *Step 3.* To get the next number, $b_2$, apply $\mathcal{D}$ another 6 times to remove a total of $12$ bits from $\alpha$,
 
     $$
     \begin{align*}
@@ -870,7 +882,7 @@ def _(mo):
     \end{align*}
     $$
 
-    Notice again that our prediction $\tilde{x}_2 = 0.421875$ is slightly off from the true value $x_2 = 0.431$ due to the limitations of $6$-bit precision. 
+    Notice again that our prediction $\tilde{x}_2 = 0.421875$ is slightly off from the true value $x_2 = 0.431$ due to the limitations of $6$-bit precision.
 
     Let
 
@@ -944,7 +956,7 @@ def _(mo):
 
     Given sample index $i \in \{0, ..., n-1\}$, precision $p$, and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
 
-    1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$ 
+    1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$
     2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     3. Covert to decimal $\tilde{x}_i = \text{dec}(b_i)$
     4. Return $\tilde{x}_i$
@@ -1102,7 +1114,7 @@ def _(mo):
 
     The logistic and dyadic maps create orbits that look nothing alike!
 
-    However, [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us these two maps are *actually* the same. 
+    However, [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us these two maps are *actually* the same.
 
     The logistic and dyadic maps have identical orbits, the exact same chaotic trajectories, simply expressed in different coordinates. The logistic map, for all its smooth curves and elegant form, is actually doing discrete binary operations under the hood, just like the dyadic map (and vice versa). Formally, two functions are topologically conjugate if there exists a homeomorphism, fancy talk for a change of coordinates, that perfectly takes you from one map to another. The change of coordinates here is
 
@@ -1151,7 +1163,7 @@ def _(np, plt):
 def _(mo):
     mo.md(
         r"""
-    Intuitively, the function $\phi(a_D) = \sin^2(2 \pi a_D)$ oscillates between $0$ and $1$ with a period of $1$, completing a cycle everytime $a_D$ reaches a new integer value. This behaviour mimics the modulo operation from the dyadic map $\mathcal{D}(a_D) = (2 a_D) \mod 1$ which similarly keeps outputs bounded within $[0,1)$ and repeats at each integer boundary. 
+    Intuitively, the function $\phi(a_D) = \sin^2(2 \pi a_D)$ oscillates between $0$ and $1$ with a period of $1$, completing a cycle everytime $a_D$ reaches a new integer value. This behaviour mimics the modulo operation from the dyadic map $\mathcal{D}(a_D) = (2 a_D) \mod 1$ which similarly keeps outputs bounded within $[0,1)$ and repeats at each integer boundary.
 
     We go back and forth between the dyadic and logistic spaces with these key equations
 
@@ -1206,7 +1218,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    While $\mathcal{D}$ is ugly and discontinuous, $\mathcal{L}$ is smooth and differentiable. 
+    While $\mathcal{D}$ is ugly and discontinuous, $\mathcal{L}$ is smooth and differentiable.
 
     Let's now use the  smooth and differentiable logistic map as "makeup" to hide the ugly and discontinuous dyadic operations. Recall our decoder is
 
@@ -1237,7 +1249,7 @@ def _(mo):
     5. ***Transform to logistic space: $\alpha = a_L = \phi(a_D) = \sin^2(2 \pi a_D)$***
     6. Return $\alpha$
 
-    Mathematically, the encoder is defined as 
+    Mathematically, the encoder is defined as
 
     $$
     \begin{align*}
@@ -1247,7 +1259,7 @@ def _(mo):
     \end{align*}
     $$
 
-    where $\oplus$ means concatenation. 
+    where $\oplus$ means concatenation.
 
     ///
 
@@ -1297,7 +1309,7 @@ def _(mo):
 
     but is still wrapped with those pesky $\text{dec}$ and $\text{bin}_p$ operations. However, something profound has happened here. We've taken the crude, discontinuous dyadic map and transformed it into something smooth and differentiable. The logistic map doesn't *look* like it's doing binary operations, but underneath the elegant trigonometry, it's performing exactly the same bit manipulations as its topological coungant, the dyadic map. Indeed, the makeup looks pretty great!
 
-    However, nothing is free. The cost of using the logistic map instead of the dyadic map is that our error is now $2 \pi$ times larger, 
+    However, nothing is free. The cost of using the logistic map instead of the dyadic map is that our error is now $2 \pi$ times larger,
 
     $$
     |\tilde{x}_i - x_i | \leq \frac{2 \pi}{2^{p}} = \frac{\pi}{2^{p-1}}
@@ -1379,7 +1391,7 @@ def _(mo):
         r"""
     Now comes the moment of truth. We've built up all this beautiful math about chaos theory and topological conjugacy, but can we actually code it up?
 
-    If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-2 with hundreds of puzzles and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it? 
+    If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-2 with hundreds of puzzles and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it?
 
     The answer is simple: we can use an arbitrary precision arithmetic library like [mpmath]([https://github.com/aleaxit/gmpy](https://github.com/mpmath/mpmath)) that can represent numbers with as many bits as we want. Instead of a regular Python float, we represent $\alpha$ as a mpmath float with $np$ bits of precision. We then run the decoder with mpmath operations and convert the final result back to a regular Python float. However, operations with arbitrary precision arithmetic libraries like mpmath tend to be *significantly* slower than regular floating point operations.
 
@@ -1499,7 +1511,7 @@ def _(mo):
     We compute $\alpha$ in five steps using mpmath with precision set to $np$ bits. Crucially, step 4 produces an mpmath float with the full $np$ bits of precision, which we then transform in step 5 to get our final $np$-bit parameter $\alpha$. Next, we implement the logistic decoder
 
     $$
-    \tilde{x}_i 
+    \tilde{x}_i
     =
     f_{\alpha, p}(i)
     =
@@ -1682,7 +1694,7 @@ def _(np, plot_matrix, plt):
       n_pred = len(predictions) if predictions is not None else 0
       mosaic = [[f'Q.{j+1}_out' for j in range(nq)] + [f'pred_{k}' for k in range(n_pred)]]
       fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(nq+n_pred), 2*size))
-      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} puzzle #{i} (id={puzzle["id"]})', fontsize=18, fontweight='bold', y=0.98)
+      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} puzzle #{i}', fontsize=18, fontweight='bold', y=0.98)
 
       for j in range(nq):
         plot_matrix(puzzle['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums)
@@ -1937,7 +1949,7 @@ def _(mo):
     /// details | How does adaptive precision work? Why can we use $p(i+1)+1$ bits instead of $np$ bits in the $i$th decoding step?
         type: info
 
-    Each sample is encoded in $p$ bits, so the $i$th sample occupies bits $ip$ through $ip + (p-1) = p(i+1) - 1$ of $\alpha$. The parts of $\alpha$ beyond $\alpha$ beyond $p(i+1) - 1$ bits are irrelevant in iteration $i$. 
+    Each sample is encoded in $p$ bits, so the $i$th sample occupies bits $ip$ through $ip + (p-1) = p(i+1) - 1$ of $\alpha$. The parts of $\alpha$ beyond $\alpha$ beyond $p(i+1) - 1$ bits are irrelevant in iteration $i$.
 
     By setting mpmath's precision to exaclty $p(i+1) - 1$ bits in iteration $i$, we perform computation on fewer bits, increasing the precision gradually: $p$ bits in iteration $0$, $2p$ bits in iteration $1$, and so on, up to $np$ bits in the final iteration. This reduces the total arithmetic cost from $n \cdot (np)$ bit-operations to
 
@@ -1945,7 +1957,7 @@ def _(mo):
     p(1+2+...+n) = \frac{n(n+1)}{2} p,
     $$
 
-    which is roughly 2x fewer arithmetic operations. Theoretically this is a constant factor improvement. However, in practice this yields a dramatic speedup in mpmath. 
+    which is roughly 2x fewer arithmetic operations. Theoretically this is a constant factor improvement. However, in practice this yields a dramatic speedup in mpmath.
 
     A key important caveat is that this optimization only works in dyadic space where the bit structure is explicit. In logistic space, the bit positions are scrambled, making reduced precision unusable. For this reason, we apply reduced precision only after $\phi^{-1}$ transforms the value into dyadic space. Shout out to Claude for helping me to debug this nuanced point!
 
@@ -2152,7 +2164,7 @@ def _(mo):
     | Deepseek R1 | 0.29% ([source](https://arcprize.org/media/data/leaderboard/evaluations.json)) | 1.3% ([source](https://arcprize.org/leaderboard)) | ? | ? |
     | Gemini 3 Deep Think (Preview) | ? | 45.1% ([source](https://arcprize.org/leaderboard)) | ? | ?|
     | HRM | 5.0% ([source](https://arxiv.org/pdf/2506.21734v1)) | 2.0% ([source](https://arcprize.org/leaderboard)) | ? | ? |
-    | NVARC | 27.64% ([source](https://drive.google.com/file/d/1vkEluaaJTzaZiJL69TkZovJUkPSDH5Xc/view)) | 
+    | NVARC | 27.64% ([source](https://drive.google.com/file/d/1vkEluaaJTzaZiJL69TkZovJUkPSDH5Xc/view)) |
     """
     )
     return
@@ -2191,6 +2203,8 @@ def _(mo):
     Yet this is exactly what occurs in the AI community.
 
     Top AI labs quietly train on their test sets. It is rumoured these labs have entire teams who generate synthetic dataset for the sole purpose of succeeding on a specific benchmark. I've also heard that at certain labs, your pay is based on getting a particular score on a particular benchmark. Though it is important to incentivize progress, behavior like this can create a culture of benchmark maxing.
+
+    <blockquote class="twitter-tweet"><p lang="en" dir="ltr">dude you&#39;re not supposed to train on the train set that&#39;s benchmaxxing. you gotta train on like some other stuff. but also the scores need to be super good</p>&mdash; will brown (@willccbb) <a href="https://twitter.com/willccbb/status/1993009122644836831?ref_src=twsrc%5Etfw">November 24, 2025</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     """
     )
     return
@@ -2232,7 +2246,7 @@ def _(mo):
         r"""
     **The ARC-AGI Benchmark**
 
-    ARC-AGI was intentionally designed to resist overfitting. It uses a private test set for official scoring, making training on test impossible. (Our one-parameter model only trained on the public eval set, not the private one.) 
+    ARC-AGI was intentionally designed to resist overfitting. It uses a private test set for official scoring, making training on test impossible. (Our one-parameter model only trained on the public eval set, not the private one.)
 
     Yet modern reasoning models may still be overfitting on ARC-AGI, just not in the traditional sense. Instead of training directly on the test set, reasoning models are clever enough to exploit distributional similarities between public and private splits, a meta-level form of overfitting to the benchmark's structural patterns. The ARC-AGI organizers [acknowledge](https://arcprize.org/blog/arc-prize-2025-results-analysis) this phenomenon, raising concerns about overfitting on their own benchmark.
 

@@ -25,57 +25,46 @@ def load_simple_matrix_data(): return np.arange(12).reshape(2, 3, 2), np.arange(
 
 #***** arc agi data *****
 
-def remote_arc_agi(path, split=None):
+TRAIN_PATH = 'public/data/arc-agi-2/public-train.jsonl'
+EVAL_PATH = 'public/data/arc-agi-2/public-eval.jsonl'
+
+def download_arc_agi_2(train_path, eval_path):
+    # download
     from datasets import load_dataset
-    return load_dataset(path, split=split)
+    ds = load_dataset("arc-agi-community/arc-agi-2")
 
-def local_arc_agi(path):
-    ret = {}
-    if not isinstance(path, pathlib.Path): path = pathlib.Path(path)
-    data_files = {'train': path / 'train.json', 'eval': path / 'eval.json'}
-    for split_name, file_path in data_files.items():
-        tasks = []
-        with open(file_path, 'r') as f:
-            for line in f:
-                task = json.loads(line.strip())
-                tasks.append({
-                    'id': task['id'],
-                    'example_inputs': task['example_inputs'],
-                    'example_outputs': task['example_outputs'],
-                    'question_inputs': task['question_inputs'],
-                    'question_outputs': task['question_outputs']
-                })
-        ret[split_name] = tasks
-    return ret
+    # process
+    def process(puzzle):
+        return {
+            'example_inputs': [example['input'] for example in puzzle['fewshots']],
+            'example_outputs': [example['output'] for example in puzzle['fewshots']],
+            'question_inputs': [question['input'] for question in puzzle['question']],
+            'question_outputs': [question['output'] for question in puzzle['question']],
+        }
+    ds2 = ds.map(process, remove_columns=['fewshots', 'question'])
 
-def process_arc_agi(ds):
-    # only look at public eval set
-    split = ds["eval"]
+    # save
+    ds2['train'].to_json(train_path), ds2['test'].to_json(eval_path)
+    print(f'Downloaded ARC-AGI-2 public train to {train_path}\Downloaded ARC-AGI-2 public eval to {eval_path=}')
 
-    # Take only first question input/output from each task
-    question_inputs = [task['question_inputs'][0] for task in split]
-    question_outputs = [task['question_outputs'][0] for task in split]
+def pad_arc_agi_2(puzzles):
+    # pad all answers to be 30x30, the maximum grid size
+    X = np.zeros((len(puzzles), 30, 30))
+    Y = np.zeros((len(puzzles), 30, 30))
 
-    # zero pad all inputs/outputs so they have the same dimension
-    X = np.zeros((len(question_inputs), 30, 30))
-    y = np.zeros((len(question_outputs), 30, 30))
+    for i, puzzle in enumerate(puzzles):
+        q_in, q_out = puzzle['question_inputs'][0], puzzle['question_outputs'][0] # only look at the first question
+        X[i, :len(q_in), :len(q_in[0])] = q_in
+        Y[i, :len(q_out), :len(q_out[0])] = q_out
 
-    for i, grid in enumerate(question_inputs):
-        m, n = len(grid), len(grid[0])
-        X[i, :m, :n] = grid
+    return X, Y
 
-    for i, grid in enumerate(question_outputs):
-        m, n = len(grid), len(grid[0])
-        y[i, :m, :n] = grid
-
-    return X, y
-
-def load_arc_agi(path, small):
-    ds = local_arc_agi(path) if pathlib.Path(path).exists() else remote_arc_agi(path)
-    return process_arc_agi(ds[:small] if small else ds)
-
-def load_arc_agi_1(path="eturok/ARC-AGI-1", small=False): return load_arc_agi(path, small)
-def load_arc_agi_2(path="eturok/ARC-AGI-2", small=False): return load_arc_agi(path, small)
+def load_arc_agi_2(split, pad=False, train_path=TRAIN_PATH, eval_path=EVAL_PATH):
+    path = {'train': train_path, 'eval': eval_path}[split]
+    if not pathlib.Path(path).exists(): download_arc_agi_2(train_path, eval_path)
+    with open(path, 'r') as f: puzzles = [json.loads(line) for line in f]
+    if pad: puzzles = pad_arc_agi_2(puzzles)
+    return puzzles
 
 #***** elephant data *****
 
@@ -109,6 +98,5 @@ def load_elephant_data(img_path='public/data/elephant.png', coarseness=2):
 
 DATASET = {
     'scalar': load_simple_scalar_data, 'vector': load_simple_vector_data, 'matrix': load_simple_matrix_data,
-    'arc-agi-1': load_arc_agi_1, 'arc-agi-2': load_arc_agi_2,
-    'elephant': load_elephant_data,
+    'arc-agi-2': load_arc_agi_2, 'elephant': load_elephant_data,
     }
