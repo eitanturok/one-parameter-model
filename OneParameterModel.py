@@ -1533,7 +1533,7 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "eval", 13, hide_question_output=True)
+    plot_arcagi(ds, "eval", 23, hide_question_output=True, size=2.5) # 17
     return
 
 
@@ -1545,7 +1545,7 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_question):
-    plot_question(ds, 'eval', 0, io='output', size=4)
+    plot_question(ds, 'eval', 22, io='output', size=4)
     return
 
 
