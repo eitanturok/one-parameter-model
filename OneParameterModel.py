@@ -214,27 +214,6 @@ def _(mo):
 
 
 @app.cell
-def _():
-    # def local_arc_agi(path):
-    #     ret = {}
-    #     if not isinstance(path, Path): path = Path(path)
-    #     data_files = {'train': path / 'train.json', 'eval': path / 'eval.json'}
-    #     for split_name, file_path in data_files.items():
-    #         puzzles = []
-    #         for puzzle in load_jsonl(file_path):
-    #             puzzles.append({
-    #                 'id': puzzle['id'],
-    #                 'example_inputs': puzzle['example_inputs'],
-    #                 'example_outputs': puzzle['example_outputs'],
-    #                 'question_inputs': puzzle['question_inputs'],
-    #                 'question_outputs': puzzle['question_outputs']
-    #             })
-    #         ret[split_name] = puzzles
-    #     return ret
-    return
-
-
-@app.cell
 def _(colors, np, plt):
     # modified from https://www.kaggle.com/code/allegich/arc-agi-2025-visualization-all-1000-120-puzzles
 
@@ -320,14 +299,8 @@ def _(load_arc_agi_2):
 
 
 @app.cell
-def _():
-    # ds = local_arc_agi("public/data/ARC-AGI-2")
-    return
-
-
-@app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, 'train', 12, hide_question_output=True)
+    plot_arcagi(ds, 'train', 2, hide_question_output=True)
     return
 
 
@@ -335,7 +308,7 @@ def _(ds, plot_arcagi):
 def _(mo):
     mo.md(
         r"""
-    This puzzle contains 3 example input-output pairs that demonstrate the rule. Given these 3 examples and the question input, we have to infer the hidden rule and predict the question output. Here the hidden rule is straightforward: translate the red shape in a straight line toward the blue shape until they touch (but do not overlap); do not move the blue shape.
+    This puzzle contains 3 example input-output pairs that demonstrate the rule. Given these 3 examples and the question input, we have to infer the hidden rule and predict the question output. Here the hidden rule is straightforward: take the colored lines from the input and line them up next to each other on top of the light gray square without changing their order. This is the output.
 
     Indeed, the solution is
     """
@@ -363,7 +336,7 @@ def _(plot_matrix, plt):
 
 @app.cell
 def _(ds, plot_question):
-    plot_question(ds, 'train', 12, show_nums=True)
+    plot_question(ds, 'train', 2, show_nums=True)
     return
 
 
@@ -375,19 +348,19 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "train", 10, hide_question_output=True)
+    plot_arcagi(ds, "train", 3, hide_question_output=True)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""The hidden rule is to take the three diagonal lines in the input and repeat them cyclically across all diagonals in the output, forming a repeating checkered pattern. Given the three examples and the question input, the question output is""")
+    mo.md(r"""The hidden rule is: add a red square between any two blue squares that have exactly one empty cell between them horizontally. Given the three examples and the question input, the question output is""")
     return
 
 
 @app.cell
 def _(ds, plot_question):
-    plot_question(ds, 'train', 10, show_nums=True)
+    plot_question(ds, 'train', 3, show_nums=True)
     return
 
 
@@ -1560,7 +1533,7 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "eval", 0, hide_question_output=True)
+    plot_arcagi(ds, "eval", 13, hide_question_output=True)
     return
 
 
@@ -1862,8 +1835,8 @@ def _(math):
 
 
 @app.cell
-def _(p_star):
-    n_bits_star = 900 * 400 * p_star
+def _(ds, p_star):
+    n_bits_star = 900 * len(ds['eval']) * p_star
     print(n_bits_star)
     return (n_bits_star,)
 
@@ -1897,13 +1870,13 @@ def _(mo):
 
     $$p^* = 38$$
 
-    bits per number. This means each of the $900$ numbers in our $30 \times 30$ image needs 38 bits of precision. For all $n=400$ puzzles, we need
+    bits per number. This means each of the $900$ numbers in our $30 \times 30$ image needs 38 bits of precision. For all $n=120$ eval puzzles, we need
 
     $$
-    900 \times 400 \times 38 = 13{,}680{,}000 \text{ bits} \approx 0.00171 \text{ GB}
+    900 \times 120 \times 38 = 4{,}104{,}000 \text{ bits} \approx 0.000513 \text{ GB}
     $$
 
-    In decimal notation, $\alpha$ must store approximately **4,118,000 digits**. This number is immense! Since mpmath operations are slower than regular operations, this will take hours! We need a faster approach.
+    In decimal notation, $\alpha$ must store approximately **1,235,427 digits**. This number is immense! Since mpmath operations are slower than regular operations, this will take hours! We need a faster approach.
     """
     )
     return
