@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.15.2"
+__generated_with = "0.18.4"
 app = marimo.App(width="medium")
 
 
@@ -91,15 +91,13 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # A one-parameter model that gets 100% on ARC-AGI-2
 
     By [Eitan Turok](https://eitanturok.github.io/).
 
     > **TLDR:** I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumps ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
-    """
-    )
+    """)
     return
 
 
@@ -117,8 +115,7 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     In July 2025, Sapient Intelligence released their [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734v1) (HRM) and the world went crazy. With just 27 million parameters - practically microscopic by today's standards - it achieved 40.3% on [ARC-AGI-1](https://arcprize.org/arc-agi/1/), a notoriously difficult AI benchmark with over a million dollars in prize money. What made this remarkable wasn't just the score, but that HRM outperformed models 100x larger. In October came the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871), obliterating expectations yet again. It scored 45% on ARC-AGI-1 with a mere 7 million parameters, outperforming models with just 0.01% of their parameters.
 
     Naturally, I wondered: how small can we go?
@@ -139,8 +136,7 @@ def _(mo):
     $$
 
     where $x_i$ is the $i\text{th}$ ARC-AGI-2 puzzle and $\alpha \in \mathbb{R}$ is the singe trainable parameter. ($p$ is a precision hyperparameter, more on this later.) All you need to get 100% on ARC-AGI-2 is to set $\alpha$ to
-    """
-    )
+    """)
     return
 
 
@@ -159,8 +155,7 @@ def _(load_json, mo, n_digits):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     and you'll get a perfect score on the public eval set of ARC-AGI-2! (Feel free to scroll horizontally. Only the first 10,000 digits of $\alpha$ are shown.)
 
     This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. Sounds pretty impressive, right?
@@ -172,8 +167,7 @@ def _(mo):
     Using chaos theory, topological conjuancy, and arbtirary precision arithmetic, the one-parameter model takes overfitting to the extreme. It is an absurd thought experiment taken seriously. As we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
 
     Let me show you how it works.
-    """
-    )
+    """)
     return
 
 
@@ -191,25 +185,21 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # ARC-AGI
 
     > "Intelligence is measured by the efficiency of skill-acquisition on unknown puzzles. Simply, how quickly can you learn new skills?" - [ARC-AGI creators](https://arcprize.org/arc-agi)
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Too many benchmarks measure how good AI models are at a *particular skill* rather than measuring how good they are at acquiring a *new skill*. [ARC-AGI-1](https://arcprize.org/arc-agi/1/) tries to address this by measuring how well AI models can *generalize* to unseen puzzles. More recently, [ARC-AGI-2](https://arcprize.org/arc-agi/2/) was released as a more challenging follow up to ARC-AGI-1. ARC-AGI-2 will be the focus of this blogpost.
 
     ARC-AGI-2 consists of visual grid-based reasoning puzzles, similar to an IQ-test. Each puzzle provides several example images that demonstrate an underlying rule and a test image that requires applying that rule. Each image is an `n x m` matrix (list of lists) of integers between $0$ and $9$ where $1 \leq n, m \leq 30$. To display an image, we simply choose a unique color for each integer. As an example,
-    """
-    )
+    """)
     return
 
 
@@ -306,13 +296,11 @@ def _(ds, plot_arcagi):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     This puzzle contains 3 example input-output pairs that demonstrate the rule. Given these 3 examples and the question input, we have to infer the hidden rule and predict the question output. Here the hidden rule is straightforward: take the colored lines from the input and line them up next to each other on top of the light gray square without changing their order. This is the output.
 
     Indeed, the solution is
-    """
-    )
+    """)
     return
 
 
@@ -342,7 +330,9 @@ def _(ds, plot_question):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Here is another puzzle""")
+    mo.md(r"""
+    Here is another puzzle
+    """)
     return
 
 
@@ -354,7 +344,9 @@ def _(ds, plot_arcagi):
 
 @app.cell
 def _(mo):
-    mo.md(r"""The hidden rule is: add a red square between any two blue squares that have exactly one empty cell between them horizontally. Given the three examples and the question input, the question output is""")
+    mo.md(r"""
+    The hidden rule is: add a red square between any two blue squares that have exactly one empty cell between them horizontally. Given the three examples and the question input, the question output is
+    """)
     return
 
 
@@ -366,7 +358,9 @@ def _(ds, plot_question):
 
 @app.cell
 def _(mo):
-    mo.md(r"""There are hundreds of puzzles like this in ARC-AGI-2. Solving each puzzle requires deducing new patterns and generalizing to unforeseen puzzles, something it is quite hard for the current crop of AI models.""")
+    mo.md(r"""
+    There are hundreds of puzzles like this in ARC-AGI-2. Solving each puzzle requires deducing new patterns and generalizing to unforeseen puzzles, something it is quite hard for the current crop of AI models.
+    """)
     return
 
 
@@ -384,19 +378,25 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(f"""Even the world's best models struggle on ARC-AGI-2, all scoring under $50\%$. `Gemini 3 Deep Think (Preview)` has the highest score of $45.1\%$ but costs a staggering $\$77.16$ per puzzle. `GPT-5 Pro` is much more efficient, costing $\$7.14$ per puzzle but only solving $18.3\%$ of puzzles. Many other frontier models -- Claude, Grok, and Deepseek can't even crack $20\%$. In contrast, a human panel [gets](https://arcprize.org/leaderboard) $100\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-2. It's that difficult.""")
+    mo.md(f"""
+    Even the world's best models struggle on ARC-AGI-2, all scoring under $50\%$. `Gemini 3 Deep Think (Preview)` has the highest score of $45.1\%$ but costs a staggering $\$77.16$ per puzzle. `GPT-5 Pro` is much more efficient, costing $\$7.14$ per puzzle but only solving $18.3\%$ of puzzles. Many other frontier models -- Claude, Grok, and Deepseek can't even crack $20\%$. In contrast, a human panel [gets](https://arcprize.org/leaderboard) $100\%$ of questions right. That's why there exists a $\$1,000,000$ [competition](https://arcprize.org/competitions/2025/) to open source a solution to ARC-AGI-2. It's that difficult.
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""# The HRM Drama""")
+    mo.md(r"""
+    # The HRM Drama
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""In July, HRM released a 27M parameter model inspired by the brain's "slow" and "fast" loops. It scored 40.3% on ARC-AGI-1, crushing larger models like o3-mini-high (34.5%) and Claude-3.7-8k (21.2%).""")
+    mo.md(r"""
+    In July, HRM released a 27M parameter model inspired by the brain's "slow" and "fast" loops. It scored 40.3% on ARC-AGI-1, crushing larger models like o3-mini-high (34.5%) and Claude-3.7-8k (21.2%).
+    """)
     return
 
 
@@ -414,13 +414,11 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     The results almost seemed to be too good to be true. How can a tiny 27M parameter model from a small lab be crushing some of the world's best models, at a fraction of their size?
 
     Turns out, HRM trained on the examples, not questions, of the public eval set.
-    """
-    )
+    """)
     return
 
 
@@ -439,39 +437,36 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(rf"""Does this actually count as "training on test"? The HRM authors never actually trained on the the questions used to measure model performance, just the examples associated with them. This contraversy set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)]!""")
+    mo.md(rf"""
+    Does this actually count as "training on test"? The HRM authors never actually trained on the the questions used to measure model performance, just the examples associated with them. This contraversy set AI twitter on fire [[1](https://x.com/Dorialexander/status/1951954826545238181), [2](https://github.com/sapientinc/HRM/issues/18), [3](https://github.com/sapientinc/HRM/issues/1) [4](https://github.com/sapientinc/HRM/pull/22) [5](https://x.com/b_arbaretier/status/1951701328754852020)]!
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     The ARC-AGI organizers ultimately accepted the HRM submission, indicating it is fine to train on the *examples* of the public eval set  [Twitter](https://x.com/Dorialexander/status/1951954826545238181). But buried in a GitHub thread, HRM's lead author, Guan Wang, made an offhand comment that caught my attention:
     > "If there were genuine 100% data leakage - then model should have very close to 100% performance (perfect memorization)." -   [Guan Wang](https://github.com/sapientinc/HRM/issues/1#issuecomment-3113214308)
 
     That line stuck with me. If partial leakage gets you $40.3\%$ on ARC-AGI-1, what happens with *complete* leakage? If we train on the actual eval *questions*, not just eval *examples*, can we hit $100\%$? Can we do it with even fewer parameters than HRM (27M) or TRM (7M)? And can we do it on the more challenging ARC-AGI-2 instead of ARC-AGI-1? How far can we push this?
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Chaos Theory
 
     > "Chaos is what killed the dinosaurs, darling." - J.D. in Heathers
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     My goal was simple: create the smallest possible model that gets 100% on ARC-AGI-2 by shamelessly training on the entire public eval set, both examples *and questions*. This goes beyond HRM's approach (which only trained on the examples) into more questionable territory: training on both the examples and the questions of the public eval set.
 
     Now, the obvious approach would be to build a dictionary - just map each input directly to its corresponding output. But that's boring and lookup tables aren't nice mathematical functions. They're discrete, discontinuous, and definitely not differentiable. We need something else, something more elegant and interesting. To do that, we are going to take a brief detour into the world of chaos theory.
@@ -492,8 +487,7 @@ def _(mo):
     $$
 
     It takes in any number between 0 and 1, doubles it, and throws away the whole number part, leaving just the fraction. That's it.
-    """
-    )
+    """)
     return
 
 
@@ -520,8 +514,7 @@ def _(np, plt):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     In chaos theory, we often study the orbit or trajectory of a chaotic system, the sequence generated by applying the chaotic map to itself over and over again. Starting with some number $a$, we apply our map to get $\mathcal{D}(a)$, and again to get $\mathcal{D}(\mathcal{D}(a))$, and so on and so forth. Let
 
     $$
@@ -534,8 +527,7 @@ def _(mo):
     $$
 
     mean we apply the dyadic map $k$ times to $a$. What does the orbit $(a, \mathcal{D}^1(a), \mathcal{D}^2(a), \mathcal{D}^3(a), \mathcal{D}^4(a), \mathcal{D}^5(a))$ look like?
-    """
-    )
+    """)
     return
 
 
@@ -573,8 +565,7 @@ def _(decimal_to_binary, dyadic_orbit3):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     | Initial Value ($a$) | Dyadic Orbit |
     |---------------------|-------|
     | $0.5$ | $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$ |
@@ -597,19 +588,16 @@ def _(mo):
     What is going on here?
 
     Each time we call $D(a) = (2a) \mod 1$, we double and truncate $a$. The doubling shifts every binary digit one place to the left and the truncation throws away whatever digit lands in the one's place. In other words, each application of $\mathcal{D}$ peels off the first binary digit and throws it away. **If we apply the dyadic map $k$ times, we remove the first $k$ bits of $a$.**
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # The Dyadic Map As An ML Model
     > "When I grow up, I'm going to be a real ~~boy~~ ML Model" - the Dyadic Map if it were staring in Pinacoi
-    """
-    )
+    """)
     return
 
 
@@ -662,20 +650,23 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(r"""We've discovered something remarkable: each application of $\mathcal{D}$ peels away exactly one bit. But if the dyadic map can systematically extract bits, is it possible to put information in those bits in the first place? Can we encode our dataset's bits into a number (`model.fit`) and then use the dyadic map as the core of a predictive model, extracting out the answer bit by bit (`model.predict`)? In other words, can we turn the dyadic map into an ML model?""")
+    mo.md(r"""
+    We've discovered something remarkable: each application of $\mathcal{D}$ peels away exactly one bit. But if the dyadic map can systematically extract bits, is it possible to put information in those bits in the first place? Can we encode our dataset's bits into a number (`model.fit`) and then use the dyadic map as the core of a predictive model, extracting out the answer bit by bit (`model.predict`)? In other words, can we turn the dyadic map into an ML model?
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## A Worked Example""")
+    mo.md(r"""
+    ## A Worked Example
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Suppose our dataset contains the three numbers we saw before
 
     $$
@@ -883,21 +874,21 @@ def _(mo):
     In decimal, we go from $\alpha = 0.50522994995117188$ to $\mathcal{D}^6(\alpha) = 0.33471679687500000$ and then to $\mathcal{D}^{12}(\alpha) = 0.42187500000000000$. Although this pattern looks completely random, we are shifitng bits with superb precision. This is anything but random.
 
     Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point $\tilde{\mathcal{X}}$ up to $p$ bits of precision. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access the desired information.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## The Algorithm""")
+    mo.md(r"""
+    ## The Algorithm
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     The algorithm itself is deceptively simple once you see the pattern:
 
     /// admonition | **Encoding Algorithm $g(p, \mathcal{X})$:**
@@ -955,27 +946,23 @@ def _(mo):
     because we don't encode anything after the first $p$ bits of precision.
 
     What makes this profound is the realization that we're not really "learning" anything in any conventional sense. We're encoding it directly into the bits of a real number, exploiting it's infinite precision, and then using the dyadic map to navigate through that number and extract exactly what we need, when we need it. From this perspective, the dyadic map resembles a classical ML model where the encoder $g$ acts as `model.fit()` and the decoder $f$ acts as `model.predict()`.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Applying Some Makeup
 
     > "You don’t want to overdo it with too much makeup" - Heidi Klum
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     How do we go from the ugly, discontinuous decoder function
 
     $$
@@ -1018,8 +1005,7 @@ def _(mo):
     $$
 
     One is a bit-shifting operation, the other is a smooth parabola that ecologists use to model population growth. (Note: previously $a$ was the input to the dyadic map but from now on $a_D$ will be the input to the dyadic map to differentiate it from $a_L$, the input to the logistic map.)
-    """
-    )
+    """)
     return
 
 
@@ -1075,8 +1061,7 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     What does the logistic orbit $(a_L, \mathcal{L}^1(a_L), \mathcal{L}^2(a_L), \mathcal{L}^3(a_L), \mathcal{L}^4(a_L), \mathcal{L}^5(a_L))$ look like? Similar or different to the dyadic orbit $(a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), \mathcal{D}^3(a_D), \mathcal{D}^4(a_D), \mathcal{D}^5(a_D))$?
 
     | Initial Values $a_L, a_D$ | Logistic Orbit | Dyadic Orbit |
@@ -1106,8 +1091,7 @@ def _(mo):
     \tag{8}
     \end{align*}
     $$
-    """
-    )
+    """)
     return
 
 
@@ -1134,8 +1118,7 @@ def _(np, plt):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Intuitively, the function $\phi(a_D) = \sin^2(2 \pi a_D)$ oscillates between $0$ and $1$ with a period of $1$, completing a cycle everytime $a_D$ reaches a new integer value. This behaviour mimics the modulo operation from the dyadic map $\mathcal{D}(a_D) = (2 a_D) \mod 1$ which similarly keeps outputs bounded within $[0,1)$ and repeats at each integer boundary.
 
     We go back and forth between the dyadic and logistic spaces with these key equations
@@ -1155,8 +1138,7 @@ def _(mo):
     $$
 
     To transform dyadic space into logistic space, we apply $\phi$ to the dyadic *outputs* $\mathcal{D}^k(a_D)$ and get $\mathcal{L}^k(a_L)$. To transform logistic space into dyadic space, we apply the inverse $\phi^{-1}$ to the *input* $a_L$ before applying the logistic map $\mathcal{L}$ and get $\mathcal{D}^k(a_D)$. These equations hold for all iterations $k$ , meaning $\phi$ and $\phi^{-1}$ perfectly relate *every* single point in the dyadic and logistic orbits. Think of these two orbits existing in parallel universes with $\phi$ and $\phi^{-1}$ acting as the bridges between $\mathcal{D}$ and $\mathcal{L}$.
-    """
-    )
+    """)
     return
 
 
@@ -1174,23 +1156,20 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Previously the dyadic and logistic oribits appeared totally unrelated. But let's now revist the orbits for $a_D = a_L = 0.431$.
 
     * Starting from the **dyadic orbit** $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$, applying $\phi$ to *after* each dyadic map (eq 10) yields the logistic orbit $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$.
     * Starting from the **logistic orbit** $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$, applying $\phi^{-1}$ *before* each logistic map (eq 11) yields the dyadic orbit $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$.
 
     Although both these orbits look completly unrelated, they are perfectly connected to one another through $\phi$ and $\phi^{-1}$.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     While $\mathcal{D}$ is ugly and discontinuous, $\mathcal{L}$ is smooth and differentiable.
 
     Let's now use the  smooth and differentiable logistic map as "makeup" to hide the ugly and discontinuous dyadic operations. Recall our decoder is
@@ -1262,15 +1241,13 @@ def _(mo):
     $$
 
     ///
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     The decoder here is tantalizingly close to the function I promised at the start:
 
     $$ f_{\alpha, p}(i)
@@ -1289,15 +1266,13 @@ def _(mo):
     $$
 
     We get this $2 \pi$ factor by noting that the derivative of $\phi$ is bounded by $2 \pi$ and applying the mean-value theorem. For a proof, see section 2.5 of "Real numbers, data science and chaos: How to fit any dataset with a single parameter".
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     /// details | How did we get $\mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$?
 
     We just need to perform some simple algebraic manipulation with our equations:
@@ -1347,21 +1322,21 @@ def _(mo):
     \end{align*}
     $$
     ///
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""# Code Implementation""")
+    mo.md(r"""
+    # Code Implementation
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Now comes the moment of truth. We've built up all this beautiful math about chaos theory and topological conjugacy, but can we actually code it up?
 
     If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-2 with hundreds of puzzles and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it?
@@ -1389,20 +1364,23 @@ def _(mo):
     $$
 
     This is amazing! Usually translating math into code turns beautiful theory into ugly, complicated messes. But surprisingly, leveraging mpmath has the opposite effect and actually makes our decoder even simpler. Now let's get to the code!
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Building Blocks""")
+    mo.md(r"""
+    ## Building Blocks
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""First, we need to import our arbitrary-precision math library, mpmath.""")
+    mo.md(r"""
+    First, we need to import our arbitrary-precision math library, mpmath.
+    """)
     return
 
 
@@ -1415,46 +1393,45 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""We need some functions to convert from binary to decimal and back. We cannot simply use python's `bin` function because it only converts integers to binary and we have floats in $[0, 1]$.""")
+    mo.md(r"""
+    We need some functions to convert from binary to decimal and back. We cannot simply use python's `bin` function because it only converts integers to binary and we have floats in $[0, 1]$.
+    """)
     return
 
 
 @app.cell
 def _(binary_to_decimal, decimal_to_binary, display_fxn, dyadic_map, mo):
-    mo.md(
-        rf"""
+    mo.md(rf"""
     {display_fxn(dyadic_map)}
 
     {display_fxn(decimal_to_binary)}
 
     {display_fxn(binary_to_decimal)}
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""Next we need $\phi$ and $\phi^{-1}$ to go back and forth between the dyadic and logistic spaces.""")
+    mo.md(r"""
+    Next we need $\phi$ and $\phi^{-1}$ to go back and forth between the dyadic and logistic spaces.
+    """)
     return
 
 
 @app.cell
 def _(display_fxn, mo, phi, phi_inverse):
-    mo.md(
-        rf"""
+    mo.md(rf"""
     {display_fxn(phi)}
 
     {display_fxn(phi_inverse)}
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     We can now implement the logistic encoder
 
     $$
@@ -1466,21 +1443,21 @@ def _(mo):
     $$
 
     in code
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(display_fxn, logistic_encoder, mo):
-    mo.md(rf"""{display_fxn(logistic_encoder)}""")
+    mo.md(rf"""
+    {display_fxn(logistic_encoder)}
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     We compute $\alpha$ in five steps using mpmath with precision set to $np$ bits. Crucially, step 4 produces an mpmath float with the full $np$ bits of precision, which we then transform in step 5 to get our final $np$-bit parameter $\alpha$. Next, we implement the logistic decoder
 
     $$
@@ -1492,33 +1469,37 @@ def _(mo):
         2^{x p} \arcsin^2(\sqrt{\alpha})
     \Big)
     $$
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(display_fxn, logistic_decoder, mo):
-    mo.md(rf"""{display_fxn(logistic_decoder)}""")
+    mo.md(rf"""
+    {display_fxn(logistic_decoder)}
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""Again, we set the mpmath precision to $np$ bits and implement the decoder in a single line using mpmath's arbitrary-precision functions `Sin`, `Arcsin`, and `Sqrt`. That's it. Our entire encoder and decoder, the heart of our one-parameter model, is just a handful of lines and a bit of beautiful mathematics.""")
+    mo.md(r"""
+    Again, we set the mpmath precision to $np$ bits and implement the decoder in a single line using mpmath's arbitrary-precision functions `Sin`, `Arcsin`, and `Sqrt`. That's it. Our entire encoder and decoder, the heart of our one-parameter model, is just a handful of lines and a bit of beautiful mathematics.
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Basic Implementation""")
+    mo.md(r"""
+    ## Basic Implementation
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     To actually run `logistic_encoder` and `logistic_decoder` on ARC-AGI-2, we need three adjustments:
 
     1. **Adjustment 1: Supervised learning.** ARC-AGI-2 is a supervised problem with input-output pairs $(X,Y)$, but our encoder only handles unsupervised data $(X)$. Solution: ignore the input $X$ and only encode the outputs $Y$ since those are what we need to memorize.
@@ -1526,8 +1507,7 @@ def _(mo):
     3. **Adjustment 3: Data scaling.** ARC-AGI-2 uses integers $0-9$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding.
 
     Now we can create a one-parameter model for the first ARC-AGI-2 puzzle in the public eval set. We ignore $X$ which contains the 4 examples and the question input
-    """
-    )
+    """)
     return
 
 
@@ -1539,7 +1519,9 @@ def _(ds, plot_arcagi):
 
 @app.cell
 def _(mo):
-    mo.md(r"""and focus on the question output $Y$""")
+    mo.md(r"""
+    and focus on the question output $Y$
+    """)
     return
 
 
@@ -1551,7 +1533,9 @@ def _(ds, plot_question):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Let's run `logistic_encoder` to encode $Y$ into $\alpha$ using precision $p=7$""")
+    mo.md(r"""
+    Let's run `logistic_encoder` to encode $Y$ into $\alpha$ using precision $p=7$
+    """)
     return
 
 
@@ -1609,7 +1593,9 @@ def _(MinMaxScaler, ds, logistic_encoder, mo, process_arc_agi):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Alpha contains $1895$ digits ($6300$ bits). (Feel free to scroll horizontally.)""")
+    mo.md(r"""
+    Alpha contains $1895$ digits ($6300$ bits). (Feel free to scroll horizontally.)
+    """)
     return
 
 
@@ -1622,19 +1608,19 @@ def _(alpha, display_alpha, p):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     This is our one-parameter model in its full glory! This scalar $\alpha$ is all we need is to correctly predict the question output of this puzzle!
 
     Let's run `logistic_decoder` to recover $Y$ from $\alpha$.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(decode, display_fxn, mo):
-    mo.md(rf"""{display_fxn(decode)}""")
+    mo.md(rf"""
+    {display_fxn(decode)}
+    """)
     return
 
 
@@ -1655,7 +1641,9 @@ def _(alpha, decode, full_precision, mo, p, scaler, y1_scaled):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Here are the results:""")
+    mo.md(r"""
+    Here are the results:
+    """)
     return
 
 
@@ -1703,8 +1691,7 @@ def _(alpha_str, ds, p, plot_prediction, y1_pred):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     The left column shows the correct answers, and the right column shows what our model predicted. Remember, the colors are just for display purposes, the model only sees the numerical values. We use different colors to show how big each mistake is: bigger mistakes have bigger color differences.
 
     Look at the first row. The left element should be 7 and we predicted 6.69. The middle element should be 7, and we predicted 6.72. The right element should be 9, and we predicted 8.98. Throughout the whole grid, our predictions are close to the correct values, usually off by just a small decimal.
@@ -1714,8 +1701,7 @@ def _(mo):
     These small errors happen because of our precision setting $p$. Remember, the encoder saves each number using only $p$ bits and throws away everything else. This cuttoff creates quantization errors up to $\frac{\pi R}{2^{p-1}} = 0.44$ ($p=7$ is the precision and $R=9$ is the range of the MinMaxScaler). All our errors are indeed less than $0.44$. There's nothing broken—this is just what happens when you use limited precision.
 
     But we can make the errors smaller by using higher precision. Or make the error larger by using lower precision. Let's train a one-parameter model with $p=4$ and another one $p=14$. This gives us
-    """
-    )
+    """)
     return
 
 
@@ -1763,7 +1749,9 @@ def _(alpha2_str, display_alpha, p2):
 
 @app.cell
 def _(mo):
-    mo.md(r"""We can visually compare these predictions:""")
+    mo.md(r"""
+    We can visually compare these predictions:
+    """)
     return
 
 
@@ -1787,14 +1775,15 @@ def _(
 
 @app.cell
 def _(mo):
-    mo.md(r"""With $p=14$ every prediction is exactly right (to two decimal places). But there's a tradeoff: we need more storage. The number $\alpha$ grows from 1,895 digits to 3,792 digits. The higher we set $p$, the more accurate our encoding becomes, but the more storage space it requires. On the flip side, with $p=5$, we only need 1,353 digits. But our predictions get much worse. For example, when the correct value is $1$, we predict $0.43$ or $0.34$, which is a closer to $0$ than it is to $1$. It is quite cool to see this tradeoff and show that the one-parameter model actually works!""")
+    mo.md(r"""
+    With $p=14$ every prediction is exactly right (to two decimal places). But there's a tradeoff: we need more storage. The number $\alpha$ grows from 1,895 digits to 3,792 digits. The higher we set $p$, the more accurate our encoding becomes, but the more storage space it requires. On the flip side, with $p=5$, we only need 1,353 digits. But our predictions get much worse. For example, when the correct value is $1$, we predict $0.43$ or $0.34$, which is a closer to $0$ than it is to $1$. It is quite cool to see this tradeoff and show that the one-parameter model actually works!
+    """)
     return
 
 
 @app.cell
 def _(mo, y, y2_pred):
-    mo.md(
-        rf"""
+    mo.md(rf"""
     Looking closer at our $p=14$ predictions, they're not perfectly accurate—they only match the ground truth to about 2 decimal places (assuming rounding):
 
     ```py
@@ -1806,8 +1795,7 @@ def _(mo, y, y2_pred):
     ```
 
     In binary,
-    """
-    )
+    """)
     return
 
 
@@ -1850,8 +1838,7 @@ def _(math, n_bits_star):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     This raises the question: what precision $p$ do we actually need to be accurate up to 32 bits? (Our `np.ndarray`'s use 32-bit precision.)
 
     Recall the error bound for the one-parameter model is
@@ -1877,21 +1864,21 @@ def _(mo):
     $$
 
     In decimal notation, $\alpha$ must store approximately **1,235,427 digits**. This number is immense! Since mpmath operations are slower than regular operations, this will take hours! We need a faster approach.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Faster Implementation""")
+    mo.md(r"""
+    ## Faster Implementation
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Looking at our decoder
 
     ```py
@@ -1910,15 +1897,13 @@ def _(mo):
     1. **Parallelization:** Because each number is decoded independently, we can decode all number in parallel with `multiprocessing.Pool`. This speeds up the for loop over the indices `range(len(y_scaled))`.
     2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it every time we call `logistic_decoder`. This eliminates repeated expensive trigonmetric and square root operations on huge $np$-bit numbers like $\alpha$.
     3. **Adaptive precision:** We currently use all $np$ bits of $\alpha$ every time we decode as we set `mp.prec = full_precision`. However, in the $i$th step, we only need the first $p(i+1)+1$ bits of $\alpha$. Working with fewer bits drastically reduces the computation needed at each step.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     /// details | How does adaptive precision work? Why can we use $p(i+1)+1$ bits instead of $np$ bits in the $i$th decoding step?
         type: info
 
@@ -1937,64 +1922,69 @@ def _(mo):
     Finally, to improve numerical stability, we set mpmath's precision to $p(i+1)+1$ bits -- two bits higher than the normal $p(i+1)-1$. These two extra bits are not for extracting additional information from $\alpha$. Instead, they act as a numerical buffer that helps preserves the accuracy of mpmath’s arithmetic. Emperically, we need this otherwise mpmath does not work properly. I'm not sure why...
 
     ///
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""It is simple to implement these three speedups in our decoder.""")
+    mo.md(r"""
+    It is simple to implement these three speedups in our decoder.
+    """)
     return
 
 
 @app.cell
 def _(display_fxn, logistic_decoder_fast, mo):
-    mo.md(rf"""{display_fxn(logistic_decoder_fast)}""")
+    mo.md(rf"""
+    {display_fxn(logistic_decoder_fast)}
+    """)
     return
 
 
 @app.cell
 def _(display_fxn, fast_decode, mo):
-    mo.md(rf"""{display_fxn(fast_decode)}""")
+    mo.md(rf"""
+    {display_fxn(fast_decode)}
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""These three optimizations give a $10\times$+ speedup on my Mac M1 Pro. Because of adaptive precision, the fast decoder may produce slightly different values beyond the first $p$ bits compared to the regular decoder. However, the fast decoder is still guaranteed to  stay within the theoretical error tolerance. We now have a decoder that is fast enough we can encode the entire ARC-AGI-2 dataset.""")
+    mo.md(r"""
+    These three optimizations give a $10\times$+ speedup on my Mac M1 Pro. Because of adaptive precision, the fast decoder may produce slightly different values beyond the first $p$ bits compared to the regular decoder. However, the fast decoder is still guaranteed to  stay within the theoretical error tolerance. We now have a decoder that is fast enough we can encode the entire ARC-AGI-2 dataset.
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     We are now ready to create the final implementation of the one-parameter model. The code is quite simple and looks like a standard scikit-learn ML model:
 
     * `model.fit` runs the encoder. It also scales and reshapes the data.
     * `model.predict` runs the (fast) decoder. It runs the decoder in parallel and reverses the data scaling and reshaping.
     * `model.verfiy` checks that the outputted predictions are within the theoretical error bounds we derived.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(OneParameterModel, display_fxn, mo):
-    mo.md(rf"""{display_fxn(OneParameterModel)}""")
+    mo.md(rf"""
+    {display_fxn(OneParameterModel)}
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     `OneParameterModel` itself is ~50 lines of code and the math functions it uses are probably another ~50 lines of code. Only around 100 lines to get a perfect score on ARC-AGI-2!
 
     Let's train the one-parameter model on all 400 puzzles of ARC-AGI-2.
-    """
-    )
+    """)
     return
 
 
@@ -2019,7 +2009,9 @@ def _(alpha5_str, display_alpha, p5):
 
 @app.cell
 def _(mo):
-    mo.md(r"""This is our perfect one-parameter model! Let's take another look at our prediction for the first puzzle of the public eval dataset.""")
+    mo.md(r"""
+    This is our perfect one-parameter model! Let's take another look at our prediction for the first puzzle of the public eval dataset.
+    """)
     return
 
 
@@ -2041,8 +2033,7 @@ def _(alpha5_str, ds, idx, p5, plot_prediction, y5_pred):
 
 @app.cell
 def _(mo, y, y5_pred):
-    mo.md(
-        rf"""
+    mo.md(rf"""
     With $p=38$ our predictions perfectly match the ground truth for all 32 bits.
 
     ```py
@@ -2052,8 +2043,7 @@ def _(mo, y, y5_pred):
     ```py
     {y[0, 0, 0]=}
     ```
-    """
-    )
+    """)
     return
 
 
@@ -2085,21 +2075,21 @@ def _(y5_pred_binary, y_binary):
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Bytes on Bytes""")
+    mo.md(r"""
+    ## Bytes on Bytes
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Wait a minute, you might say. The one-parameter model is nothing but a cheap hack. It merely hides its complexity in digits rather than its parameter count. Parameter counts usually assumes finite-precision weights (e.g. fp32), not infinite precision. You are changing what it means to count parameters.
 
     True. We need a more fundamental way to measure the size of the model: bytes. For each model, let's plot its ARC-AGI-2 public eval score of models VS the bytes of its weights.
 
     [HRM](https://huggingface.co/sapientinc/HRM-checkpoint-ARC-2/blob/main/checkpoint) is 27M parameters, but this does not include a giant embedding lookup table with 300M parameters.
-    """
-    )
+    """)
     return
 
 
@@ -2117,14 +2107,15 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(r"""The one-parameter model sits at the top of the prato frontier. It requires ?? bytes while the next smallest model needs ?? bytes. The one-parameter model expresses the minimum number of bytes needed to overfit on this data. All the other bytes these models have are used to encode generalization. This is totally different if we plot the ARC-AGI-2 performance on the private eval set.""")
+    mo.md(r"""
+    The one-parameter model sits at the top of the prato frontier. It requires ?? bytes while the next smallest model needs ?? bytes. The one-parameter model expresses the minimum number of bytes needed to overfit on this data. All the other bytes these models have are used to encode generalization. This is totally different if we plot the ARC-AGI-2 performance on the private eval set.
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     [Source](https://arcprize.org/media/data/leaderboard/evaluations.json)
 
 
@@ -2138,8 +2129,7 @@ def _(mo):
     | Gemini 3 Deep Think (Preview) | ? | 45.1% ([source](https://arcprize.org/leaderboard)) | ? | ?|
     | HRM | 5.0% ([source](https://arxiv.org/pdf/2506.21734v1)) | 2.0% ([source](https://arcprize.org/leaderboard)) | ? | ? |
     | NVARC | 27.64% ([source](https://drive.google.com/file/d/1vkEluaaJTzaZiJL69TkZovJUkPSDH5Xc/view)) |
-    """
-    )
+    """)
     return
 
 
@@ -2153,20 +2143,37 @@ app._unparsable_cell(
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-    # Conclusion
+    mo.md(r"""
+    https://arxiv.org/pdf/2505.24832
 
-    > "When a measure becomes a target, it ceases to be a good measure" - Charles Goodhart
-    """
-    )
+    > We propose a new method for estimating how much a model “knows” about a datapoint and use it
+    to measure the capacity of modern language models. We formally separate memorization into two
+    components: unintended memorization, the information a model contains about a specific dataset,
+    and generalization, the information a model contains about the true data-generation process. By
+    eliminating generalization, we can compute the total memorization of a given model, which provides
+    an estimate of model capacity: our measurements estimate that models in the GPT family have an
+    approximate capacity of 3.6 bits-per-parameter. We train language models on datasets of increasing
+    size and observe that models memorize until their capacity fills, at which point “grokking” begins, and
+    unintended memorization decreases as models begin to generalize. We train hundreds of transformer
+    language models ranging from 500K to 1.5B parameters and produce a series of scaling laws relating
+    model capacity and data size to membership inference.
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
+    # Conclusion
+
+    > "When a measure becomes a target, it ceases to be a good measure" - Charles Goodhart
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
     **Training on test.**
 
     The one-parameter model takes the idea of "training on test" to the extreme: it encodes the question outputs of the entire public eval set directly into $\alpha$, achieving 100% accuracy while learning nothing. Simply shuffling the dataset will cause this model to break down as the decoder depends on the index $i$, not the sample $x_i$. It should be abundantly clear that the one-parameter model has no ability to generalize whatsoever. It would get a 0% on the private, heldout eval set of ARCI-AGI-2.
@@ -2178,29 +2185,25 @@ def _(mo):
     Top AI labs quietly train on their test sets. It is rumoured these labs have entire teams who generate synthetic dataset for the sole purpose of succeeding on a specific benchmark. I've also heard that at certain labs, your pay is based on getting a particular score on a particular benchmark. Though it is important to incentivize progress, behavior like this can create a culture of benchmark maxing.
 
     <blockquote class="twitter-tweet"><p lang="en" dir="ltr">dude you&#39;re not supposed to train on the train set that&#39;s benchmaxxing. you gotta train on like some other stuff. but also the scores need to be super good</p>&mdash; will brown (@willccbb) <a href="https://twitter.com/willccbb/status/1993009122644836831?ref_src=twsrc%5Etfw">November 24, 2025</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     **Intelligence is not parameter count.**
 
     The existence of a simple equation with such powerful expressivity deomonstrates that model complexity cannot be determined by counting parameters alone. The one-parameter model exploits a often-overlooked fact: a single real-valued parameter can encode an unbounded amount of information by hiding complexity in its digits rather than in parameter count. Larger models should not be assumed to be strictly smarter. Instead, what parameter count actually measures is computational cost, not intelligence. FLOPs scale with parameters and precision, making parameter count a useful proxy for the limiting resources in ML: compute and memory.
 
     Of course we would never train a model by shoving all the information into one parameter. In practice, parameter counts usually assumes finite-precision weights (e.g. fp32), not infinite precision. That's why the one-parameter model is more of a thought experiment than a practical proposal.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     **Intelligence is compression.**
 
     To compress data, you must find regularities in it and finding regularities fundamentally requires intelligent pattern matching. If [intelligence is compression]((https://en.wikipedia.org/wiki/Hutter_Prize)), then our one-parameter model has all the intelligence of a phonebook. It achieves zero compression and is just a nice lookup table. It cannot discover patterns or extract structure. The one-parameter model simply stores the raw data and uses the precision $p$ as a tunable recovery knob.
@@ -2208,15 +2211,13 @@ def _(mo):
     Real compression requires understanding. If you want to measure the complexity and expressivity of machine learning models, measure their compression. Use minimum description length or Kolmogorov complexity. These techniques capture whether a model has actually learned the underlying patterns. They cut through the illusion of parameter counts and reveal what the model truly understands.
 
     Prof. Albert Gu's paper [ARC-AGI without pretraining](https://iliao2345.github.io/blog_posts/arc_agi_without_pretraining/arc_agi_without_pretraining.html) actually does this right. They used a general-purpose compression algorithm to solve ARC-AGI without training on the test set. Our one-parameter model is a degenerate version of the same idea.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     **The ARC-AGI Benchmark**
 
     ARC-AGI was intentionally designed to resist overfitting. It uses a private test set for official scoring, making training on test impossible. (Our one-parameter model only trained on the public eval set, not the private one.)
@@ -2224,27 +2225,23 @@ def _(mo):
     Yet modern reasoning models may still be overfitting on ARC-AGI, just not in the traditional sense. Instead of training directly on the test set, reasoning models are clever enough to exploit distributional similarities between public and private splits, a meta-level form of overfitting to the benchmark's structural patterns. The ARC-AGI organizers [acknowledge](https://arcprize.org/blog/arc-prize-2025-results-analysis) this phenomenon, raising concerns about overfitting on their own benchmark.
 
     However, the fundamental problem runs deeper. Many ARC-AGI solutions appear benchmark-specific, using synthetic data and abstractions tailored to these visual-grid puzzles. How many of these solutions have inspired downstream improvements in LLMs or other modes of intelligence? ARC-AGI is a necessary but not sufficent condition for AGI. I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles, driving broader innovation the field of AI.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     **Closing Thoughts**
 
     This one-parameter model is a ridiclous thought experiment taken seriously. By pushing overfitting to its absurd limit, the one-parameter model forces us to rethink generalization, overfitting, and how we can actually measure real intelligence.
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ---
 
     All the code for my experiments can be found here: [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).
@@ -2263,26 +2260,31 @@ def _(mo):
     	url = {https://eitanturok.github.io/one-parameter-model/},
     }
     ```
-    """
-    )
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""# Appendeix""")
+    mo.md(r"""
+    # Appendeix
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Appendix A: Other Uses of the One-Parameter Model""")
+    mo.md(r"""
+    ## Appendix A: Other Uses of the One-Parameter Model
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""The one-parameter model can be applied to all sorts of datasets beyond ARC-AGI-2. For instance, we can encode animal shapes with different values of $\alpha$""")
+    mo.md(r"""
+    The one-parameter model can be applied to all sorts of datasets beyond ARC-AGI-2. For instance, we can encode animal shapes with different values of $\alpha$
+    """)
     return
 
 
@@ -2300,14 +2302,12 @@ def _(fix_marimo_path, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     We can find an $\alpha$ that perfectly predicts the fluctuations of the S&P 500 for ~6 months with
     ```py
     alpha = 0.9186525008673170697061215177743819472103574383504939864690954692792184358812098296063847317394708021665491910117472119056871470143410398692872752461892785029829514157709738923288994766865216570536672099485574178884250989741343121
     ```
-    """
-    )
+    """)
     return
 
 
@@ -2325,7 +2325,9 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""And we can even find values of $\alpha$ that generate parts of the famous [CIFAR-10](https://en.wikipedia.org/wiki/CIFAR-10) dataset""")
+    mo.md(r"""
+    And we can even find values of $\alpha$ that generate parts of the famous [CIFAR-10](https://en.wikipedia.org/wiki/CIFAR-10) dataset
+    """)
     return
 
 
@@ -2343,27 +2345,29 @@ def _(fix_marimo_path, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""Indeed, the one parameter model is incredibly versatile, able to train on all sorts of test sets.""")
+    mo.md(r"""
+    Indeed, the one parameter model is incredibly versatile, able to train on all sorts of test sets.
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Appendix B: Some Technical Critiques""")
+    mo.md(r"""
+    ## Appendix B: Some Technical Critiques
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Two quick technical notes to the critics.
 
     **For the complexity theorists**, yes, this is cheating. We've violated the fundamental assumption of bounded-precision arithmetic. Most complexity problems assume we operate on a machine with an $\omega$-bit word-size. However, my one-parameter model assumes we can operate on a machine with infinite bit word-size.
 
     **For the deep learning theorists**, of course our one-parameter model can memorize any dataset. Our decoder contains $\sin$ which has an [infinite VC dimension](https://cseweb.ucsd.edu/classes/fa12/cse291-b/vcnotes.pdf), i.e. an unbounded hypothesis class, and is therefore infinitely expressive. It can learn anything. What is interesting about the one-parameter model is that it offers a tangible construction, not merely a claim of existence, for learning any dataset.
-    """
-    )
+    """)
     return
 
 
