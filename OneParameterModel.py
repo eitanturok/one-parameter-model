@@ -2029,13 +2029,13 @@ def _(mo):
 
 @app.cell
 def _():
-    from huggingface_hub import snapshot_download
+    # from huggingface_hub import snapshot_download
 
-    repo_path = snapshot_download(
-        repo_id="sapientinc/HRM-checkpoint-ARC-2"
-    )
+    # repo_path = snapshot_download(
+    #     repo_id="sapientinc/HRM-checkpoint-ARC-2"
+    # )
 
-    repo_path
+    # repo_path
     return
 
 
@@ -2090,7 +2090,7 @@ def _(Path, json, pd):
                 "params": 1_000_000_000_000,
             },
             "grok-4": {"pattern": r"^grok-4", "params": 1_000_000_000_000},
-            "o4-mini": {"pattern": r"^o4-mini", "params": 1_000_000_000_000},
+            # "o4-mini": {"pattern": r"^o4-mini", "params": 1_000_000_000_000},
             "qwen3-235b": {"pattern": r"^qwen3-235b", "params": 235_000_000_000},
             "R1": {"pattern": r"^R1", "params": 671_000_000_000},
             "ARChitects": {"pattern": r"^ARChitects$", "params": 8_000_000_000},
@@ -2161,12 +2161,18 @@ def _(np, plt):
                               np.ceil(np.log10(df['weight bytes'].max())) + 1)
         ax.set_xticks(ticks)
         ax.set_xticklabels([fmt(t) for t in ticks])
-        ax.set(title=f"{score_key} Model Efficiency: Performance vs Size", xlabel="Model Size in Bytes (Log)", ylabel=f"ARC-AGI-2 {score_key}")
+        ax.set(title=f"{score_key.title()} Model Efficiency: Performance vs Size", xlabel="Model Size in Bytes (Log)", ylabel=f"ARC-AGI-2 {score_key.title()}")
         ax.grid(True, which="both", alpha=0.1)
     
         plt.tight_layout()
         return fig
     return (plot_efficiency,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""We assume each of the frontier models has a billion parameters (GPT-5.2, Gemini-3-Flash, Claude-Opus-4.5, Grok-4) and conservatively assume all models have fp16 weights.""")
+    return
 
 
 @app.cell
