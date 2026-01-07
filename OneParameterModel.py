@@ -2017,9 +2017,9 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Wait a minute, you might say. The one-parameter model is nothing but a cheap hack. It merely hides its complexity in digits rather than its parameter count. Parameter counts usually assumes finite-precision weights (e.g. fp32), not infinite precision. You are changing what it means to count parameters.
+    By default parameter count assumes finite precision weights, (e.g. fp16), not infinite precision. Subtly violating this assumption, the one-parameter model merely hides its complexity in precision rather than its parameter count. Insted of millions of parameters, it has millions of bits of precision/digits.
 
-    True. We need a more fundamental way to measure the size of the model: bytes. For each model, let's plot its ARC-AGI-2 public eval score of models VS the bytes of its weights.
+    We need a more fundamental way to measure the size of the model: bytes. For each model, let's plot its ARC-AGI-2 public eval score of models VS the bytes of its weights.
 
     [HRM](https://huggingface.co/sapientinc/HRM-checkpoint-ARC-2/blob/main/checkpoint) is 27M parameters, but this does not include a giant embedding lookup table with 300M parameters.
     """
@@ -2049,6 +2049,7 @@ def _(mo):
 def _(Path, json, pd):
     import requests
 
+
     def load_arc_evals(path="public/data/arc-agi-evaluations.json"):
         path = Path(path)
 
@@ -2062,75 +2063,122 @@ def _(Path, json, pd):
 
         df = (
             df.pivot_table(
-                index=["modelId", "version"],
-                columns="eval",
-                values="score"
+                index=["modelId", "version"], columns="eval", values="score"
             )
             .reset_index()
-            .rename(columns={
-                "modelId": "model",
-                "Public": "public eval score",
-                "Semi_Private": "semi-private eval score",
-                "Private": "private eval score",
-            })
+            .rename(
+                columns={
+                    "modelId": "model",
+                    "Public": "public eval score",
+                    "Semi_Private": "semi-private eval score",
+                }
+            )
         )
 
-        # percentages
-        eval_cols = ["public eval score", "semi-private eval score", "private eval score"]
-        df[eval_cols] *= 100
-
-        # ARC-AGI-2 only + require public & semi-private
-        df = df[df["version"] == "v2"].dropna(
-            subset=["public eval score", "semi-private eval score"]
+        df[["public eval score", "semi-private eval score"]] *= 100
+        df = (
+            df[df["version"] == "v2"]
+            .dropna(subset=["public eval score", "semi-private eval score"])
+            .drop(columns=["Private", "version"])
         )
 
-        # model family matching
-        families = {
-            "gpt-5": r"^gpt-5",
-            "gemini-3": r"^gemini-3",
-            "gemini-2-5": r"^gemini-2-5",
-            "claude-4-5": r"claude-.*-4-5",
-            "grok-4": r"^grok-4",
-            "o4-mini": r"^o4-mini",
-            "trm": r"^trm",
-            "ARChitects": r"^ARChitects$",
-            "qwen3-235b-a22b-instruct-2507": r"^qwen3-235b-a22b-instruct-2507$",
-            "R1": r"^R1",
-            "hrm": r"^hrm",
+        models = {
+            "gpt-5": {"pattern": r"^gpt-5", "params": 1_000_000_000_000},
+            "gemini-3": {"pattern": r"^gemini-3", "params": 1_000_000_000_000},
+            "claude-4-5": {
+                "pattern": r"claude-.*-4-5",
+                "params": 1_000_000_000_000,
+            },
+            "grok-4": {"pattern": r"^grok-4", "params": 1_000_000_000_000},
+            "o4-mini": {"pattern": r"^o4-mini", "params": 1_000_000_000_000},
+            "qwen3-235b": {"pattern": r"^qwen3-235b", "params": 235_000_000_000},
+            "R1": {"pattern": r"^R1", "params": 671_000_000_000},
+            "ARChitects": {"pattern": r"^ARChitects$", "params": 8_000_000_000},
+            "trm": {"pattern": r"^trm", "params": 7_000_000},
+            "hrm": {"pattern": r"^hrm", "params": 27_000_000},
         }
 
         rows = []
-        for name, pattern in families.items():
-            sub = df[df["model"].str.contains(pattern, regex=True)]
-            if not sub.empty:
-                rows.append(sub.loc[sub["public eval score"].idxmax()])
+        for m in models.values():
+            sub = df[df["model"].str.contains(m["pattern"], regex=True)]
+            if sub.empty:
+                continue
+            best = sub.loc[sub["public eval score"].idxmax()].copy()
+            best["# of parameters"] = m["params"]
+            best["weight dtype"] = "fp16"
+            best["weight bytes"] = m["params"] * 2
+            rows.append(best)
 
-        return pd.DataFrame(rows).reset_index(drop=True)
+        df = pd.DataFrame(rows)
 
+        # add one-parameter model row
+        df.loc[len(df)] = {
+            "model": "one-parameter model",
+            "public eval score": 100.0,
+            "semi-private eval score": 0.0,
+            "# of parameters": 1,
+            "weight dtype": "arbitrary",
+            "weight bytes": 4_000_000,
+        }
+
+        # sort by weight bytes and reset index
+        df = df.sort_values('weight bytes')
+        df = df.reset_index(drop=True)
+        return df
     return (load_arc_evals,)
-
-
-app._unparsable_cell(
-    r"""
-    gpt-5, gemini-3, gemini-2-5, claude-4-5, grok-4, o4-mini, trm, ARChitects, qwen3-235b-a22b-instruct-2507, R1, hrm
-    """,
-    name="_"
-)
 
 
 @app.cell
 def _(load_arc_evals):
     df = load_arc_evals()
     df
+    return (df,)
+
+
+@app.cell
+def _(np, plt):
+    def plot_efficiency(df, score_key):
+        # Byte formatter
+        def fmt(b):
+            for u in ['B','KB','MB','GB','TB']:
+                if b < 1024: return f"{b:.1f}{u}"
+                b /= 1024
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+    
+        # Plot points with distinct colors
+        colors = plt.cm.tab20(np.linspace(0, 1, len(df)))
+        ax.scatter(df['weight bytes'], df[score_key], c=colors, s=300, alpha=0.8)
+        ax.set_xscale('log')
+
+        # Add model labels
+        for _, r in df.iterrows():
+            ha = 'left' if r['model'] == 'one-parameter model' else 'right'
+            ax.annotate(f" {r['model']}", (r['weight bytes'], r[score_key]), fontsize=10, va='center', ha=ha)
+
+        # Formatting
+        ticks = 10**np.arange(np.floor(np.log10(df['weight bytes'].min())), 
+                              np.ceil(np.log10(df['weight bytes'].max())) + 1)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels([fmt(t) for t in ticks])
+        ax.set(title=f"{score_key} Model Efficiency: Performance vs Size", xlabel="Model Size in Bytes (Log)", ylabel=f"ARC-AGI-2 {score_key}")
+        ax.grid(True, which="both", alpha=0.1)
+    
+        plt.tight_layout()
+        return fig
+    return (plot_efficiency,)
+
+
+@app.cell
+def _(df, plot_efficiency):
+    plot_efficiency(df, 'public eval score')
     return
 
 
-app._unparsable_cell(
-    r"""
-    parameters = {'HRM': '2.25GB', 'one-parameter': }
-    """,
-    name="_"
-)
+@app.cell
+def _(df, plot_efficiency):
+    plot_efficiency(df, 'semi-private eval score')
+    return
 
 
 @app.cell
