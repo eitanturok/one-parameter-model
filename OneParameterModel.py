@@ -1478,7 +1478,7 @@ def _(mo):
     2. **Adjustment 2: Shape handling.** Our encoder expects scalars, not matrices. Solution: flatten matrices to lists for encoding and reshape back for decoding. For an `m x n` puzzle, we decode `mn` individual elements, running the decoder `mn` times per puzzle, not once.
     3. **Adjustment 3: Data scaling.** ARC-AGI-2 uses integers $0-9$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding.
 
-    Now we can create a one-parameter model for the first ARC-AGI-2 puzzle in the public eval set. We ignore $X$ which contains the 4 examples and the question input
+    Now we can create a one-parameter model for an ARC-AGI-2 puzzle from the public eval set, not the train set. We ignore $X$ which contains the 3 examples and the question input
     """
     )
     return
@@ -1486,7 +1486,7 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "eval", 23, hide_question_output=True, size=2.5) # 17
+    plot_arcagi(ds, "eval", 22, hide_question_output=True, size=2.5) # 17, 23
     return
 
 
@@ -1512,7 +1512,7 @@ def _(mo):
 def _(MinMaxScaler, ds, logistic_encoder, mo, pad_arc_agi_2):
     # Adjustment 1: process the question output Y, not the quesiton input X
     X, y = pad_arc_agi_2(ds['eval'])
-    y1 = y[:1] # extract question 0
+    y1 = y[22:23] # extract question 0
 
     # Adjustment 2: flatten matrix
     y1_flat = y1.flatten()
@@ -2019,9 +2019,8 @@ def _(mo):
         r"""
     By default parameter count assumes finite precision weights, (e.g. fp16), not infinite precision. Subtly violating this assumption, the one-parameter model merely hides its complexity in precision rather than its parameter count. Insted of millions of parameters, it has millions of bits of precision/digits.
 
-    We need a more fundamental way to measure the size of the model: bytes. For each model, let's plot its ARC-AGI-2 public eval score of models VS the bytes of its weights.
 
-    [HRM](https://huggingface.co/sapientinc/HRM-checkpoint-ARC-2/blob/main/checkpoint) is 27M parameters, but this does not include a giant embedding lookup table with 300M parameters.
+    We [scraped](https://arcprize.org/media/data/leaderboard/evaluations.json), the official ARC-AGI leaderboard and plot the size of each model in bytes VS their public ARC-AGI-2 eval score.
     """
     )
     return
@@ -2144,25 +2143,55 @@ def _(np, plt):
                 if b < 1024: return f"{b:.1f}{u}"
                 b /= 1024
 
-        fig, ax = plt.subplots(figsize=(10, 5))
-    
-        # Plot points with distinct colors
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Define colors
         colors = plt.cm.tab20(np.linspace(0, 1, len(df)))
-        ax.scatter(df['weight bytes'], df[score_key], c=colors, s=300, alpha=0.8)
+
+        for i, (idx, r) in enumerate(df.iterrows()):
+            is_target = r['model'] == 'one-parameter model'
+        
+            # Enhanced styling for the target model
+            size = 1000 if is_target else 400
+            alpha = 1.0 if is_target else 0.4
+            edgecolor = 'black' # if is_target else 'none'
+            linewidth = 3 if is_target else 1
+            marker = '*' if is_target else 'o' # Star shape for extra emphasis
+        
+            ax.scatter(r['weight bytes'], r[score_key], 
+                       color=colors[i], 
+                       s=size, 
+                       alpha=alpha, 
+                       edgecolors=edgecolor, 
+                       linewidths=linewidth,
+                       marker=marker,
+                       zorder=3 if is_target else 2) # Bring to front
+
         ax.set_xscale('log')
 
         # Add model labels
         for _, r in df.iterrows():
-            ha = 'left' if r['model'] == 'one-parameter model' else 'right'
-            ax.annotate(f" {r['model']}", (r['weight bytes'], r[score_key]), fontsize=10, va='center', ha=ha)
+            is_target = r['model'] == 'one-parameter model'
+            ha = 'left' if is_target or r['model'] == 'trm-2025-10-07' else 'right'
+            weight = 'bold' if is_target else 'normal'
+        
+            ax.annotate(f" {r['model']}", 
+                        (r['weight bytes'], r[score_key]), 
+                        fontsize=18 if is_target else 12, 
+                        fontweight=weight,
+                        va='center', 
+                        ha=ha,
+                        xytext=(10, 0) if ha == 'left' else (-10, 0),
+                        textcoords='offset points')
 
         # Formatting
         ticks = 10**np.arange(np.floor(np.log10(df['weight bytes'].min())), 
                               np.ceil(np.log10(df['weight bytes'].max())) + 1)
         ax.set_xticks(ticks)
         ax.set_xticklabels([fmt(t) for t in ticks])
-        ax.set(title=f"{score_key.title()} Model Efficiency: Performance vs Size", xlabel="Model Size in Bytes (Log)", ylabel=f"ARC-AGI-2 {score_key.title()}")
-        ax.grid(True, which="both", alpha=0.1)
+        ax.set(title=f"{score_key.title()} Model Efficiency: Performance vs Size", 
+               xlabel="Model Size in Bytes (Log Scale)", 
+               ylabel=f"ARC-AGI-2 {score_key.title()}")
     
         plt.tight_layout()
         return fig
