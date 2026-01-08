@@ -25,7 +25,7 @@ def _():
     import matplotlib.pyplot as plt
     from matplotlib import colors
     from tqdm import tqdm
-    return colors, np, pd, plt
+    return colors, np, pd, plt, tqdm
 
 
 @app.cell
@@ -200,8 +200,8 @@ def _(colors, np, plt):
         for i in range(len(matrix)):
           for j in range(len(matrix[0])):
             val = matrix[i, j]
-            txt = f'{int(val)}' if val == int(val) else f'{val:.2f}'
-            ax.text(j, i, txt, ha='center', va='center', color='#ffffff', fontsize=8)
+            txt = f'{int(val)}' if val == int(val) else f'{val:.1f}'
+            ax.text(j, i, txt, ha='center', va='center', color='#ffffff', fontsize=7)
 
       if title: ax.text(0, 1.02, title, transform=ax.transAxes, ha='left', va='bottom', fontsize=11, color='#000000', clip_on=False)
 
@@ -1486,7 +1486,7 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_arcagi):
-    plot_arcagi(ds, "eval", 22, hide_question_output=True, size=2.5) # 17, 23
+    plot_arcagi(ds, "eval", 50, hide_question_output=True, size=2.5) # 17, 23, 26, 27
     return
 
 
@@ -1498,21 +1498,27 @@ def _(mo):
 
 @app.cell
 def _(ds, plot_question):
-    plot_question(ds, 'eval', 22, io='output', size=4)
+    plot_question(ds, 'eval', 50, io='output', size=4)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""Let's run `logistic_encoder` to encode $Y$ into $\alpha$ using precision $p=7$""")
+    mo.md(r"""Let's do `model.fit()` and run `logistic_encoder` to encode $Y$ into $\alpha$ using precision $p=7$""")
     return
 
 
 @app.cell
-def _(MinMaxScaler, ds, logistic_encoder, mo, pad_arc_agi_2):
+def _():
+    idx = 50
+    return (idx,)
+
+
+@app.cell
+def _(MinMaxScaler, ds, idx, logistic_encoder, mo, pad_arc_agi_2):
     # Adjustment 1: process the question output Y, not the quesiton input X
     X, y = pad_arc_agi_2(ds['eval'])
-    y1 = y[22:23] # extract question 0
+    y1 = y[idx:idx+1] # extract question 0
 
     # Adjustment 2: flatten matrix
     y1_flat = y1.flatten()
@@ -1522,7 +1528,7 @@ def _(MinMaxScaler, ds, logistic_encoder, mo, pad_arc_agi_2):
     y1_scaled = scaler.fit_transform(y1_flat)
 
     # Set precision
-    p = 7 # bits for a single sample
+    p = 10 # bits for a single sample
     full_precision = len(y1_scaled) * p # bits for all samples in the dataset
 
     # Run Encoder
@@ -1550,7 +1556,7 @@ def _(mo):
         r"""
     This is our one-parameter model in its full glory! This scalar $\alpha$ is all we need is to correctly predict the question output of this puzzle!
 
-    Let's run `logistic_decoder` to recover $Y$ from $\alpha$.
+    Let's do `model.predict()` and run `logistic_decoder` to recover $Y$ from $\alpha$.
     """
     )
     return
@@ -1563,9 +1569,21 @@ def _(decode, display_fxn, mo):
 
 
 @app.cell
-def _(alpha, decode, full_precision, mo, p, scaler, y1_scaled):
+def _(alpha, full_precision, idx, logistic_decoder, np, p, tqdm):
+    def decode2(alpha, full_precision, p, idxs, y_size=900):
+        y_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten().tolist()
+        out = np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(y_idxs, total=len(y_idxs), desc="Decoding")], dtype=np.float32)
+        return y_idxs, out
+
+    y_idxs2, out2 = decode2(alpha, full_precision, p, np.array([idx]))
+    y_idxs2
+    return
+
+
+@app.cell
+def _(alpha, decode, full_precision, idx, mo, np, p, scaler):
     # Run decoder
-    y1_pred_raw = decode(alpha, full_precision, p, y1_scaled)
+    y1_pred_raw = decode(alpha, full_precision, p, np.array([idx]))
 
     # Undo adjustment 3: scale back to [0, 9]
     y1_pred_unscaled = scaler.inverse_transform(y1_pred_raw)
@@ -1590,7 +1608,7 @@ def _(np, plot_matrix, plt):
       nq = 1 # len(puzzle['question_inputs'])
       n_pred = len(predictions) if predictions is not None else 0
       mosaic = [[f'Q.{j+1}_out' for j in range(nq)] + [f'pred_{k}' for k in range(n_pred)]]
-      fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(nq+n_pred), 2*size))
+      fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(nq+n_pred)+3, 5))
       plt.suptitle(f'ARC-AGI-2 {split.capitalize()} puzzle #{i}', fontsize=18, fontweight='bold', y=0.98)
 
       for j in range(nq):
@@ -1620,8 +1638,8 @@ def _(np, plot_matrix, plt):
 
 
 @app.cell
-def _(alpha_str, ds, p, plot_prediction, y1_pred):
-    plot_prediction(ds, "eval", 0, [y1_pred.squeeze()], [p], [len(alpha_str)], show_nums=True)
+def _(alpha_str, ds, idx, p, plot_prediction, y1_pred):
+    plot_prediction(ds, "eval", idx, [y1_pred.squeeze()], [p], [len(alpha_str)], show_nums=True, size=5)
     return
 
 
@@ -1644,7 +1662,7 @@ def _(mo):
 
 
 @app.cell
-def _(decode, logistic_encoder, scaler, y1_scaled):
+def _(decode, idx, logistic_encoder, np, scaler, y1_scaled):
     # encode
     y3_scaled = y1_scaled
     p3 = 5 # bits for a single sample
@@ -1653,7 +1671,7 @@ def _(decode, logistic_encoder, scaler, y1_scaled):
     alpha3_str = str(alpha3)
 
     # decode
-    y3_pred_raw = decode(alpha3, full_precision3, p3, y3_scaled)
+    y3_pred_raw = decode(alpha3, full_precision3, p3, np.array([idx]))
     y3_pred = scaler.inverse_transform(y3_pred_raw).reshape(1, 30, 30)
     return alpha3_str, p3, y3_pred
 
@@ -1665,7 +1683,7 @@ def _(alpha3_str, display_alpha, p3):
 
 
 @app.cell
-def _(decode, logistic_encoder, scaler, y1_scaled):
+def _(decode, idx, logistic_encoder, np, scaler, y1_scaled):
     # encode
     y2_scaled = y1_scaled
     p2 = 14 # bits for a single sample
@@ -1674,7 +1692,7 @@ def _(decode, logistic_encoder, scaler, y1_scaled):
     alpha2_str = str(alpha2)
 
     # decode
-    y2_pred_raw = decode(alpha2, full_precision2, p2, y2_scaled)
+    y2_pred_raw = decode(alpha2, full_precision2, p2, np.array([idx]))
     y2_pred = scaler.inverse_transform(y2_pred_raw).reshape(1, 30, 30)
     return alpha2_str, p2, y2_pred
 
@@ -1948,13 +1966,13 @@ def _(mo):
 
 
 @app.cell
-def _(mo, model, np, y):
-    idx = np.array([0])
+def _(idx, mo, model, y):
+    # idx = np.array([0])
     y5_pred = model.predict(idx)
     model.verify(y5_pred, y[idx])
 
     mo.show_code()
-    return idx, y5_pred
+    return (y5_pred,)
 
 
 @app.cell
@@ -2150,14 +2168,14 @@ def _(np, plt):
 
         for i, (idx, r) in enumerate(df.iterrows()):
             is_target = r['model'] == 'one-parameter model'
-        
+
             # Enhanced styling for the target model
             size = 1000 if is_target else 400
             alpha = 1.0 if is_target else 0.4
             edgecolor = 'black' # if is_target else 'none'
             linewidth = 3 if is_target else 1
             marker = '*' if is_target else 'o' # Star shape for extra emphasis
-        
+
             ax.scatter(r['weight bytes'], r[score_key], 
                        color=colors[i], 
                        s=size, 
@@ -2174,7 +2192,7 @@ def _(np, plt):
             is_target = r['model'] == 'one-parameter model'
             ha = 'left' if is_target or r['model'] == 'trm-2025-10-07' else 'right'
             weight = 'bold' if is_target else 'normal'
-        
+
             ax.annotate(f" {r['model']}", 
                         (r['weight bytes'], r[score_key]), 
                         fontsize=18 if is_target else 12, 
@@ -2192,7 +2210,7 @@ def _(np, plt):
         ax.set(title=f"{score_key.title()} Model Efficiency: Performance vs Size", 
                xlabel="Model Size in Bytes (Log Scale)", 
                ylabel=f"ARC-AGI-2 {score_key.title()}")
-    
+
         plt.tight_layout()
         return fig
     return (plot_efficiency,)
