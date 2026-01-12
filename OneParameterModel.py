@@ -25,7 +25,7 @@ def _():
     import matplotlib.pyplot as plt
     from matplotlib import colors
     from tqdm import tqdm
-    return colors, np, pd, plt, tqdm
+    return colors, np, pd, plt
 
 
 @app.cell
@@ -1510,7 +1510,7 @@ def _(mo):
 
 @app.cell
 def _():
-    idx = 50
+    idx = 1
     return (idx,)
 
 
@@ -1518,7 +1518,7 @@ def _():
 def _(MinMaxScaler, ds, idx, logistic_encoder, mo, pad_arc_agi_2):
     # Adjustment 1: process the question output Y, not the quesiton input X
     X, y = pad_arc_agi_2(ds['eval'])
-    y1 = y[idx:idx+1] # extract question 0
+    y1 = y[idx:idx+1] # extract the question
 
     # Adjustment 2: flatten matrix
     y1_flat = y1.flatten()
@@ -1569,27 +1569,27 @@ def _(decode, display_fxn, mo):
 
 
 @app.cell
-def _(alpha, full_precision, idx, logistic_decoder, np, p, tqdm):
-    def decode2(alpha, full_precision, p, idxs, y_size=900):
-        y_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten().tolist()
-        out = np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(y_idxs, total=len(y_idxs), desc="Decoding")], dtype=np.float32)
-        return y_idxs, out
+def _():
+    # def decode2(alpha, full_precision, p, idxs, y_size=900):
+    #     y_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten().tolist()
+    #     out = np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(y_idxs, total=len(y_idxs), desc="Decoding")], dtype=np.float32)
+    #     return y_idxs, out
 
-    y_idxs2, out2 = decode2(alpha, full_precision, p, np.array([idx]))
-    y_idxs2
+    # y_idxs2, out2 = decode2(alpha, full_precision, p, np.array([idx]))
+    # y_idxs2
     return
 
 
 @app.cell
-def _(alpha, decode, full_precision, idx, mo, np, p, scaler):
+def _(alpha, decode, full_precision, mo, p, scaler, y1_scaled):
     # Run decoder
-    y1_pred_raw = decode(alpha, full_precision, p, np.array([idx]))
+    y1_pred_raw = decode(alpha, full_precision, p, y1_scaled)
 
     # Undo adjustment 3: scale back to [0, 9]
     y1_pred_unscaled = scaler.inverse_transform(y1_pred_raw)
 
     # Undo adjustment 2: reshape back to original size
-    y1_pred = y1_pred_unscaled.reshape(1, 30, 30)
+    y1_pred = y1_pred_unscaled.reshape(-1, 30, 30)
 
     mo.show_code()
     return (y1_pred,)
@@ -1638,8 +1638,14 @@ def _(np, plot_matrix, plt):
 
 
 @app.cell
+def _(ds):
+    ds['eval'][0].keys()
+    return
+
+
+@app.cell
 def _(alpha_str, ds, idx, p, plot_prediction, y1_pred):
-    plot_prediction(ds, "eval", idx, [y1_pred.squeeze()], [p], [len(alpha_str)], show_nums=True, size=5)
+    plot_prediction(ds, "eval", idx, [y1_pred.squeeze()], [p], [len(alpha_str)], show_nums=False, size=5)
     return
 
 
@@ -1662,7 +1668,7 @@ def _(mo):
 
 
 @app.cell
-def _(decode, idx, logistic_encoder, np, scaler, y1_scaled):
+def _(decode, logistic_encoder, scaler, y1_scaled):
     # encode
     y3_scaled = y1_scaled
     p3 = 5 # bits for a single sample
@@ -1671,7 +1677,7 @@ def _(decode, idx, logistic_encoder, np, scaler, y1_scaled):
     alpha3_str = str(alpha3)
 
     # decode
-    y3_pred_raw = decode(alpha3, full_precision3, p3, np.array([idx]))
+    y3_pred_raw = decode(alpha3, full_precision3, p3, y3_scaled)
     y3_pred = scaler.inverse_transform(y3_pred_raw).reshape(1, 30, 30)
     return alpha3_str, p3, y3_pred
 
@@ -1683,7 +1689,7 @@ def _(alpha3_str, display_alpha, p3):
 
 
 @app.cell
-def _(decode, idx, logistic_encoder, np, scaler, y1_scaled):
+def _(decode, logistic_encoder, scaler, y1_scaled):
     # encode
     y2_scaled = y1_scaled
     p2 = 14 # bits for a single sample
@@ -1692,7 +1698,7 @@ def _(decode, idx, logistic_encoder, np, scaler, y1_scaled):
     alpha2_str = str(alpha2)
 
     # decode
-    y2_pred_raw = decode(alpha2, full_precision2, p2, np.array([idx]))
+    y2_pred_raw = decode(alpha2, full_precision2, p2, y2_scaled)
     y2_pred = scaler.inverse_transform(y2_pred_raw).reshape(1, 30, 30)
     return alpha2_str, p2, y2_pred
 
@@ -1966,9 +1972,9 @@ def _(mo):
 
 
 @app.cell
-def _(idx, mo, model, y):
+def _(idx, mo, model, np, y):
     # idx = np.array([0])
-    y5_pred = model.predict(idx)
+    y5_pred = model.predict(np.array([idx]))
     model.verify(y5_pred, y[idx])
 
     mo.show_code()
@@ -1977,7 +1983,7 @@ def _(idx, mo, model, y):
 
 @app.cell
 def _(alpha5_str, ds, idx, p5, plot_prediction, y5_pred):
-    plot_prediction(ds, "eval", idx.item(), [y5_pred.squeeze()], [p5], [len(alpha5_str.strip('0.'))], size=3, show_nums=True)
+    plot_prediction(ds, "eval", idx, [y5_pred.squeeze()], [p5], [len(alpha5_str.strip('0.'))], size=3, show_nums=True)
     return
 
 
