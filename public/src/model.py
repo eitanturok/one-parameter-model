@@ -95,17 +95,13 @@ def logistic_encoder(X, precision, full_precision):
     alpha = phi(phi_inv_decimal_scalar)
     return alpha
 
-# def decode(alpha, full_precision, p, idxs, y_size=900):
-#     y_idxs = (np.tile(np.arange(y_size), (len(idxs), 1)) + idxs[:, None] * y_size).flatten().tolist()
-#     return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(y_idxs, total=len(y_idxs), desc="Decoding")], dtype=np.float32)
-
+# only works for one ARC-AGI-2 example, i.e. we only encoded one ARC-AGI-2 example into alpha
 def decode(alpha, full_precision, p, y_scaled):
-    # works when we encoded only one ARC-AGI-2 example into alpha
     y_idxs = list(range(len(y_scaled)))
     return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(y_idxs, total=len(y_idxs), desc="Decoding")], dtype=np.float32)
 
+# only works for one ARC-AGI-2 example, i.e. we only encoded one ARC-AGI-2 example into alpha
 def fast_decode(alpha, p, y_scaled, n_workers=8):
-    # works when we encoded only one ARC-AGI-2 example into alpha
     y_idxs = list(range(len(y_scaled)))
     mp.prec = p * len(y_scaled) # compute arcsin(sqrt(alpha)) with full precision
     decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(alpha)), p)
