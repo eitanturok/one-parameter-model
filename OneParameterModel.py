@@ -1506,9 +1506,9 @@ def _(MinMaxScaler, ds, idx, logistic_encoder, mo, p, pad_arc_agi_2):
     full_precision = len(y1_scaled) * p # bits for all samples in the dataset
 
     # Run Encoder
-    alpha = logistic_encoder(y1_scaled, p, full_precision)
+    alpha1 = logistic_encoder(y1_scaled, p, full_precision)
     mo.show_code()
-    return X, alpha, full_precision, scaler, y, y1_scaled
+    return X, alpha1, full_precision, scaler, y, y1_scaled
 
 
 @app.cell
@@ -1520,10 +1520,10 @@ def _(mo):
 
 
 @app.cell
-def _(alpha, display_alpha, p):
-    alpha_str = str(alpha)
-    display_alpha(p, alpha_str)
-    return (alpha_str,)
+def _(alpha1, display_alpha, p):
+    alpha1_str = str(alpha1)
+    display_alpha(p, alpha1_str)
+    return (alpha1_str,)
 
 
 @app.cell
@@ -1543,9 +1543,9 @@ def _(decode, display_fxn, mo):
 
 
 @app.cell
-def _(alpha, decode, full_precision, mo, p, scaler, y1_scaled):
+def _(alpha1, decode, full_precision, mo, p, scaler, y1_scaled):
     # Run decoder
-    y1_pred_raw = decode(alpha, full_precision, p, y1_scaled)
+    y1_pred_raw = decode(alpha1, full_precision, p, y1_scaled)
 
     # Undo adjustment 3: scale back to [0, 9]
     y1_pred_unscaled = scaler.inverse_transform(y1_pred_raw)
@@ -1608,8 +1608,8 @@ def _(ds):
 
 
 @app.cell
-def _(alpha_str, ds, idx, p, plot_prediction, y1_pred):
-    plot_prediction(ds, "eval", idx, [y1_pred.squeeze()], [p], [len(alpha_str)], show_nums=True, size=2)
+def _(alpha1_str, ds, idx, p, plot_prediction, y1_pred):
+    plot_prediction(ds, "eval", idx, [y1_pred.squeeze()], [p], [len(alpha1_str)], show_nums=True, size=2)
     return
 
 
@@ -1679,9 +1679,9 @@ def _(mo):
 
 @app.cell
 def _(
+    alpha1_str,
     alpha2_str,
     alpha3_str,
-    alpha_str,
     ds,
     idx,
     p,
@@ -1692,7 +1692,7 @@ def _(
     y2_pred,
     y3_pred,
 ):
-    plot_prediction(ds, "eval", idx, [y3_pred.squeeze(), y1_pred.squeeze(), y2_pred.squeeze()], [p3, p, p2], [len(alpha3_str.strip('0.')), len(alpha_str.strip('0.')), len(alpha2_str.strip('0.'))], show_nums=True, size=2.7)
+    plot_prediction(ds, "eval", idx, [y3_pred.squeeze(), y1_pred.squeeze(), y2_pred.squeeze()], [p3, p, p2], [len(alpha3_str.strip('0.')), len(alpha1_str.strip('0.')), len(alpha2_str.strip('0.'))], show_nums=True, size=2.7)
     return
 
 
@@ -1705,16 +1705,16 @@ def _(mo):
 
 
 @app.cell
-def _(mo, y, y2_pred):
+def _(idx, mo, y, y2_pred):
     mo.md(rf"""
     Looking closer at our $p=14$ predictions, they're not perfectly accurate—they only match the ground truth to about 2 decimal places (assuming rounding):
 
     ```py
-    {y2_pred[0, 0, 0]=}
+    y_pred[0, 0] = {y2_pred[0, 0, 0]}
     ```
 
     ```py
-    {y[0, 0, 0]=}
+    y[0, 0] = {y[idx, 0, 0]}
     ```
 
     In binary,
@@ -1732,8 +1732,22 @@ def diff(a, b, name_a="", name_b=""):
 
 
 @app.cell
-def _(decimal_to_binary, scaler, y, y2_pred):
-    diff(decimal_to_binary(scaler.transform(y[0, 0, 0]), 32), decimal_to_binary(scaler.transform(y2_pred[0, 0, 0]), 32), "y", "y_pred")
+def _(decimal_to_binary, idx, scaler, y, y2_pred):
+    diff(decimal_to_binary(scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(scaler.transform(y2_pred[0, 0, 0]), 32), "y", "y_pred")
+    return
+
+
+@app.cell
+def _(idx, scaler, y):
+    # Test 1: Round-trip error of the scaler
+    y_val = y[idx, 0, 0]
+    y_scaled = scaler.transform(y_val)
+    y_back = scaler.inverse_transform(y_scaled)
+    y_re_scaled = scaler.transform(y_back)
+
+    print(f"Original Scaled: {y_scaled}")
+    print(f"Round-trip Scaled: {y_re_scaled}")
+    print(f"Bit-level difference: {abs(y_scaled - y_re_scaled)}")
     return
 
 
@@ -1762,31 +1776,95 @@ def _(math, n_bits_star):
 @app.cell
 def _(mo):
     mo.md(r"""
-    This raises the question: what precision $p$ do we actually need to be accurate up to 32 bits? (Our `np.ndarray`'s use 32-bit precision.)
-
-    Recall the error bound for the one-parameter model is
+    We scale the raw ARC-AGI data $y \in [0, 9]$ to the unit interval $[0,1]$ using the minmax scaler which does a linear shift
 
     $$
-    |\tilde{x}_i - x_i| \leq \frac{R \pi}{2^{p-1}}
+    y_{\text{scaled}} = \frac{y - y_{\min}}{R}
     $$
 
-    To ensure this errors stays below $2^{-32}$, we solve for $p$:
+    and then clips to
 
     $$
-    p \geq \lceil 33 + \log_2(R \pi) \rceil
+    y_{\text{clipped}} = \text{clip}(y_{\text{scaled}}, \epsilon, 1-\epsilon).
     $$
 
-    With $R=9$ (our MinMaxScaler range), we get
-
-    $$p^* = 38$$
-
-    bits per number. This means each of the $900$ numbers in our $30 \times 30$ image needs 38 bits of precision. For all $n=120$ eval puzzles, we need
+    Clipping introduces error bounded by:
 
     $$
-    900 \times 120 \times 38 = 4{,}104{,}000 \text{ bits} \approx 0.000513 \text{ GB}
+    |y_{\text{clipped}} - y_{\text{scaled}}| \leq \epsilon \tag{1}
+    $$
+
+    Our one-parameter model predicts $\hat{y}_{\text{scaled}} \in [0,1]$ with decoding error:
+
+    $$
+    |\hat{y}_{\text{scaled}} - y_{\text{clipped}}| \leq \frac{\pi}{2^{p-1}} \tag{2}
+    $$
+
+    We rescale back to the original domain via $\hat{y} = \hat{y}_{\text{scaled}} \cdot R + y_{\min}$. Therefore, the total error is
+
+    $$
+    \begin{align*}
+    |\hat{y} - y| &= |(\hat{y}_{\text{scaled}} \cdot R + y_{\min}) - (y_{\text{scaled}} \cdot R + y_{\min})| \\
+    &= R |\hat{y}_{\text{scaled}} - y_{\text{scaled}}| \\
+    &\leq R (|\hat{y}_{\text{scaled}} - y_{\text{clipped}}| + |y_{\text{clipped}} - y_{\text{scaled}}|) & \text{by the triangle inequality} \\
+    &= R \left(\frac{\pi}{2^{p-1}} + \epsilon\right) & \text{by equations (1) and (2)}
+    \end{align*}
+    $$
+
+    This raises the question: what precision $p$ do we need to store each sample in for the one-parameter model to be accurate up to $p^*=32$ bits? In other words, we want
+
+    $$
+    \begin{align*}
+    |\hat{y} - y|
+    & \leq
+    2^{p^*}
+    \\
+    \end{align*}
+    $$
+
+    which means we need the upper bound of our error to be less than $2^{p^*}$
+
+    $$
+    \begin{align*}
+    R \left(\frac{\pi}{2^{p-1}} + \epsilon\right)
+    & \leq
+    2^{p^*}
+    \end{align*}
+    $$
+
+    Plugging in $R=9$ and $\epsilon=1e-12$ and solving for $p$
+
+    $$
+    \begin{align*}
+    p
+    &\geq
+    \Bigg \lceil
+    \log_2 \left( \frac{\pi \cdot R \cdot 2^{p^*}}{1 - \epsilon \cdot R \cdot 2^{p^*}} \right) + 1
+    \Bigg \rceil
+    \\
+    & \geq
+    \lceil 37.87 \rceil
+    \\
+    p
+    & \geq
+    38
+    \end{align*}
+    $$
+
+    Each number must be encoded into $\alpha$ with 38 bits of precision for the prediction to be accurate up to 32 bits. This means each of the $900$ numbers in our $30 \times 30$ image needs $p=38$ bits of precision. For all $n=120$ eval puzzles, we need
+
+    $$
+    900 \times 120 \times 38 = 4{,}104{,}000 \text{ bits} \approx 0.513 \text{ MB}
     $$
 
     In decimal notation, $\alpha$ must store approximately **1,235,427 digits**. This number is immense! Since mpmath operations are slower than regular operations, this will take hours! We need a faster approach.
+
+
+    > Note: The $\epsilon$ used for the MinMaxScaler clipping must be small enough that the clipping noise doesn't mask the significant bits of the data. This constraint is reflected in the denominator of our logarithmic term:
+    >
+    > $$1 - \epsilon \cdot R \cdot 2^{p^*}$$
+    >
+    > We need this term to be positive as you cannot take the logarithm of a non-positive number. If the target precision $p^*$ is really big, we must have a smaller clipping noise $\epsilon$ must be small enough to counteract the massive scaling of $2^{p^*}$. If $\epsilon$ is too large, clipping error destroys the signal, making $p^*$ bits of accuracy mathematically impossible.
     """)
     return
 
@@ -1940,12 +2018,17 @@ def _(mo):
 
 @app.cell
 def _(idx, mo, model, np, y):
-    # idx = np.array([0])
     y5_pred = model.predict(np.array([idx]))
     model.verify(y5_pred, y[idx])
 
     mo.show_code()
     return (y5_pred,)
+
+
+@app.cell
+def _(model):
+    model.scaler.epsilon * model.scaler.range * 2**model.precision
+    return
 
 
 @app.cell
@@ -1955,7 +2038,7 @@ def _(alpha5_str, ds, idx, p5, plot_prediction, y5_pred):
 
 
 @app.cell
-def _(mo, y, y5_pred):
+def _(idx, mo, y, y5_pred):
     mo.md(rf"""
     With $p=38$ our predictions perfectly match the ground truth for all 32 bits.
 
@@ -1964,15 +2047,15 @@ def _(mo, y, y5_pred):
     ```
 
     ```py
-    {y[0, 0, 0]=}
+    {y[idx, 0, 0]=}
     ```
     """)
     return
 
 
 @app.cell
-def _(decimal_to_binary, scaler, y, y5_pred):
-    diff(decimal_to_binary(scaler.transform(y[0, 0, 0]), 32), decimal_to_binary(scaler.transform(y5_pred[0, 0, 0]), 32))
+def _(decimal_to_binary, idx, scaler, y, y5_pred):
+    diff(decimal_to_binary(scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(scaler.transform(y5_pred[0, 0, 0]), 32))
     return
 
 
@@ -1984,15 +2067,15 @@ def _(decimal_to_binary, model, y5_pred):
 
 
 @app.cell
-def _(decimal_to_binary, model, y):
-    y_binary = decimal_to_binary(model.scaler.transform(y[0, 0, 0]), 32)
+def _(decimal_to_binary, idx, model, y):
+    y_binary = decimal_to_binary(model.scaler.transform(y[idx, 0, 0]), 32)
     y_binary
     return (y_binary,)
 
 
 @app.cell
 def _(y5_pred_binary, y_binary):
-    assert y5_pred_binary == y_binary
+    assert y5_pred_binary == y_binary, f'{y5_pred_binary=}\n{y_binary=}'
     return
 
 
