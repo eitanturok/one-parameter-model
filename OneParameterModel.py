@@ -1557,7 +1557,7 @@ def _(display_alpha, model1):
 @app.cell
 def _(mo):
     mo.md(r"""
-    For instance, consider puzzle 23 of the public eval set. We ignore $X$ which contains the 3 examples and the question input
+    For instance, consider puzzle 23 of the public eval set. In `model.fit()`, we ignore $X$ which contains the 3 examples and the question input
     """)
     return
 
@@ -1577,7 +1577,7 @@ def _(ds, idx, plot_arcagi):
 @app.cell
 def _(mo):
     mo.md(r"""
-    and only encode the question output
+    and only encode the question output $Y$
     """)
     return
 
@@ -1591,7 +1591,7 @@ def _(ds, idx, plot_question):
 @app.cell
 def _(mo):
     mo.md(r"""
-    into $\alpha$. To recover this puzzle output, we run `model.predict()` and decode $\alpha$
+    into $\alpha$, along with the question outputs from all the other 120 public eval puzzles. To recover the question output of puzzle 23, we run `model.predict()` and decode $\alpha$
     """)
     return
 
@@ -1605,8 +1605,30 @@ def _(mo, model1, np):
 
 
 @app.cell
-def _(np, plot_matrix, plt):
-    def plot_prediction(ds, split, i, predictions=None, precisions=None, alpha_n_digits=None, size=2.5, w=0.9, show_nums=False):
+def _(mo):
+    mo.md(r"""
+    The first row of the predictions looks like this numerically
+    """)
+    return
+
+
+@app.cell
+def _(y1_pred):
+    print(f'y1_pred[0] = {y1_pred[0, 0]}')
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    and visually look like
+    """)
+    return
+
+
+app._unparsable_cell(
+    r"""
+    |def plot_prediction(ds, split, i, predictions=None, precisions=None, alpha_n_digits=None, size=2.5, w=0.9, show_nums=False):
       puzzle = ds[split][i]
       nq = 1 # len(puzzle['question_inputs'])
       n_pred = len(predictions) if predictions is not None else 0
@@ -1637,7 +1659,9 @@ def _(np, plot_matrix, plt):
       fig.patch.set_facecolor('#eeeeee')
       plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
       return fig
-    return (plot_prediction,)
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -1649,7 +1673,7 @@ def _(alpha1_str, ds, idx, p1, plot_prediction, y1_pred):
 @app.cell
 def _(mo):
     mo.md(r"""
-    The correct answer is on the left and the one-parameter model's prediction is on the right. (Remember, the colors are just for display purposes, the model really sees numerical values.) Taking a closer look
+    Here, the correct answer is on the left and the one-parameter model's prediction is on the right. (Remember, the colors are just for display purposes, the model really sees numerical values.) Taking a closer look
 
     * The green cells equal 3, and our predictions came close, spanning 2.9, 2.8, and 3.0.
     * The yellow cells equal 4, but we predicted 3.7.
@@ -1688,7 +1712,7 @@ def _(OneParameterModel, X, idx, np, y):
     model2 = OneParameterModel(precision=14).fit(X, y)
     alpha2_str = str(model2.alpha)
     y2_pred = model2.predict(np.array([idx]))
-    return alpha2_str, y2_pred
+    return alpha2_str, model2, y2_pred
 
 
 @app.cell
@@ -1766,8 +1790,20 @@ def diff(a, b, name_a="", name_b=""):
 
 
 @app.cell
-def _(decimal_to_binary, idx, y, y1_pred):
-    diff(decimal_to_binary(y[idx, 0, 0], 32), decimal_to_binary(y1_pred[0, 0, 0], 32))
+def _(decimal_to_binary, idx, model1, y, y1_pred):
+    diff(decimal_to_binary(model1.scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(model1.scaler.transform(y1_pred[0, 0, 0]), 32))
+    return
+
+
+@app.cell
+def _(decimal_to_binary, idx, model2, y, y2_pred):
+    diff(decimal_to_binary(model2.scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(model2.scaler.transform(y2_pred[0, 0, 0]), 32))
+    return
+
+
+@app.cell
+def _(decimal_to_binary, idx, model4, y, y4_pred):
+    diff(decimal_to_binary(model4.scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(model4.scaler.transform(y4_pred[0, 0, 0]), 32))
     return
 
 
