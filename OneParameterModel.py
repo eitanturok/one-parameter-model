@@ -5,6 +5,29 @@ app = marimo.App(width="medium")
 
 
 @app.cell
+def _(decimal_to_binary, np):
+
+    def float_to_binary(arr):
+        # Ensure the input is a numpy array of 32-bit floats
+        arr = np.array(arr, dtype=np.float32)
+    
+        # View the raw bits as unsigned 32-bit integers
+        raw_bits = arr.view(np.uint32)
+    
+        # Format each integer as a 32-character binary string
+        return [f"{bit:032b}" for bit in raw_bits]
+
+    # Example Usage:
+    data2 = np.array([13.625, 0.1, 2.0])
+    binary_strings = float_to_binary(data2)
+    my_binary_strings = decimal_to_binary()
+
+    for num, bits in zip(data2, binary_strings):
+        print(f"{num:>6} : {bits}")
+    return
+
+
+@app.cell
 def _():
     import marimo as mo
     return (mo,)
@@ -33,20 +56,12 @@ def _():
     from public.src.model import dyadic_map, decimal_to_binary, binary_to_decimal, phi, phi_inverse, logistic_encoder, logistic_decoder, logistic_decoder_fast, MinMaxScaler, decode, fast_decode, OneParameterModel
     from public.src.data import load_arc_agi_2, pad_arc_agi_2
     return (
-        MinMaxScaler,
         OneParameterModel,
-        binary_to_decimal,
         decimal_to_binary,
-        decode,
-        dyadic_map,
-        fast_decode,
         load_arc_agi_2,
         logistic_decoder,
-        logistic_decoder_fast,
         logistic_encoder,
         pad_arc_agi_2,
-        phi,
-        phi_inverse,
     )
 
 
@@ -1283,29 +1298,7 @@ def _(mo):
 
     If you've been paying attention, there is one crucial implementation detail we have to worry about. If our dataset $\mathcal{X}$ has $n$ samples, each encoded with $p$ bits, $\alpha$ will contain $np$ bits. For ARC-AGI-2 with hundreds of puzzles and high precision, this could be millions of bits. Standard computers can only handle numbers with 32 or 64 bits. How do we even store $\alpha$, much less solve ARC-AGI-2 with it?
 
-    The answer is simple: we can use an arbitrary precision arithmetic library like [mpmath]([https://github.com/aleaxit/gmpy](https://github.com/mpmath/mpmath)) that can represent numbers with as many bits as we want. Instead of a regular Python float, we represent $\alpha$ as a mpmath float with $np$ bits of precision. We then run the decoder with mpmath operations and convert the final result back to a regular Python float. However, operations with arbitrary precision arithmetic libraries like mpmath tend to be *significantly* slower than regular floating point operations.
-
-    Remarkably, using mpmath has another benefit: it actually removes the pesky $\text{dec}(\text{bin}_p(\cdot))$ operations from our decoder
-
-    $$ f_{\alpha, p}(i)
-    =
-    \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big).
-    $$
-
-    In our implementation, we use $\text{dec}(\text{bin}_p(\cdot))$ to truncate $\mathcal{L}^{ip}(\alpha)$ to exactly $p$ bits and then convert $f_{\alpha, p}(i)$ from a $p$-bit mpmath number to a Python float32. During this conversion, Python copies the first $p$ bits of $f_{\alpha, p}(i)$  and then fills the remaining bits of the Python float32 (bits $p+1$ through $32$) with random meaningless junk bits (assuming $p<=32$). Since our model only guarantees accuracy for the first $p$ bits, these random bits don't matter.
-
-    However, converting to binary and back is wildly expensive, especially when $\alpha$ contains millions of bits. Upon taking a closer look, we can, in fact, actually skip the entire $\text{dec}(\text{bin}_p(\cdot))$ step and convert $\mathcal{L}^{ip}(\alpha)$ directly to a Python float32. The first $p$ bits of $\mathcal{L}^{ip}(\alpha)$ still get copied correctly and bits $p+1$ through $32$ get filled with the higher-order bits of $\mathcal{L}^{ip}(\alpha)$ instead of random Python bits. Since our prediction only uses the first $p$ bits, these extra bits are irrelevant whether they come from Python junk or from the higher-order bits of our decoder. Removing $\text{dec}(\text{bin}_p(\cdot))$, our decoder simplifies to exactly what we promised at the start:
-
-    $$ f_{\alpha, p}(i)
-    =
-    \mathcal{L}^{ip}(\alpha)
-    =
-    \sin^2 \Big(
-        2^{x p} \arcsin^2(\sqrt{\alpha})
-    \Big)
-    $$
-
-    This is amazing! Usually translating math into code turns beautiful theory into ugly, complicated messes. But surprisingly, leveraging mpmath has the opposite effect and actually makes our decoder even simpler. Now let's get to the code!
+    The answer is simple: we can use an arbitrary precision arithmetic library like [mpmath](https://github.com/mpmath/mpmath) that can represent numbers with as many bits as we want. Instead of a regular Python float, we represent $\alpha$ as a mpmath float with $np$ bits of precision. We then run the decoder with mpmath operations and convert the final result back to a regular Python float. However, operations with arbitrary precision arithmetic libraries like mpmath tend to be *significantly* slower than regular floating point operations.
     """)
     return
 
@@ -1313,68 +1306,7 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    ## Building Blocks
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    First, we need to import our arbitrary-precision math library, mpmath.
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    from mpmath import mp, asin as Arcsin, sqrt as Sqrt, sin as Sin, pi as Pi
-    mo.show_code()
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    We need some functions to convert from binary to decimal and back. We cannot simply use python's `bin` function because it only converts integers to binary and we have floats in $[0, 1]$.
-    """)
-    return
-
-
-@app.cell
-def _(binary_to_decimal, decimal_to_binary, display_fxn, dyadic_map, mo):
-    mo.md(rf"""
-    {display_fxn(dyadic_map)}
-
-    {display_fxn(decimal_to_binary)}
-
-    {display_fxn(binary_to_decimal)}
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    Next we need $\phi$ and $\phi^{-1}$ to go back and forth between the dyadic and logistic spaces.
-    """)
-    return
-
-
-@app.cell
-def _(display_fxn, mo, phi, phi_inverse):
-    mo.md(rf"""
-    {display_fxn(phi)}
-
-    {display_fxn(phi_inverse)}
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    We can now implement the logistic encoder
+    We implement the logistic encoder
 
     $$
     \alpha
@@ -1384,7 +1316,7 @@ def _(mo):
     \phi \bigg( \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x_i)) \Big) \bigg)
     $$
 
-    in code
+    in code as
     """)
     return
 
@@ -1411,6 +1343,8 @@ def _(mo):
         2^{x p} \arcsin^2(\sqrt{\alpha})
     \Big)
     $$
+
+    in code as
     """)
     return
 
@@ -1434,7 +1368,32 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    ## Basic Implementation
+    /// details | Our decoder is $f_{\alpha, p}(i) = \text{dec} \Big( \text{bin}_p \Big(\sin^2 \Big( 2^{x p} \arcsin^2(\sqrt{\alpha}) \Big) \Big) \Big)$ but our implementation drops the $\text{dec}(\text{bin}_p(\cdot))$. Why is this okay?
+        type: info
+
+    Using mpmath allows us to remove the pesky $\text{dec}(\text{bin}_p(\cdot))$ operations from our decoder
+
+    $$ f_{\alpha, p}(i)
+    =
+    \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big).
+    $$
+
+    In our implementation, we use $\text{dec}(\text{bin}_p(\cdot))$ to truncate $\mathcal{L}^{ip}(\alpha)$ to exactly $p$ bits and then convert $f_{\alpha, p}(i)$ from a $p$-bit mpmath number to a Python float32. During this conversion, Python copies the first $p$ bits of $f_{\alpha, p}(i)$  and then fills the remaining bits of the Python float32 (bits $p+1$ through $32$) with random meaningless junk bits (assuming $p<=32$). Since our model only guarantees accuracy for the first $p$ bits, these random bits don't matter.
+
+    However, converting to binary and back is wildly expensive, especially when $\alpha$ contains millions of bits. Upon taking a closer look, we can, in fact, actually skip the entire $\text{dec}(\text{bin}_p(\cdot))$ step and convert $\mathcal{L}^{ip}(\alpha)$ directly to a Python float32. The first $p$ bits of $\mathcal{L}^{ip}(\alpha)$ still get copied correctly and bits $p+1$ through $32$ get filled with the higher-order bits of $\mathcal{L}^{ip}(\alpha)$ instead of random Python bits. Since our prediction only uses the first $p$ bits, these extra bits are irrelevant whether they come from Python junk or from the higher-order bits of our decoder. Removing $\text{dec}(\text{bin}_p(\cdot))$, our decoder simplifies to exactly what we promised at the start:
+
+    $$ f_{\alpha, p}(i)
+    =
+    \mathcal{L}^{ip}(\alpha)
+    =
+    \sin^2 \Big(
+        2^{x p} \arcsin^2(\sqrt{\alpha})
+    \Big)
+    $$
+
+    This is amazing! Usually translating math into code turns beautiful theory into ugly, complicated messes. But surprisingly, leveraging mpmath has the opposite effect and actually makes our decoder even simpler.
+
+    ///
     """)
     return
 
@@ -1445,337 +1404,18 @@ def _(mo):
     To actually run `logistic_encoder` and `logistic_decoder` on ARC-AGI-2, we need three adjustments:
 
     1. **Adjustment 1: Supervised learning.** ARC-AGI-2 is a supervised problem with input-output pairs $(X,Y)$, but our encoder only handles unsupervised data $(X)$. Solution: ignore the input $X$ and only encode the outputs $Y$ since those are what we need to memorize.
-    2. **Adjustment 2: Shape handling.** Our encoder expects scalars, not matrices. Solution: flatten matrices to lists for encoding and reshape back for decoding. For an `m x n` puzzle, we decode `mn` individual elements, running the decoder `mn` times per puzzle, not once.
-    3. **Adjustment 3: Data scaling.** ARC-AGI-2 uses integers $0-9$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding.
-
-    Now let's create a one-parameter model for an ARC-AGI-2 puzzle from the public eval set, not the train set. We ignore $X$ which contains the 3 examples and the question input
+    2. **Adjustment 2: Shape handling.** Our encoder expects scalars, not matrices. Solution: flatten matrices to lists for encoding and reshape back for decoding. For an `m x n` puzzle, we decode `mn` individual elements, running the decoder `mn` times per puzzle, not once. We never explicltly learn the order of inputs.
+    3. **Adjustment 3: Data scaling.** ARC-AGI-2 uses integers $0-9$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding. This changes the theoretical error bounds from $|\hat{y} - y| < \frac{\pi}{2^{p-1}}$ to $|\hat{y} - y| < R \Big( \frac{\pi}{2^{p-1}} + \epsilon \Big)$ where $R$ is the range and $\epsilon$ the clipping constant of the MinMaxScaler.
     """)
-    return
-
-
-@app.cell
-def _(ds, idx, plot_arcagi):
-    plot_arcagi(ds, "eval", idx, hide_question_output=True, size=2.5) # 17, 23, 26, 27
     return
 
 
 @app.cell
 def _(mo):
     mo.md(r"""
-    and focus on the question output $Y$
-    """)
-    return
+    /// details | Why does MinMaxScaling change our error bound to $|\hat{y} - y| < R \Big( \frac{\pi}{2^{p-1}} + \epsilon \Big)$?
+        type: info
 
-
-@app.cell
-def _(ds, idx, plot_question):
-    plot_question(ds, 'eval', idx, io='output', size=4)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    Let's do `model.fit()` and run `logistic_encoder` to encode $Y$ into $\alpha$ using precision $p=6$
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    idx = 23
-    p = 6 # bits for a single sample
-    mo.show_code()
-    return idx, p
-
-
-@app.cell
-def _(MinMaxScaler, ds, idx, logistic_encoder, mo, p, pad_arc_agi_2):
-    # Adjustment 1: process the question output Y, not the question input X
-    X, y = pad_arc_agi_2(ds['eval'])
-    y1 = y[idx:idx+1] # extract the question
-
-    # Adjustment 2: flatten matrix
-    y1_flat = y1.flatten()
-
-    # Adjustment 3: scale to [0, 1]
-    scaler = MinMaxScaler()
-    y1_scaled = scaler.fit_transform(y1_flat)
-
-    # Set precision
-    full_precision = len(y1_scaled) * p # bits for all samples in the dataset
-
-    # Run Encoder
-    alpha1 = logistic_encoder(y1_scaled, p, full_precision)
-    mo.show_code()
-    return X, alpha1, full_precision, scaler, y, y1_scaled
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    Alpha contains $1625$ digits. Feel free to scroll horizontally.
-    """)
-    return
-
-
-@app.cell
-def _(alpha1, display_alpha, p):
-    alpha1_str = str(alpha1)
-    display_alpha(p, alpha1_str)
-    return (alpha1_str,)
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    This is our one-parameter model in its full glory! This scalar $\alpha$ is all we need is to correctly predict the question output of this puzzle! Let's do `model.predict()` and run `logistic_decoder` to recover $Y$ from $\alpha$.
-    """)
-    return
-
-
-@app.cell
-def _(decode, display_fxn, mo):
-    mo.md(rf"""
-    {display_fxn(decode)}
-    """)
-    return
-
-
-@app.cell
-def _(alpha1, decode, full_precision, mo, p, scaler, y1_scaled):
-    # Run decoder
-    y1_pred_raw = decode(alpha1, full_precision, p, y1_scaled)
-
-    # Undo adjustment 3: scale back to [0, 9]
-    y1_pred_unscaled = scaler.inverse_transform(y1_pred_raw)
-
-    # Undo adjustment 2: reshape back to original size
-    y1_pred = y1_pred_unscaled.reshape(-1, 30, 30)
-
-    mo.show_code()
-    return (y1_pred,)
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    Here are the results:
-    """)
-    return
-
-
-@app.cell
-def _(np, plot_matrix, plt):
-    def plot_prediction(ds, split, i, predictions=None, precisions=None, alpha_n_digits=None, size=2.5, w=0.9, show_nums=False):
-      puzzle = ds[split][i]
-      nq = 1 # len(puzzle['question_inputs'])
-      n_pred = len(predictions) if predictions is not None else 0
-      mosaic = [[f'Q.{j+1}_out' for j in range(nq)] + [f'pred_{k}' for k in range(n_pred)]]
-      fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(nq+n_pred)+3, 5))
-      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} puzzle #{i}', fontsize=18, fontweight='bold', y=0.98)
-
-      for j in range(nq):
-        plot_matrix(puzzle['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums)
-
-      if n_pred:
-        if precisions is None: precisions = [None]*n_pred
-        if alpha_n_digits is None: alpha_n_digits = [None]*n_pred
-        for k in range(n_pred):
-          pred = np.array(predictions[k])[:len(puzzle['question_outputs'][0]), :len(puzzle['question_outputs'][0][0])]
-          title = "Q.1 Prediction"
-          if alpha_n_digits[k] is not None: title = f"len(α)={alpha_n_digits[k]} digits\n\n{title}"
-          if precisions[k] is not None: title = f"Precision={precisions[k]}\n{title}"
-          plot_matrix(pred, axes[f'pred_{k}'], title=title, w=w, show_nums=show_nums)
-        fig.add_artist(plt.Line2D([nq/(nq+n_pred), nq/(nq+n_pred)], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
-        fig.text(nq/(2*(nq+n_pred)), 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
-        fig.text((nq+n_pred/2)/(nq+n_pred), 0.91, 'Predictions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
-      else:
-        fig.text(0.5, 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
-
-      fig.patch.set_linewidth(5)
-      fig.patch.set_edgecolor('#333333')
-      fig.patch.set_facecolor('#eeeeee')
-      plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
-      return fig
-    return (plot_prediction,)
-
-
-@app.cell
-def _(ds):
-    ds['eval'][0].keys()
-    return
-
-
-@app.cell
-def _(alpha1_str, ds, idx, p, plot_prediction, y1_pred):
-    plot_prediction(ds, "eval", idx, [y1_pred.squeeze()], [p], [len(alpha1_str)], show_nums=True, size=2)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    The correct answer is on the left and the one-parameter model's prediction is on the right. Remember, the colors are just for display purposes, the model really sees numerical values. The green cells should equal 3, and our predictions came close, spanning 2.9, 2.8, and 3.0. For the yellow cells, we predicted 3.7 while the true value is 4. The light blue cells were 8 but we predicted of 7.8 and 7.7. Across the entire image, our predictions are close to the correct values, typically off by only a small fraction.
-
-    What went wrong?
-
-    These small errors happen because of our precision setting $p$. Remember, the encoder saves each number using only $p$ bits and throws away everything else. This cuttoff creates quantization errors up to $\frac{\pi R}{2^{p-1}} = 0.88$ ($p=6$ is the precision and $R=9$ is the range of the MinMaxScaler). All our errors are indeed less than $0.88$. There's nothing broken here. This is just what happens when you use finite precision.
-
-    But we can make the errors smaller by using higher precision. Or make the error larger by using lower precision. Let's train a one-parameter model with $p=4$ and another one $p=14$. This gives us
-    """)
-    return
-
-
-@app.cell
-def _(decode, logistic_encoder, scaler, y1_scaled):
-    # encode
-    y3_scaled = y1_scaled
-    p3 = 4 # bits for a single sample
-    full_precision3 = len(y3_scaled) * p3 # bits for all samples in the dataset
-    alpha3 = logistic_encoder(y3_scaled, p3, full_precision3)
-    alpha3_str = str(alpha3)
-
-    # decode
-    y3_pred_raw = decode(alpha3, full_precision3, p3, y3_scaled)
-    y3_pred = scaler.inverse_transform(y3_pred_raw).reshape(1, 30, 30)
-    return alpha3_str, p3, y3_pred
-
-
-@app.cell
-def _(alpha3_str, display_alpha, p3):
-    display_alpha(p3, alpha3_str)
-    return
-
-
-@app.cell
-def _(decode, logistic_encoder, scaler, y1_scaled):
-    # encode
-    y2_scaled = y1_scaled
-    p2 = 14 # bits for a single sample
-    full_precision2 = len(y2_scaled) * p2 # bits for all samples in the dataset
-    alpha2 = logistic_encoder(y2_scaled, p2, full_precision2)
-    alpha2_str = str(alpha2)
-
-    # decode
-    y2_pred_raw = decode(alpha2, full_precision2, p2, y2_scaled)
-    y2_pred = scaler.inverse_transform(y2_pred_raw).reshape(1, 30, 30)
-    return alpha2_str, p2, y2_pred
-
-
-@app.cell
-def _(alpha2_str, display_alpha, p2):
-    display_alpha(p2, alpha2_str)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    We can visually compare these predictions:
-    """)
-    return
-
-
-@app.cell
-def _(
-    alpha1_str,
-    alpha2_str,
-    alpha3_str,
-    ds,
-    idx,
-    p,
-    p2,
-    p3,
-    plot_prediction,
-    y1_pred,
-    y2_pred,
-    y3_pred,
-):
-    plot_prediction(ds, "eval", idx, [y3_pred.squeeze(), y1_pred.squeeze(), y2_pred.squeeze()], [p3, p, p2], [len(alpha3_str.strip('0.')), len(alpha1_str.strip('0.')), len(alpha2_str.strip('0.'))], show_nums=True, size=2.7)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    With $p=14$ every prediction is exactly right (up to one decimal place). But there's a tradeoff: we need more storage. The number $\alpha$ grows from 1,625 digits to 3,792 digits. The higher we set $p$, the more accurate our encoding becomes, but the more storage space it requires. On the flip side, with $p=4$, we only need 1,083 digits. But our predictions are totally off. It is cool to see the precision tradeoff in practice!
-    """)
-    return
-
-
-@app.cell
-def _(idx, mo, y, y2_pred):
-    mo.md(rf"""
-    Looking closer at our $p=14$ predictions, they're not perfectly accurate—they only match the ground truth to about 2 decimal places (assuming rounding):
-
-    ```py
-    y_pred[0, 0] = {y2_pred[0, 0, 0]}
-    ```
-
-    ```py
-    y[0, 0] = {y[idx, 0, 0]}
-    ```
-
-    In binary,
-    """)
-    return
-
-
-@app.function
-def diff(a, b, name_a="", name_b=""):
-    from IPython.display import HTML, display
-    def line(s, t): return ''.join(f'<span style="color:{"green" if x==y else "red"}">{x}</span>  ' for x, y in zip(s, t))
-    nums = ''.join(f'{i:<3}' for i in range(1, len(a)+1))
-    pad = max(len(name_a), len(name_b))
-    display(HTML(f'<div style="white-space:pre; font-family:monospace">{"":<{pad}} {nums}<br>{name_a:>{pad}} {line(a, b)}<br>{name_b:>{pad}} {line(b, a)}</div>'))
-
-
-@app.cell
-def _(decimal_to_binary, idx, scaler, y, y2_pred):
-    diff(decimal_to_binary(scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(scaler.transform(y2_pred[0, 0, 0]), 32), "y", "y_pred")
-    return
-
-
-@app.cell
-def _(idx, scaler, y):
-    # Test 1: Round-trip error of the scaler
-    y_val = y[idx, 0, 0]
-    y_scaled = scaler.transform(y_val)
-    y_back = scaler.inverse_transform(y_scaled)
-    y_re_scaled = scaler.transform(y_back)
-
-    print(f"Original Scaled: {y_scaled}")
-    print(f"Round-trip Scaled: {y_re_scaled}")
-    print(f"Bit-level difference: {abs(y_scaled - y_re_scaled)}")
-    return
-
-
-@app.cell
-def _(math):
-    R = 9
-    p_star = math.ceil(33 + math.log2(R * math.pi))
-    print(p_star)
-    return (p_star,)
-
-
-@app.cell
-def _(ds, p_star):
-    n_bits_star = 900 * len(ds['eval']) * p_star
-    print(n_bits_star)
-    return (n_bits_star,)
-
-
-@app.cell
-def _(math, n_bits_star):
-    n_digits_star = math.floor(n_bits_star / math.log2(10))
-    print(n_digits_star)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
     We scale the raw ARC-AGI data $y \in [0, 9]$ to the unit interval $[0,1]$ using the minmax scaler which does a linear shift
 
     $$
@@ -1810,7 +1450,338 @@ def _(mo):
     &= R \left(\frac{\pi}{2^{p-1}} + \epsilon\right) & \text{by equations (1) and (2)}
     \end{align*}
     $$
+    ///
+    """)
+    return
 
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    With these adjustments, we are now ready to create the final implementation of the one-parameter model. The code is quite simple and looks like a standard scikit-learn ML model:
+
+    * `model.fit` runs the encoder. It also scales and reshapes the data.
+    * `model.predict` runs the decoder. It also reverses the data scaling and reshaping.
+    * `model.verify` checks that the outputted predictions are within the theoretical error bounds we derived.
+    """)
+    return
+
+
+@app.cell
+def _(OneParameterModel, display_fxn, mo):
+    mo.md(rf"""
+    {display_fxn(OneParameterModel)}
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    This is the entire one-parameter model, short and sweet! Since arbitrary precision arithmetic operations are so slow, we implemement three speed ups for the decoder.
+
+    1. **ParallelizationThis is our one-parameter model in its full glory! This scalar
+    α
+    α is is 130,044 digits long and all we need to correctly predict the question output of any ARC-AGI-2 public eval set puzzle!:** Because each number is decoded independently, we can decode all number in parallel with `multiprocessing.Pool`. This speeds up the for loop over the indices `range(len(y_scaled))`.
+    2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it every time we call `logistic_decoder`. This eliminates repeated expensive trigonometric and square root operations on huge $np$-bit numbers like $\alpha$.
+    3. **Adaptive precision:** We currently use all $np$ bits of $\alpha$ every decoding step, i.e. we set `mp.prec = full_precision`. However, in the $i$th decoding step, we only need the first $p(i+1)+1$ bits of $\alpha$. This allows us to work with fewer bits, drastically reducing the computation needed at each step, and makes everything faster.
+
+    These speedups are gated behind the `fast` flag and are turned on by default. On my M1 Macbook, they give a 10x speedup.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    /// details | How does adaptive precision work? Why can we use $p(i+1)+1$ bits instead of $np$ bits in the $i$th decoding step?
+        type: info
+
+    Each sample is encoded in $p$ bits, so the $i$th sample occupies bits $ip$ through $ip + (p-1) = p(i+1) - 1$ of $\alpha$. The parts of $\alpha$ beyond $\alpha$ beyond $p(i+1) - 1$ bits are irrelevant in iteration $i$.
+
+    By setting mpmath's precision to exactly $p(i+1) - 1$ bits in iteration $i$, we perform computation on fewer bits, increasing the precision gradually: $p$ bits in iteration $0$, $2p$ bits in iteration $1$, and so on, up to $np$ bits in the final iteration. This reduces the total arithmetic cost from $n \cdot (np)$ bit-operations to
+
+    $$
+    p(1+2+...+n) = \frac{n(n+1)}{2} p,
+    $$
+
+    which is roughly 2x fewer arithmetic operations. Theoretically this is a constant factor improvement. However, in practice this yields a dramatic speedup in mpmath.
+
+    A key important caveat is that this optimization only works in dyadic space where the bit structure is explicit. In logistic space, the bit positions are scrambled, making reduced precision unusable. For this reason, we apply reduced precision only after $\phi^{-1}$ transforms the value into dyadic space. Shout out to Claude for helping me to debug this nuanced point!
+
+    Finally, to improve numerical stability, we set mpmath's precision to $p(i+1)+1$ bits -- two bits higher than the normal $p(i+1)-1$. These two extra bits are not for extracting additional information from $\alpha$. Instead, they act as a numerical buffer that helps preserves the accuracy of mpmath’s arithmetic. Empirically, we need this otherwise mpmath does not work properly. I'm not sure why...
+
+    ///
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    Now let's try out the one-parameter model and encode the entire ARC-AGI-2 public eval set (120 puzlzes) into $\alpha$ using precision $p=6$.
+    """)
+    return
+
+
+@app.cell
+def _(ds, pad_arc_agi_2):
+    X, y = pad_arc_agi_2(ds['eval'])
+    return X, y
+
+
+@app.cell
+def _(OneParameterModel, X, mo, y):
+    model1 = OneParameterModel(precision=6)
+    model1.fit(X, y)
+    mo.show_code()
+    return (model1,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    This is our one-parameter model in its full glory! This scalar $\alpha$ is is 130,044 digits long and all we need to correctly predict the question output of any ARC-AGI-2 public eval set puzzle!
+    """)
+    return
+
+
+@app.cell
+def _(display_alpha, model1):
+    p1 = 6
+    alpha1_str = str(model1.alpha)
+    display_alpha(p1, alpha1_str)
+    return alpha1_str, p1
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    For instance, consider puzzle 23 of the public eval set. We ignore $X$ which contains the 3 examples and the question input
+    """)
+    return
+
+
+@app.cell
+def _():
+    idx = 23
+    return (idx,)
+
+
+@app.cell
+def _(ds, idx, plot_arcagi):
+    plot_arcagi(ds, "eval", idx, hide_question_output=True, size=2.5) # 17, 23, 26, 27
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    and only encode the question output
+    """)
+    return
+
+
+@app.cell
+def _(ds, idx, plot_question):
+    plot_question(ds, 'eval', idx, io='output', size=4)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    into $\alpha$. To recover this puzzle output, we run `model.predict()` and decode $\alpha$
+    """)
+    return
+
+
+@app.cell
+def _(mo, model1, np):
+    y1_pred = model1.predict(np.array([23]))
+
+    mo.show_code()
+    return (y1_pred,)
+
+
+@app.cell
+def _(np, plot_matrix, plt):
+    def plot_prediction(ds, split, i, predictions=None, precisions=None, alpha_n_digits=None, size=2.5, w=0.9, show_nums=False):
+      puzzle = ds[split][i]
+      nq = 1 # len(puzzle['question_inputs'])
+      n_pred = len(predictions) if predictions is not None else 0
+      mosaic = [[f'Q.{j+1}_out' for j in range(nq)] + [f'pred_{k}' for k in range(n_pred)]]
+      fig, axes = plt.subplot_mosaic(mosaic, figsize=(size*(nq+n_pred)+3, 5))
+      plt.suptitle(f'ARC-AGI-2 {split.capitalize()} puzzle #{i}', fontsize=18, fontweight='bold', y=0.98)
+
+      for j in range(nq):
+        plot_matrix(puzzle['question_outputs'][j], axes[f'Q.{j+1}_out'], title=f"Q.{j+1} Output", status='predict', w=w, show_nums=show_nums)
+
+      if n_pred:
+        if precisions is None: precisions = [None]*n_pred
+        if alpha_n_digits is None: alpha_n_digits = [None]*n_pred
+        for k in range(n_pred):
+          pred = np.array(predictions[k])[:len(puzzle['question_outputs'][0]), :len(puzzle['question_outputs'][0][0])]
+          title = "Q.1 Prediction"
+          if alpha_n_digits[k] is not None: title = f"len(α)={alpha_n_digits[k]:,} digits\n\n{title}"
+          if precisions[k] is not None: title = f"Precision={precisions[k]}\n{title}"
+          plot_matrix(pred, axes[f'pred_{k}'], title=title, w=w, show_nums=show_nums)
+        fig.add_artist(plt.Line2D([nq/(nq+n_pred), nq/(nq+n_pred)], [0.05, 0.87], color='#333333', linewidth=5, transform=fig.transFigure))
+        fig.text(nq/(2*(nq+n_pred)), 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
+        fig.text((nq+n_pred/2)/(nq+n_pred), 0.91, 'Predictions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
+      else:
+        fig.text(0.5, 0.91, 'Questions', ha='center', va='top', fontsize=13, fontweight='bold', color='#444444', transform=fig.transFigure)
+
+      fig.patch.set_linewidth(5)
+      fig.patch.set_edgecolor('#333333')
+      fig.patch.set_facecolor('#eeeeee')
+      plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
+      return fig
+    return (plot_prediction,)
+
+
+@app.cell
+def _(alpha1_str, ds, idx, p1, plot_prediction, y1_pred):
+    plot_prediction(ds, "eval", idx, [y1_pred.squeeze()], [p1], [len(alpha1_str)], show_nums=True, size=2)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    The correct answer is on the left and the one-parameter model's prediction is on the right. (Remember, the colors are just for display purposes, the model really sees numerical values.) Taking a closer look
+
+    * The green cells equal 3, and our predictions came close, spanning 2.9, 2.8, and 3.0.
+    * The yellow cells equal 4, but we predicted 3.7.
+    * The light blue cells equal 8 but we predicted 7.8 and 7.7.
+
+    Across the entire image, our predictions are close to the correct values, typically off by only a small fraction. What went wrong?
+
+    These small errors happen because of our precision setting $p$. Remember, the encoder saves each number using only $p$ bits and throws away everything else. This cuttoff creates quantization errors up to
+
+    $$
+    R \Big( \frac{\pi}{2^{p-1}} + \epsilon \Big) = 0.88
+    $$
+
+    where precision $p=6$, MinMaxScaler range $R=9$, and MinMaxScaler clipping factor $\epsilon=10^{-12}$. All our errors are indeed less than $0.88$, meaning our theoretical bound holds true in practice. There's nothing broken here. This is just what happens when you use finite precision.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    If we run the one-parameter model with $p=14$ and $p=4$
+    """)
+    return
+
+
+@app.cell
+def _():
+    p2 = 14
+    p3 = 4
+    return p2, p3
+
+
+@app.cell
+def _(OneParameterModel, X, idx, np, y):
+    model2 = OneParameterModel(precision=14).fit(X, y)
+    alpha2_str = str(model2.alpha)
+    y2_pred = model2.predict(np.array([idx]))
+    return alpha2_str, y2_pred
+
+
+@app.cell
+def _(OneParameterModel, X, idx, np, y):
+    model3 = OneParameterModel(precision=4).fit(X, y)
+    alpha3_str = str(model3.alpha)
+    y3_pred = model3.predict(np.array([idx]))
+    return alpha3_str, y3_pred
+
+
+@app.cell
+def _():
+    # display_alpha(p2, alpha2_str)
+    return
+
+
+@app.cell
+def _():
+    # display_alpha(p3, alpha3_str)
+    return
+
+
+@app.cell
+def _(
+    alpha1_str,
+    alpha2_str,
+    alpha3_str,
+    ds,
+    idx,
+    p1,
+    p2,
+    p3,
+    plot_prediction,
+    y1_pred,
+    y2_pred,
+    y3_pred,
+):
+    plot_prediction(ds, "eval", idx, [y3_pred.squeeze(), y1_pred.squeeze(), y2_pred.squeeze()], [p3, p1, p2], [len(alpha3_str.strip('0.')), len(alpha1_str.strip('0.')), len(alpha2_str.strip('0.'))], show_nums=True, size=2.8)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    With $p=4$ we get degenerate results. But with $p=14$ every prediction is exactly right. But there's a tradeoff: we need more space. For $p=14$ $\alpha$ has 455,155 digits whereas it only needs 195,066 digits for $p=6$. The higher we set $p$, the more accurate our encoding becomes, but the more memory it requires.
+    """)
+    return
+
+
+@app.cell
+def _(idx, mo, y, y2_pred):
+    mo.md(rf"""
+    Taking a closer look at our $p=14$ predictions, they're not perfectly accurate—they only match the ground truth to about 2 decimal places (assuming rounding):
+
+    ```py
+    y_pred[0, 0] = {y2_pred[0, 0, 0]}
+    ```
+
+    ```py
+    y[0, 0] = {y[idx, 0, 0]}
+    ```
+
+    In binary,
+    """)
+    return
+
+
+@app.function
+def diff(a, b, name_a="", name_b=""):
+    from IPython.display import HTML, display
+    def line(s, t): return ''.join(f'<span style="color:{"green" if x==y else "red"}">{x}</span>  ' for x, y in zip(s, t))
+    nums = ''.join(f'{i:<3}' for i in range(1, len(a)+1))
+    pad = max(len(name_a), len(name_b))
+    display(HTML(f'<div style="white-space:pre; font-family:monospace">{"":<{pad}} {nums}<br>{name_a:>{pad}} {line(a, b)}<br>{name_b:>{pad}} {line(b, a)}</div>'))
+
+
+@app.cell
+def _(decimal_to_binary, idx, y, y1_pred):
+    diff(decimal_to_binary(y[idx, 0, 0], 32), decimal_to_binary(y1_pred[0, 0, 0], 32))
+    return
+
+
+@app.cell
+def _(math):
+    R = 9
+    p_star = math.ceil(33 + math.log2(R * math.pi))
+    print(p_star)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
     This raises the question: what precision $p$ do we need to store each sample in for the one-parameter model to be accurate up to $p^*=32$ bits? In other words, we want
 
     $$
@@ -1857,124 +1828,13 @@ def _(mo):
     900 \times 120 \times 38 = 4{,}104{,}000 \text{ bits} \approx 0.513 \text{ MB}
     $$
 
-    In decimal notation, $\alpha$ must store approximately **1,235,427 digits**. This number is immense! Since mpmath operations are slower than regular operations, this will take hours! We need a faster approach.
-
+    In decimal notation, $\alpha$ must store approximately **1,235,427 digits**.
 
     > Note: The $\epsilon$ used for the MinMaxScaler clipping must be small enough that the clipping noise doesn't mask the significant bits of the data. This constraint is reflected in the denominator of our logarithmic term:
     >
     > $$1 - \epsilon \cdot R \cdot 2^{p^*}$$
     >
     > We need this term to be positive as you cannot take the logarithm of a non-positive number. If the target precision $p^*$ is really big, we must have a smaller clipping noise $\epsilon$ must be small enough to counteract the massive scaling of $2^{p^*}$. If $\epsilon$ is too large, clipping error destroys the signal, making $p^*$ bits of accuracy mathematically impossible.
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    ## Faster Implementation
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    Looking at our decoder
-
-    ```py
-    def logistic_decoder(alpha, full_precision, p, i):
-        mp.prec = full_precision
-        return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
-
-    def decode(alpha, full_precision, p, y_scaled):
-        return np.array([logistic_decoder(alpha, full_precision, p, i) for i in tqdm(range(len(y_scaled)), total=len(y_scaled), desc="Decoding")])
-
-    y_pred_raw = decode(alpha, full_precision, p, y_scaled)
-    ```
-
-    we can accelerate this in three ways:
-
-    1. **Parallelization:** Because each number is decoded independently, we can decode all number in parallel with `multiprocessing.Pool`. This speeds up the for loop over the indices `range(len(y_scaled))`.
-    2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it every time we call `logistic_decoder`. This eliminates repeated expensive trigonometric and square root operations on huge $np$-bit numbers like $\alpha$.
-    3. **Adaptive precision:** We currently use all $np$ bits of $\alpha$ every time we decode as we set `mp.prec = full_precision`. However, in the $i$th step, we only need the first $p(i+1)+1$ bits of $\alpha$. Working with fewer bits drastically reduces the computation needed at each step.
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    /// details | How does adaptive precision work? Why can we use $p(i+1)+1$ bits instead of $np$ bits in the $i$th decoding step?
-        type: info
-
-    Each sample is encoded in $p$ bits, so the $i$th sample occupies bits $ip$ through $ip + (p-1) = p(i+1) - 1$ of $\alpha$. The parts of $\alpha$ beyond $\alpha$ beyond $p(i+1) - 1$ bits are irrelevant in iteration $i$.
-
-    By setting mpmath's precision to exactly $p(i+1) - 1$ bits in iteration $i$, we perform computation on fewer bits, increasing the precision gradually: $p$ bits in iteration $0$, $2p$ bits in iteration $1$, and so on, up to $np$ bits in the final iteration. This reduces the total arithmetic cost from $n \cdot (np)$ bit-operations to
-
-    $$
-    p(1+2+...+n) = \frac{n(n+1)}{2} p,
-    $$
-
-    which is roughly 2x fewer arithmetic operations. Theoretically this is a constant factor improvement. However, in practice this yields a dramatic speedup in mpmath.
-
-    A key important caveat is that this optimization only works in dyadic space where the bit structure is explicit. In logistic space, the bit positions are scrambled, making reduced precision unusable. For this reason, we apply reduced precision only after $\phi^{-1}$ transforms the value into dyadic space. Shout out to Claude for helping me to debug this nuanced point!
-
-    Finally, to improve numerical stability, we set mpmath's precision to $p(i+1)+1$ bits -- two bits higher than the normal $p(i+1)-1$. These two extra bits are not for extracting additional information from $\alpha$. Instead, they act as a numerical buffer that helps preserves the accuracy of mpmath’s arithmetic. Empirically, we need this otherwise mpmath does not work properly. I'm not sure why...
-
-    ///
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    It is simple to implement these three speedups in our decoder.
-    """)
-    return
-
-
-@app.cell
-def _(display_fxn, logistic_decoder_fast, mo):
-    mo.md(rf"""
-    {display_fxn(logistic_decoder_fast)}
-    """)
-    return
-
-
-@app.cell
-def _(display_fxn, fast_decode, mo):
-    mo.md(rf"""
-    {display_fxn(fast_decode)}
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    These three optimizations give a $10\times$+ speedup on my Mac M1 Pro. Because of adaptive precision, the fast decoder may produce slightly different values beyond the first $p$ bits compared to the regular decoder. However, the fast decoder is still guaranteed to  stay within the theoretical error tolerance. We now have a decoder that is fast enough we can encode the entire ARC-AGI-2 dataset.
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    We are now ready to create the final implementation of the one-parameter model. The code is quite simple and looks like a standard scikit-learn ML model:
-
-    * `model.fit` runs the encoder. It also scales and reshapes the data.
-    * `model.predict` runs the (fast) decoder. It runs the decoder in parallel and reverses the data scaling and reshaping.
-    * `model.verify` checks that the outputted predictions are within the theoretical error bounds we derived.
-    """)
-    return
-
-
-@app.cell
-def _(OneParameterModel, display_fxn, mo):
-    mo.md(rf"""
-    {display_fxn(OneParameterModel)}
     """)
     return
 
@@ -1990,21 +1850,24 @@ def _(mo):
 
 
 @app.cell
-def _(OneParameterModel, X, mo, y):
-    p5 = 38
-
-    # run encoder
-    model = OneParameterModel(p5)
-    model.fit(X, y)
-    alpha5_str = str(model.alpha)
-
-    mo.show_code()
-    return alpha5_str, model, p5
+def _():
+    p4 = 38
+    return (p4,)
 
 
 @app.cell
-def _(alpha5_str, display_alpha, p5):
-    display_alpha(p5, alpha5_str)
+def _(OneParameterModel, X, mo, y):
+    model4 = OneParameterModel(precision=38)
+    model4.fit(X, y)
+    alpha4_str = str(model4.alpha)
+
+    mo.show_code()
+    return alpha4_str, model4
+
+
+@app.cell
+def _(alpha4_str, display_alpha, p4):
+    display_alpha(p4, alpha4_str)
     return
 
 
@@ -2017,33 +1880,27 @@ def _(mo):
 
 
 @app.cell
-def _(idx, mo, model, np, y):
-    y5_pred = model.predict(np.array([idx]))
-    model.verify(y5_pred, y[idx])
+def _(idx, mo, model, model4, np, y):
+    y4_pred = model4.predict(np.array([idx]))
+    model.verify(y4_pred, y[idx])
 
     mo.show_code()
-    return (y5_pred,)
+    return (y4_pred,)
 
 
 @app.cell
-def _(model):
-    model.scaler.epsilon * model.scaler.range * 2**model.precision
+def _(alpha4_str, ds, idx, p4, plot_prediction, y4_pred):
+    plot_prediction(ds, "eval", idx, [y4_pred.squeeze()], [p4], [len(alpha4_str.strip('0.'))], size=3, show_nums=True)
     return
 
 
 @app.cell
-def _(alpha5_str, ds, idx, p5, plot_prediction, y5_pred):
-    plot_prediction(ds, "eval", idx, [y5_pred.squeeze()], [p5], [len(alpha5_str.strip('0.'))], size=3, show_nums=True)
-    return
-
-
-@app.cell
-def _(idx, mo, y, y5_pred):
+def _(idx, mo, y, y4_pred):
     mo.md(rf"""
     With $p=38$ our predictions perfectly match the ground truth for all 32 bits.
 
     ```py
-    {y5_pred[0, 0, 0]=}
+    {y4_pred[0, 0, 0]=}
     ```
 
     ```py
@@ -2054,21 +1911,15 @@ def _(idx, mo, y, y5_pred):
 
 
 @app.cell
-def _(decimal_to_binary, idx, scaler, y, y5_pred):
-    diff(decimal_to_binary(scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(scaler.transform(y5_pred[0, 0, 0]), 32))
-    return
-
-
-@app.cell
-def _(decimal_to_binary, model, y5_pred):
-    y5_pred_binary = decimal_to_binary(model.scaler.transform(y5_pred[0, 0, 0]), 32)
+def _(decimal_to_binary, model4, y4_pred):
+    y5_pred_binary = decimal_to_binary(model4.scaler.transform(y4_pred[0, 0, 0]), 32)
     y5_pred_binary
     return (y5_pred_binary,)
 
 
 @app.cell
-def _(decimal_to_binary, idx, model, y):
-    y_binary = decimal_to_binary(model.scaler.transform(y[idx, 0, 0]), 32)
+def _(decimal_to_binary, idx, model4, y):
+    y_binary = decimal_to_binary(model4.scaler.transform(y[idx, 0, 0]), 32)
     y_binary
     return (y_binary,)
 
@@ -2096,18 +1947,6 @@ def _(mo):
 
     [Scraping](https://arcprize.org/media/data/leaderboard/evaluations.json) the official ARC-AGI leaderboard, we can plot each model's size in bytes against their public ARC-AGI-2 eval score.
     """)
-    return
-
-
-@app.cell
-def _():
-    # from huggingface_hub import snapshot_download
-
-    # repo_path = snapshot_download(
-    #     repo_id="sapientinc/HRM-checkpoint-ARC-2"
-    # )
-
-    # repo_path
     return
 
 

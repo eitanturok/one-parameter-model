@@ -17,8 +17,7 @@ class MinMaxScaler:
         X_scaled = (X - self.min) / self.range
         return np.clip(X_scaled, self.epsilon, 1 - self.epsilon)  # Keep away from exact boundaries
     def fit_transform(self, X): return self.fit(X).transform(X)
-    def inverse_transform(self, X):
-        return X * self.range + self.min
+    def inverse_transform(self, X): return X * self.range + self.min
 
 #***** binary *****
 
