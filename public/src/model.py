@@ -6,8 +6,7 @@ from tqdm import tqdm
 #***** utilities *****
 
 class MinMaxScaler:
-    # def __init__(self, epsilon=1e-10): # todo: change to 1e-12
-    def __init__(self, epsilon=1e-12): # todo: change to 1e-12
+    def __init__(self, epsilon=1e-12):
         self.min = self.max = self.range = None
         self.epsilon = epsilon
     def fit(self, X):
@@ -19,9 +18,7 @@ class MinMaxScaler:
         return np.clip(X_scaled, self.epsilon, 1 - self.epsilon)  # Keep away from exact boundaries
     def fit_transform(self, X): return self.fit(X).transform(X)
     def inverse_transform(self, X):
-        return X * self.range + self.min # todo: use this line instead
-        # X_clipped = np.clip(X, self.epsilon, 1 - self.epsilon)
-        # return X_clipped * self.range + self.min
+        return X * self.range + self.min
 
 #***** binary *****
 
@@ -34,8 +31,7 @@ def decimal_to_binary(x_decimal:np.ndarray|float|int|list|tuple, precision:int):
     assert 0 <= x_decimal.min() <= x_decimal.max() <= 1, f"expected x_decimal to be in [0, 1] but got [{x_decimal.min()}, {x_decimal.max()}]"
     bits = []
     for _ in range(precision):
-        bits.append((x_decimal >= 0.5).astype(int)) # todo: use this in stead
-        # bits.append(np.round(x_decimal))
+        bits.append((x_decimal >= 0.5).astype(int))
         x_decimal = dyadic_map(x_decimal)
     return ''.join(map(str, np.array(bits).astype(int).T.ravel()))
 
@@ -140,22 +136,19 @@ class OneParameterModel:
     def predict(self, idxs:np.ndarray, fast:bool=True):
         full_idxs = (np.tile(np.arange(self.y_size), (len(idxs), 1)) + idxs[:, None] * self.y_size).flatten().tolist()
 
-        # choose the fast or slow logistic decoder
-        if fast:
-            mp.prec = self.full_precision # compute arcsin(sqrt(alpha)) with full precision
-            decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(self.alpha)), self.precision)
-        else: decoder = functools.partial(logistic_decoder, self.alpha, self.full_precision, self.precision)
+        if not fast:
+            decoder = functools.partial(logistic_decoder, self.alpha, self.full_precision, self.precision)
+            y_pred = np.array([decoder(idx) for idx in tqdm(full_idxs, desc="Decoding")])
+            return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
-        # run the decoder sequentially/in parallel and then unscale+reshape y_pred
-        if self.n_workers == 0:
-            y_pred = np.array([decoder(idx) for idx in tqdm(full_idxs)])
-        else:
-            with multiprocessing.Pool(self.n_workers) as p:
-                y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding"))) # dtype=np.float32?
+        # choose the fast or slow logistic decoder
+        mp.prec = self.full_precision # compute arcsin(sqrt(alpha)) with full precision
+        decoder = functools.partial(logistic_decoder_fast, Arcsin(Sqrt(self.alpha)), self.precision)
+        with multiprocessing.Pool(self.n_workers) as p:
+            y_pred = np.array(list(tqdm(p.imap(decoder, full_idxs), total=len(full_idxs), desc="Decoding"))) # dtype=np.float32?
         return self.scaler.inverse_transform(y_pred).reshape((-1, *self.y_shape))
 
     def verify(self, y_pred:np.ndarray, y:np.ndarray):
-        # check logistic decoder error is within the theoretical bounds (section 2.5 https://arxiv.org/pdf/1904.12320)
-        # we increase the theoretical bounds from using the MinMax Scaler
+        # check logistic decoder error is within the theoretical bounds
         tolerance = self.scaler.range * (np.pi / 2 ** (self.precision - 1) + self.scaler.epsilon)
         np.testing.assert_allclose(y_pred.squeeze(), y.squeeze(), atol=tolerance, rtol=0)
