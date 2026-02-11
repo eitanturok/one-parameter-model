@@ -23,7 +23,7 @@ marimo export html OneParameterModel.py -o docs/docs.html --force --no-include-c
 python export.py
 ```
 
-Export to html-wasm (not used)
+Export to html-wasm for interactive modeling (not used)
 ```bash
 marimo export html-wasm OneParameterModel.py -o docs --force
 python -m http.server --directory docs

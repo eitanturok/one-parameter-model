@@ -878,7 +878,7 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point $\tilde{\mathcal{X}}$ up to $p$ bits of precision. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access the desired information.
+    Think about what we've accomplished here. We just showed that you can take a dataset compress it down to a single real number, $\alpha$. Then, using nothing more than repeated doubling and truncation via $\mathcal{D}$, we can perfectly recover every data point $\tilde{\mathcal{X}}$ up to $p$ bits of precision. The chaotic dynamics of the dyadic map, which seemed like a nuisance, turns out to be the precise mechanism we need to systematically access the desired information. Perhaps we can encode the ARC-AGI-2 dataset using this method...
     """)
     return
 
@@ -985,7 +985,7 @@ def _(mo):
     ?
     $$
 
-    In this section we will "apply makeup" to the first function to get it looking a bit closer to the second function. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map). The logistic-map at $r=4$ on the unit interval is defined as
+    In this section we will "apply makeup" to the first function to get it looking a bit closer to the second. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map). The logistic-map at $r=4$ on the unit interval is defined as
 
     $$
     \begin{align*}
@@ -1076,7 +1076,9 @@ def _(mo):
     | $1/3$ | $(0.333, 0.888, 0.395, 0.956, 0.168, 0.560)$ | $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$ |
     | $0.43085467085$ | $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$ | $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$ |
 
-    At first glance, the logistic and dyadic maps create orbits that look nothing alike! However, [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us these two maps are *actually* the same.
+    At first glance, the logistic and dyadic maps create orbits that look nothing alike: the first orbits differ by a single element while the second and third appear random, unrelated.
+
+    However, [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us these two maps are *actually* the same.
 
     The logistic and dyadic maps have identical orbits, the exact same chaotic trajectories, simply expressed in different coordinates. The logistic map, for all its smooth curves and elegant form, is actually doing discrete binary operations under the hood, just like the dyadic map (and vice versa). Formally, two functions are topologically conjugate if there exists a homeomorphism, fancy talk for a change of coordinates, that perfectly takes you from one map to another. The change of coordinates here is
 
@@ -1147,7 +1149,10 @@ def _(mo):
     \end{align*}
     $$
 
-    To transform dyadic space into logistic space, we apply $\phi$ to the dyadic *outputs* $\mathcal{D}^k(a_D)$ and get $\mathcal{L}^k(a_L)$. To transform logistic space into dyadic space, we apply the inverse $\phi^{-1}$ to the *input* $a_L$ before applying the logistic map $\mathcal{L}$ and get $\mathcal{D}^k(a_D)$. These equations hold for all iterations $k$ , meaning $\phi$ and $\phi^{-1}$ perfectly relate *every* single point in the dyadic and logistic orbits. Think of these two orbits existing in parallel universes with $\phi$ and $\phi^{-1}$ acting as the bridges between $\mathcal{D}$ and $\mathcal{L}$.
+    * The first equation says that to transform dyadic space into logistic space, we apply $\phi$ to the dyadic *outputs* $\mathcal{D}^k(a_D)$ and get $\mathcal{L}^k(a_L)$.
+    * The second equation says that to transform logistic space into dyadic space, we apply the inverse $\phi^{-1}$ to the *input* $a_L$ before applying the logistic map $\mathcal{L}$ and get $\mathcal{D}^k(a_D)$.
+
+    These equations hold for all iterations $k$ , meaning $\phi$ and $\phi^{-1}$ perfectly relate *every* single point in the dyadic and logistic orbits. Think of these two orbits existing in parallel universes with $\phi$ and $\phi^{-1}$ acting as the bridges between $\mathcal{D}$ and $\mathcal{L}$.
     """)
     return
 
@@ -1180,7 +1185,15 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    Let's now use the smooth and differentiable logistic map $\mathcal{L}$  as "makeup" to hide the ugly and discontinuous dyadic operation $\mathcal{D}$ . However, we still need to be in the dyadic space so our clever bit manipulations will still work out. Here's the strategy:
+    ## A New Algorithm
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    Let's now use the smooth and differentiable logistic map $\mathcal{L}$  as "makeup" to hide the ugly and discontinuous dyadic operation $\mathcal{D}$ in our algorithm. Remember, we still need to be in the dyadic space so our clever bit manipulations will still work out. Here's the strategy:
 
     1. Encoder: Work in dyadic space where bit manipulation works (use $\phi$) but at the very end output $\alpha$ in logistic space (use $\phi^{-1}$)
     2. Decoder: Work entirely in smooth logistic space using the conjugacy relationship
@@ -2020,7 +2033,7 @@ def _(mo):
 
     A better way to measure model size is by the total bytes of the model weights (number of parameters × bytes per parameter). This accounts for both the quantity of parameters and the precision at which each is stored, capturing the true information content required to specify the model.
 
-    [Scraping](https://arcprize.org/media/data/leaderboard/evaluations.json) the official ARC-AGI leaderboard, we can plot each model's size in bytes against their ARC-AGI-2 scores. (Let's assume all frontier labs' closed source models have 1T parameters).
+    [Scraping](https://arcprize.org/media/data/leaderboard/evaluations.json) the official ARC-AGI leaderboard, we can plot each model's size in bytes against their ARC-AGI-2 scores. (Let's assume all frontier labs' closed source models have 1T parameters and are in fp16.)
     """)
     return
 
@@ -2368,21 +2381,13 @@ def _(df, plot_efficiency_twitter):
 @app.cell
 def _(mo):
     mo.md(r"""
-    Here the one-parameter model gets zero on the Semi-Private eval set. It is not prateo optimal and instead fits along the smooth curve, with the rest of the models.
+    While the one-parameter model achieves a perfect 100% on the public ARC-AGI-2 evaluation set, its performance collapses to zero on semi-private evaluation set. Every other model maintains a consistent score across public and semi-private sets, but the one-parameter model’s failure on held-out data reveals that it has overfit and is nothing more than a clever mathematical hack.
 
-    Every model has roughly the same score on the Public Eval and Semi-Private Eval set except for the one-parameter model. This is textbook overfitting. The gap between the public and semi-private eval scores represents the bytes required to actually learn.
-    """)
-    return
+    Taking a closer look, most top-tier models approach 1TB in size, while the one-parameter model is a mere 5MB. If 5MB can literally memorize the entire ARC-AGI-2 dataset, what is the purpose of those extra trillion bytes in larger models?
 
+    The answer is generalization.
 
-@app.cell
-def _(mo):
-    mo.md(r"""
-    But how much information can a model actually store? [Recent work](https://arxiv.org/pdf/2505.24832) provides a precise answer. The authors estimate that models in the GPT family have a capacity of approximately **3.6 bits-per-parameter**. When a model's capacity fills up, something remarkable happens: it stops memorizing and begins to generalize.
-
-    > We propose a new method for estimating how much a model "knows" about a datapoint and use it to measure the capacity of modern language models... our measurements estimate that models in the GPT family have an approximate capacity of 3.6 bits-per-parameter. We train language models on datasets of increasing size and observe that models memorize until their capacity fills, at which point "grokking" begins, and unintended memorization decreases as models begin to generalize.
-
-    This research highlights exactly why the one-parameter model is so absurd. It has no capacity constraint at all. By storing 260,091 digits of precision, I've crammed roughly **860,000 bits** into a single "parameter"—orders of magnitude more than any real model could achieve. The one-parameter model doesn't learn or generalize; it simply has infinite storage disguised as a single number.
+    A model is much more than a compressed form of its training data. True pattern recognition requires "excess" bytes to navigate the space between training samples and generalize to unseen examples. These extra bytes allow for language, reasoning, and pattern matching. It is in these excess bytes that true intelligence lies.
     """)
     return
 
@@ -2489,19 +2494,19 @@ def _(np, plt):
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
 
         return fig
-    return (plot_dual_efficiency_bars,)
+    return
 
 
 @app.cell
-def _(df, plot_dual_efficiency_bars, plt):
-    plot_dual_efficiency_bars(
-        df, 
-        score_col_1='public eval score', 
-        score_col_2='semi-private eval score',
-        label_1='Public Score',
-        label_2='Semi-Private Score'
-    )
-    plt.show()
+def _():
+    # plot_dual_efficiency_bars(
+    #     df, 
+    #     score_col_1='public eval score', 
+    #     score_col_2='semi-private eval score',
+    #     label_1='Public Score',
+    #     label_2='Semi-Private Score'
+    # )
+    # plt.show()
     return
 
 
