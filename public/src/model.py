@@ -47,7 +47,10 @@ def phi_inverse(x): return np.arcsin(np.sqrt(x)) / (2.0 * np.pi)
 def dyadic_decoder(alpha, p, i): return float((2 ** (i * p) * alpha) % 1)
 
 def logistic_decoder(alpha, full_precision, p, i):
+    # 1. set the arbitrary precision before computing anything
     mp.prec = full_precision
+
+    # 2. predict x_i via the logistic decoder
     return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
 
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):

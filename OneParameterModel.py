@@ -1,12 +1,13 @@
 import marimo
 
-__generated_with = "0.19.2"
+__generated_with = "0.19.10"
 app = marimo.App(width="medium")
 
 
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
@@ -15,6 +16,7 @@ def _():
     import json, inspect, multiprocessing, functools, time, math
     from pathlib import Path
     from urllib.request import urlopen
+
     return Path, inspect, json, math
 
 
@@ -25,6 +27,7 @@ def _():
     import matplotlib.pyplot as plt
     from matplotlib import colors
     from tqdm import tqdm
+
     return colors, np, pd, plt
 
 
@@ -32,6 +35,7 @@ def _():
 def _():
     from public.src.model import dyadic_map, decimal_to_binary, binary_to_decimal, phi, phi_inverse, logistic_encoder, logistic_decoder, logistic_decoder_fast, MinMaxScaler, decode, fast_decode, OneParameterModel
     from public.src.data import load_arc_agi_2, pad_arc_agi_2
+
     return (
         OneParameterModel,
         decimal_to_binary,
@@ -47,6 +51,7 @@ def _(inspect):
     def display_fxn(*fxns):
         fxns_str = '\n'.join([inspect.getsource(fxn) for fxn in fxns])
         return f"```py\n{fxns_str}\n```"
+
     return (display_fxn,)
 
 
@@ -54,6 +59,7 @@ def _(inspect):
 def _(mo):
     def display_alpha(p, alpha_str):
         return mo.md(f"```py\np={p}\nlen(alpha)={len(alpha_str.lstrip('0.'))} digits\nalpha={alpha_str}\n\n```")
+
     return (display_alpha,)
 
 
@@ -230,6 +236,7 @@ def _(colors, np, plt):
       fig.patch.set_facecolor('#eeeeee')
       plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
       return fig
+
     return plot_arcagi, plot_matrix
 
 
@@ -268,6 +275,7 @@ def _(plot_matrix, plt):
         fig.patch.set_linewidth(3)
         plt.subplots_adjust(left=0.08, right=0.92, bottom=0.08, top=0.8)
         return fig
+
     return (plot_question,)
 
 
@@ -346,7 +354,7 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    In July, HRM released a 27M parameter model inspired by the brain's "slow" and "fast" loops. It scored 40.3% on ARC-AGI-1, crushing larger models like o3-mini-high (34.5%) and Claude-3.7-8k (21.2%).
+    In July, HRM released a 27M parameter model inspired by the brain's "slow" and "fast" loops. It scored 40.3% on ARC-AGI-1, crushing larger models like o3-mini-high (34.5%) and Claude-3.7-8k (21.2%) which were SOTA at the time.
     """)
     return
 
@@ -532,11 +540,11 @@ def _(mo):
     | 4 | $D^4(a) = 0.897$ | $\text{bin}(D^4(a)) = 0.11...$ | First four bits of $a$ $(0110)$ removed |
     | 5 | $D^5(a) = 0.792$ | $\text{bin}(D^5(a)) = 0.1...$ | First five bits of $a$ $(01101)$ removed |
 
-    Looking at the Binary column, we see that **every time we apply the dyadic map, the most significant bit is removed**! We start off with $0.011011$, and then applying $\mathcal{D}$ once removes the leftmost $0$ to get $0.11011$, and applying $\mathcal{D}$ another time removes the leftmost $1$ to get $0.1011$. Although the orbit appears irregular in its decset_ylabel(r"$\mathcaimal representation, a clear pattern emerges from the binary representation.
+    Looking at the Binary column, we see that **every time we apply the dyadic map, the most significant bit is removed**! We start off with $0.011011$, and then applying $\mathcal{D}$ once removes the leftmost $0$ to get $0.11011$, and applying $\mathcal{D}$ another time removes the leftmost $1$ to get $0.1011$. Although the orbit appears irregular in its decimal representation, a clear pattern emerges from the binary representation.
 
     What is going on here?
 
-    Each time we call $D(a) = (2a) \mod 1$, we double $a$, i.e. $2a$, and truncate it, i.e. $\mod 1$. The doubling shifts every binary digit one place to the left and the truncation throws away whatever digit lands in the one's place. In other words, each application of $\mathcal{D}$ peels off the first binary digit and throws it away. **If we apply the dyadic map $k$ times, we remove the first $k$ bits of $a$.**
+    Each time we call $D(a) = (2a) \mod 1$, we double $a$ -- via $2a$ -- and truncate it -- via $\mod 1$. The doubling shifts every binary digit one place to the left and the truncation throws away whatever digit lands in the one's place. In other words, each application of $\mathcal{D}$ peels off the first binary digit and throws it away. **If we apply the dyadic map $k$ times, we remove the first $k$ bits of $a$.**
     """)
     return
 
@@ -667,7 +675,7 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    The number $\alpha$ is carefully engineered so that it is a decimal number whose bits contain our entire dataset's binary representation. That's right: **we've just compressed our entire dataset into a single decimal number!** We only have one parameter, not billions here! This is a very simple, stupid version of $\alpha = \text{model.fit}(\mathcal{X})$.
+    The number $\alpha$ is carefully engineered so that its bits contain our entire dataset's binary representation. That's right: **we've just compressed our entire dataset into a single decimal number!** We only have one parameter, not billions here! This is a very simple, stupid version of $\alpha = \text{model.fit}(\mathcal{X})$.
     """)
     return
 
@@ -884,6 +892,11 @@ def _(mo):
 
 
 @app.cell
+def _():
+    return
+
+
+@app.cell
 def _(mo):
     mo.md(r"""
     ## The Algorithm
@@ -962,6 +975,236 @@ def _(mo):
     # Applying Some Makeup
 
     > "You don’t want to overdo it with too much makeup" - Heidi Klum
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    While the Dyadic map $\mathcal{D}(x) = 2x \pmod 1$ is ideal for bit-extraction, it creates an ugly, discontionious decoder
+
+    $$
+    f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
+    $$
+
+    In this section we will "apply makeup" to make the decoder closer  to the beautiful function I promised you at the start of the blog
+
+    $$ f_{\alpha, p}(i)
+    =
+    \sin^2 \Big(
+        2^{i p} \arcsin^2(\sqrt{\alpha})
+    \Big)
+    $$
+
+    To do this we use the Logistic Map at $r=4$ on the unit interval
+
+    $$
+    \begin{align*}
+    \mathcal{L}: [0, 1] \to [0, 1]
+    &&
+    \mathcal{L}(a_L)
+    &=
+    4 a_L (1 - a_L)
+    \tag{6}
+    \end{align*}
+    $$
+
+    which seems quite different than the familiar dyadic map
+
+    $$
+    \begin{align*}
+    \mathcal{D}: [0, 1] \to [0, 1]
+    &&
+    \mathcal{D}(a_D)
+    &=
+    (2 a_D) \mod 1
+    \end{align*}
+    $$
+
+    One is a bit-shifting operation, the other is a smooth parabola that ecologists use to model population growth. However through [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy), we can show that the dyadic map $\mathcal{D}$ and the logistic map $\mathcal{L}$ are actually the same functions just viewed through different coordinate systems. The maps are related by the function $\phi$
+
+    $$
+    \begin{align*}
+    \mathcal{D}
+    &=
+    \phi^{-1} \circ \mathcal{L} \circ \phi
+    \\
+    \phi(a)
+    &=
+    \sin^2\left(\frac{\pi a}{2}\right)
+    \end{align*}
+    $$
+
+    The $k$-th iteration of the dyadic map can be expressed with the logistic map
+
+    $$
+    \begin{align*}
+        \mathcal{D}^k(a)
+        &=
+        \phi^{-1} \Big( \mathcal{L}^k \big( \phi( a ) \big) \Big)
+        =
+        \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big)
+    \end{align*}
+    $$
+
+    Leveraging this relatiosnhip, we can create a new continious decoder with the logistic map
+
+    $$
+    \begin{align*}
+        f_{\alpha, p}(i)
+        &=
+        \text{dec} \Big( \text{bin}_p \Big( & \mathcal{D}^{ip}(\alpha) && \Big) \Big)
+        =
+        \text{dec} \Big( \text{bin}_p \Big( && \phi^{-1} \big( \mathcal{L}^{ip}(\phi(\alpha)) \big) && \Big) \Big)
+        =
+        \text{dec} \Big( \text{bin}_p \Big( && \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big) && \Big) \Big)
+    \end{align*}
+    $$
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## A New Algorithm
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## old old
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    How do we go from the ugly, discontinuous decoder function
+
+    $$
+    f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
+    $$
+
+    to that beautiful function I promised you at the start of the blog
+
+    $$ f_{\alpha, p}(i)
+    =
+    \sin^2 \Big(
+        2^{i p} \arcsin^2(\sqrt{\alpha})
+    \Big)
+    ?
+    $$
+
+    In this section we will "apply makeup" to the first function to get it looking a bit closer to the second. To do this we use the Logistic Map at $r=4$ on the unit interval
+
+    $$
+    \begin{align*}
+    \mathcal{L}: [0, 1] \to [0, 1]
+    &&
+    \mathcal{L}(a_L)
+    &=
+    4 a_L (1 - a_L)
+    \tag{6}
+    \end{align*}
+    $$
+
+    which seems quite different than the familiar dyadic map
+
+    $$
+    \begin{align*}
+    \mathcal{D}: [0, 1] \to [0, 1]
+    &&
+    \mathcal{D}(a_D)
+    &=
+    (2 a_D) \mod 1
+    \end{align*}
+    $$
+
+    One is a bit-shifting operation, the other is a smooth parabola that ecologists use to model population growth. (Note: previously $a$ was the input to the dyadic map but from now on $a_D$ will be the input to the dyadic map to differentiate it from $a_L$, the input to the logistic map.)
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    However, [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) shows that the dyadic map $\mathcal{D}$ and the logistic map $L$ are actually the same system viewed through different "lenses." They are related by the coordinate transformation
+
+    $$
+    \begin{align*}
+    \mathcal{L} \circ \phi
+    &=
+    \phi \circ \mathcal{D}
+    \\
+    \phi(a)
+    &=
+    \sin^2\left(\frac{\pi a}{2}\right)
+    \\
+    \phi^{-1}(x)
+    &=
+    \frac{2}{\pi}\arcsin(\sqrt{x})
+    \end{align*}
+    $$
+
+    Leveraging this relationship, we can derive a new decoder
+
+    $$
+    \begin{align*}
+        \mathcal{D}
+        &=
+        \phi^{-1} \circ \mathcal{L} \circ \phi
+        \\
+        \mathcal{D}(a)
+        &=
+        \phi^{-1} \Big( \mathcal{L} \big( \phi( a ) \big) \Big) = \sin^2 \Big(2 \arcsin(\sqrt{a}) \Big)
+        \\
+        \mathcal{D}^k(a)
+        &=
+        \phi^{-1} \Big( \mathcal{L}^k \big( \phi( a ) \big) \Big)
+        =
+        \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big)
+    \end{align*}
+    $$
+
+    which becomes
+
+    $$
+    \begin{align*}
+        f_{\alpha, p}(i)
+        &=
+        \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
+        =
+        \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
+        =
+        \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big) \Big) \Big)
+    \end{align*}
+    $$
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## The New Decoder
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## old
     """)
     return
 
@@ -1068,7 +1311,7 @@ def _():
 @app.cell
 def _(mo):
     mo.md(r"""
-    What does the logistic orbit $(a_L, \mathcal{L}^1(a_L), \mathcal{L}^2(a_L), \mathcal{L}^3(a_L), \mathcal{L}^4(a_L), \mathcal{L}^5(a_L))$ look like? Similar or different to the dyadic orbit $(a_D, \mathcal{D}^1(a_D), \mathcal{D}^2(a_D), \mathcal{D}^3(a_D), \mathcal{D}^4(a_D), \mathcal{D}^5(a_D))$?
+    What does the logistic orbit look like? Similar or different to the dyadic orbit?
 
     | Initial Values $a_L, a_D$ | Logistic Orbit | Dyadic Orbit |
     |---------------|----------------|--------------|
@@ -1524,9 +1767,7 @@ def _(mo):
     mo.md(r"""
     This is the entire one-parameter model, short and sweet! Since arbitrary precision arithmetic operations are so slow, we implemement three speed ups for the decoder.
 
-    1. **ParallelizationThis is our one-parameter model in its full glory! This scalar
-    α
-    α is is 130,044 digits long and all we need to correctly predict the question output of any ARC-AGI-2 public eval set puzzle!:** Because each number is decoded independently, we can decode all number in parallel with `multiprocessing.Pool`. This speeds up the for loop over the indices `range(len(y_scaled))`.
+    1. **Parallelization:** Because each number is decoded independently, we can decode all number in parallel with `multiprocessing.Pool`. This speeds up the for loop over the indices `range(len(y_scaled))`.
     2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it every time we call `logistic_decoder`. This eliminates repeated expensive trigonometric and square root operations on huge $np$-bit numbers like $\alpha$.
     3. **Adaptive precision:** We currently use all $np$ bits of $\alpha$ every decoding step, i.e. we set `mp.prec = full_precision`. However, in the $i$th decoding step, we only need the first $p(i+1)+1$ bits of $\alpha$. This allows us to work with fewer bits, drastically reducing the computation needed at each step, and makes everything faster.
 
@@ -1703,6 +1944,7 @@ def _(np, plot_matrix, plt):
       fig.patch.set_facecolor('#eeeeee')
       plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
       return fig
+
     return (plot_prediction,)
 
 
@@ -1751,6 +1993,7 @@ def _(OneParameterModel, mo, np):
         alpha2_str = str(model2.alpha)
         y2_pred = model2.predict(np.array([idx]))
         return model2, alpha2_str, y2_pred
+
     return (run_model,)
 
 
@@ -1910,12 +2153,22 @@ def _(mo):
     $$
 
     In decimal notation, $\alpha$ must store approximately **1,235,427 digits**.
+    """)
+    return
 
-    > Note: The $\epsilon$ used for the MinMaxScaler clipping must be small enough that the clipping noise doesn't mask the significant bits of the data. This constraint is reflected in the denominator of our logarithmic term:
-    >
-    > $$1 - \epsilon \cdot R \cdot 2^{p^*}$$
-    >
-    > We need this term to be positive as you cannot take the logarithm of a non-positive number. If the target precision $p^*$ is really big, we must have a smaller clipping noise $\epsilon$ must be small enough to counteract the massive scaling of $2^{p^*}$. If $\epsilon$ is too large, clipping error destroys the signal, making $p^*$ bits of accuracy mathematically impossible.
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    /// details | **Are there any constraints on $\epsilon$?**
+
+    The $\epsilon$ used for the MinMaxScaler clipping must be small enough that the clipping noise doesn't mask the significant bits of the data. This constraint is reflected in the denominator of our logarithmic term:
+
+    $$1 - \epsilon \cdot R \cdot 2^{p^*}$$
+
+    We need this term to be positive as you cannot take the logarithm of a non-positive number. If the target precision $p^*$ is really big, we must have a smaller clipping noise $\epsilon$ must be small enough to counteract the massive scaling of $2^{p^*}$. If $\epsilon$ is too large, clipping error destroys the signal, making $p^*$ bits of accuracy mathematically impossible.
+
+    ///
     """)
     return
 
@@ -2118,6 +2371,7 @@ def _(Path, json, pd):
         df = df.sort_values('weight bytes')
         df = df.reset_index(drop=True)
         return df
+
     return (load_arc_evals,)
 
 
@@ -2220,6 +2474,7 @@ def _(np, plt):
 
         plt.tight_layout()
         return fig
+
     return
 
 
@@ -2335,6 +2590,7 @@ def _(plt):
             fig.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
 
         return ax
+
     return (plot_efficiency_twitter,)
 
 
@@ -2494,6 +2750,7 @@ def _(np, plt):
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
 
         return fig
+
     return
 
 
@@ -2593,20 +2850,7 @@ def _():
     tweet_html = """
     <blockquote class="twitter-tweet"><p lang="en" dir="ltr">Wait, this sounds incredible useful! Can we just have a model with 0 entropy, 0 hallucinations, that just acts like a retrieval database over its training dataset? Also sounds like a great way to solve the traceability problem. Why don&#39;t the AI labs just make something like that? <a href="https://t.co/n37BIqqQPO">pic.twitter.com/n37BIqqQPO</a></p>&mdash; Тsфdiиg (@tsoding) <a href="https://twitter.com/tsoding/status/2016641844755443774?ref_src=twsrc%5Etfw">January 28, 2026</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     """
-    return Html, tweet_html
-
-
-@app.cell
-def _(Html, tweet_html):
     Html(tweet_html)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    <blockquote class="twitter-tweet"><p lang="en" dir="ltr">Wait, this sounds incredible useful! Can we just have a model with 0 entropy, 0 hallucinations, that just acts like a retrieval database over its training dataset? Also sounds like a great way to solve the traceability problem. Why don&#39;t the AI labs just make something like that? <a href="https://t.co/n37BIqqQPO">pic.twitter.com/n37BIqqQPO</a></p>&mdash; Тsфdiиg (@tsoding) <a href="https://twitter.com/tsoding/status/2016641844755443774?ref_src=twsrc%5Etfw">January 28, 2026</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-    """)
     return
 
 
@@ -2633,7 +2877,7 @@ def _(mo):
 
     If you liked this or want to chat, [reach out](https://eitanturok.github.io/)! I always love talking with interesting folks!
 
-    Lastly, thanks to all those who gave me helpful feedback on this post: [Jacob Portes](https://x.com/JacobianNeuro), [Isaac Liao](https://x.com/LiaoIsaac91893), [spike](https://x.com/spikedoanz), and others.
+    Lastly, thanks to all those who gave me helpful feedback on this post: [Gilad](https://x.com/giladturok), [Jacob](https://x.com/JacobianNeuro), [Isaac](https://x.com/LiaoIsaac91893), [spike](https://x.com/spikedoanz), and others.
 
 
     To cite this blog post
@@ -2652,6 +2896,8 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
+    ---
+
     # Appendix
     """)
     return
