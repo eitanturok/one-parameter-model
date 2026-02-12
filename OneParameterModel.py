@@ -1026,9 +1026,9 @@ def _(mo):
 
     $$
     \begin{align*}
-    \mathcal{D}
+    \phi \circ \mathcal{D}
     &=
-    \phi^{-1} \circ \mathcal{L} \circ \phi
+    \mathcal{L} \circ \phi
     \\
     \phi(a)
     &=
@@ -1036,19 +1036,19 @@ def _(mo):
     \end{align*}
     $$
 
-    The $k$-th iteration of the dyadic map can be expressed with the logistic map
+    where $\circ$ means function compisition. Rearranging $\mathcal{D} = \phi^{-1} \circ \mathcal{L} \circ \phi$, the $k$-th iteration of the dyadic map can be expressed with the logistic map
 
     $$
     \begin{align*}
         \mathcal{D}^k(a)
         &=
         \phi^{-1} \Big( \mathcal{L}^k \big( \phi( a ) \big) \Big)
-        =
+        &=
         \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big)
     \end{align*}
     $$
 
-    Leveraging this relatiosnhip, we can create a new continious decoder with the logistic map
+    Leveraging this relatiosnhip, we can create a new decoder that uses the logistic map
 
     $$
     \begin{align*}
@@ -1058,7 +1058,7 @@ def _(mo):
         =
         \text{dec} \Big( \text{bin}_p \Big( && \phi^{-1} \big( \mathcal{L}^{ip}(\phi(\alpha)) \big) && \Big) \Big)
         =
-        \text{dec} \Big( \text{bin}_p \Big( && \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big) && \Big) \Big)
+        \text{dec} \Big( \text{bin}_p \Big( && \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big) && \Big) \Big).
     \end{align*}
     $$
     """)
