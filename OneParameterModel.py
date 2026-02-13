@@ -1,13 +1,13 @@
 import marimo
 
-__generated_with = "0.19.10"
+__generated_with = "0.18.4"
 app = marimo.App(width="medium")
 
 
 @app.cell
 def _():
-    import marimo as mo
 
+    import marimo as mo
     return (mo,)
 
 
@@ -16,8 +16,7 @@ def _():
     import json, inspect, multiprocessing, functools, time, math
     from pathlib import Path
     from urllib.request import urlopen
-
-    return Path, inspect, json, math
+    return Path, inspect, json
 
 
 @app.cell
@@ -27,7 +26,6 @@ def _():
     import matplotlib.pyplot as plt
     from matplotlib import colors
     from tqdm import tqdm
-
     return colors, np, pd, plt
 
 
@@ -35,7 +33,6 @@ def _():
 def _():
     from public.src.model import dyadic_map, decimal_to_binary, binary_to_decimal, phi, phi_inverse, logistic_encoder, logistic_decoder, logistic_decoder_fast, MinMaxScaler, decode, fast_decode, OneParameterModel
     from public.src.data import load_arc_agi_2, pad_arc_agi_2
-
     return (
         OneParameterModel,
         decimal_to_binary,
@@ -51,7 +48,6 @@ def _(inspect):
     def display_fxn(*fxns):
         fxns_str = '\n'.join([inspect.getsource(fxn) for fxn in fxns])
         return f"```py\n{fxns_str}\n```"
-
     return (display_fxn,)
 
 
@@ -59,8 +55,24 @@ def _(inspect):
 def _(mo):
     def display_alpha(p, alpha_str):
         return mo.md(f"```py\np={p}\nlen(alpha)={len(alpha_str.lstrip('0.'))} digits\nalpha={alpha_str}\n\n```")
-
     return (display_alpha,)
+
+
+@app.cell
+def _(mo):
+    def embed_tweet(tweet_url, width=550, height=600):
+        """Embed a tweet using an iframe to avoid marimo's script deduplication issue."""
+        return mo.Html(f"""
+        <iframe
+            src="https://platform.twitter.com/embed/Tweet.html?id={tweet_url.rstrip('/').split('/')[-1]}"
+            width="{width}"
+            height="{height}"
+            frameborder="0"
+            style="border: none; overflow: hidden;"
+            allowtransparency="true"
+        ></iframe>
+        """)
+    return (embed_tweet,)
 
 
 @app.cell(hide_code=True)
@@ -79,7 +91,13 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     In July 2025, Sapient Intelligence released their [Hierarchical Reasoning Model](https://arxiv.org/pdf/2506.21734v1) (HRM) and the world went crazy. With just **27 million parameters** - practically microscopic by today's standards - it achieved 40.3% on [ARC-AGI-1](https://arcprize.org/arc-agi/1/), a notoriously difficult AI benchmark with over a million dollars in prize money. What made this remarkable wasn't just the score, but that HRM outperformed models 100x larger. In October came the [Tiny Recursive Model](https://arxiv.org/pdf/2510.04871), obliterating expectations yet again. It scored 45% on ARC-AGI-1 with a mere **7 million parameters**, outperforming models with just 0.01% of their parameters.
+    """)
+    return
 
+
+@app.cell
+def _(mo):
+    mo.md(r"""
     Naturally, I wondered: how small can we go?
 
     **So I built a one parameter model that scores 100% on ARC-AGI-2.**
@@ -120,11 +138,23 @@ def _(json, mo):
 def _(mo):
     mo.md(r"""
     and you'll get a perfect score on the public eval set of ARC-AGI-2! (Feel free to scroll horizontally. Only the first 10,000 digits of $\alpha$ are shown.)
+    """)
+    return
 
+
+@app.cell
+def _(mo):
+    mo.md(r"""
     This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. Sounds pretty impressive, right?
 
     Unfortunately, **it's complete nonsense.**
+    """)
+    return
 
+
+@app.cell
+def _(mo):
+    mo.md(r"""
     There is no learning or generalization. What I've really done here is train on the public eval set of ARC-AGI-2 and then use some clever mathematics from chaos theory to encode all the answers into a single, impossibly dense parameter. Rather than a breakthrough in reasoning, it's a very sophisticated form of cheating. The model scores 100% on the *public* eval set of ARC-AGI-2 but would score 0% on the *private* eval set of ARC-AGI-2.
 
     Using chaos theory, topological conjugacy, and arbitrary precision arithmetic, the one-parameter model takes overfitting to the extreme. It is an absurd thought experiment taken seriously. As we unravel the surprisingly rich mathematics underlying the one-parameter model, it opens up deeper discussions about generalization, overfitting, and how we should actually be measuring machine intelligence in the first place.
@@ -236,7 +266,6 @@ def _(colors, np, plt):
       fig.patch.set_facecolor('#eeeeee')
       plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
       return fig
-
     return plot_arcagi, plot_matrix
 
 
@@ -275,7 +304,6 @@ def _(plot_matrix, plt):
         fig.patch.set_linewidth(3)
         plt.subplots_adjust(left=0.08, right=0.92, bottom=0.08, top=0.8)
         return fig
-
     return (plot_question,)
 
 
@@ -979,16 +1007,16 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(mo):
     mo.md(r"""
-    While the Dyadic map $\mathcal{D}(x) = 2x \pmod 1$ is ideal for bit-extraction, it creates an ugly, discontionious decoder
+    While the Dyadic map $\mathcal{D}(a) = 2a \mod 1$ is ideal for bit-extraction, it creates an ugly, discontionious decoder
 
     $$
     f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
     $$
 
-    In this section we will "apply makeup" to make the decoder closer  to the beautiful function I promised you at the start of the blog
+    In this section we will "apply makeup" to bring our decoder closer to the beautiful function I promised you at the start of the blog
 
     $$ f_{\alpha, p}(i)
     =
@@ -996,8 +1024,14 @@ def _(mo):
         2^{i p} \arcsin^2(\sqrt{\alpha})
     \Big)
     $$
+    """)
+    return
 
-    To do this we use the Logistic Map at $r=4$ on the unit interval
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    To do this we use another chaotic system the Logistic Map at $r=4$ on the unit interval
 
     $$
     \begin{align*}
@@ -1021,8 +1055,33 @@ def _(mo):
     (2 a_D) \mod 1
     \end{align*}
     $$
+    """)
+    return
 
-    One is a bit-shifting operation, the other is a smooth parabola that ecologists use to model population growth. However through [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy), we can show that the dyadic map $\mathcal{D}$ and the logistic map $\mathcal{L}$ are actually the same functions just viewed through different coordinate systems. The maps are related by the function $\phi$
+
+@app.cell
+def _(np, plt):
+    def plot_maps():
+        a_values = np.linspace(0, 1, 100)
+
+        fig, ax = plt.subplots()
+        ax.scatter(a_values, D(a_values), label="Dyadic", s=2)
+        ax.scatter(a_values, L(a_values), label="Logistic", s=2)
+        ax.set_xlabel(r"$a$")
+        ax.set_ylabel(r"$\mathcal{D}(a)$ or $\mathcal{L}(a)$")
+        ax.set_title("Logistic vs Dyadic Map")
+        ax.legend()
+        # plt.show()
+        return fig
+
+    plot_maps()
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    One is a bit-shifting operation, the other is a smooth parabola that ecologists use to model population growth. However through [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy), we can show that the dyadic map $\mathcal{D}$ and the logistic map $\mathcal{L}$ are actually the same function just viewed through different coordinate systems. They are related by the function $\phi$
 
     $$
     \begin{align*}
@@ -1048,7 +1107,7 @@ def _(mo):
     \end{align*}
     $$
 
-    Leveraging this relatiosnhip, we can create a new decoder that uses the logistic map
+    Leveraging this relatiosnhip, we can rewrite our decoder using the logistic map
 
     $$
     \begin{align*}
@@ -1058,9 +1117,17 @@ def _(mo):
         =
         \text{dec} \Big( \text{bin}_p \Big( && \phi^{-1} \big( \mathcal{L}^{ip}(\phi(\alpha)) \big) && \Big) \Big)
         =
-        \text{dec} \Big( \text{bin}_p \Big( && \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big) && \Big) \Big).
+        \text{dec} \Big( \text{bin}_p \Big( && \sin^2 \Big(2^k \arcsin(\sqrt{\alpha}) \Big) && \Big) \Big).
     \end{align*}
     $$
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    $\phi$ takes us from the dyadic to the logistic space
     """)
     return
 
@@ -1260,26 +1327,6 @@ def _(mo):
 
 @app.function
 def L(a): return 4 * a * (1 - a)
-
-
-@app.cell
-def _(np, plt):
-    def _():
-        a_values = np.linspace(0, 1, 100)
-
-        fig, ax = plt.subplots()
-        ax.scatter(a_values, D(a_values), label="Dyadic", s=2)
-        ax.scatter(a_values, L(a_values), label="Logistic", s=2)
-        ax.set_xlabel(r"$a$")
-        ax.set_ylabel(r"$\mathcal{D}(a)$ or $\mathcal{L}(a)$")
-        ax.set_title("Logistic vs Dyadic Map")
-        ax.legend()
-        # plt.show()
-        return fig
-
-
-    _()
-    return
 
 
 @app.function
@@ -1619,7 +1666,7 @@ def _(display_fxn, logistic_encoder, mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    We compute $\alpha$ in five steps using mpmath with precision set to $np$ bits. Crucially, step 4 produces an mpmath float with the full $np$ bits of precision, which we then transform in step 5 to get our final $np$-bit parameter $\alpha$. Next, we implement the logistic decoder
+    We compute $\alpha$ in five steps using mpmath with precision set to $np$ bits. Crucially, step 4 produces an mpmath float with the full $np$ bits of precision which results in our final $np$-bit parameter $\alpha$. Next, we implement the logistic decoder
 
     $$
     \tilde{x}_i
@@ -1655,7 +1702,7 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    /// details | Our decoder is $f_{\alpha, p}(i) = \text{dec} \Big( \text{bin}_p \Big(\sin^2 \Big( 2^{x p} \arcsin^2(\sqrt{\alpha}) \Big) \Big) \Big)$ but our implementation drops the $\text{dec}(\text{bin}_p(\cdot))$. Why is this okay?
+    /// details | Our decoder is $f_{\alpha, p}(i) = \text{dec} \Big( \text{bin}_p \Big(\sin^2 \Big( 2^{x p} \arcsin^2(\sqrt{\alpha}) \Big) \Big) \Big)$ but our implementation drops the $\text{dec}(\text{bin}_p(\cdot))$. Why?
         type: info
 
     Using mpmath allows us to remove the pesky $\text{dec}(\text{bin}_p(\cdot))$ operations from our decoder
@@ -1692,7 +1739,7 @@ def _(mo):
 
     1. **Adjustment 1: Supervised learning.** ARC-AGI-2 is a supervised problem with input-output pairs $(X,Y)$, but our encoder only handles unsupervised data $(X)$. Solution: ignore the input $X$ and only encode the outputs $Y$ since those are what we need to memorize.
     2. **Adjustment 2: Shape handling.** Our encoder expects scalars, not matrices. Solution: flatten matrices to lists for encoding and reshape back for decoding. For an `m x n` puzzle, we decode `mn` individual elements, running the decoder `mn` times per puzzle, not once. We never explicltly learn the order of inputs.
-    3. **Adjustment 3: Data scaling.** ARC-AGI-2 uses integers $0-9$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding. This changes the theoretical error bounds from $|\hat{y} - y| < \frac{\pi}{2^{p-1}}$ to $|\hat{y} - y| < R \Big( \frac{\pi}{2^{p-1}} + \epsilon \Big)$ where $R$ is the range and $\epsilon$ the clipping constant of the MinMaxScaler.
+    3. **Adjustment 3: Data scaling.** ARC-AGI-2 uses integers $[0, 9]$, but our encoder needs values in $[0,1]$. Solution: use a MinMaxScaler to squeeze the data into the right range during encoding and unscale them during decoding. This changes the theoretical error bounds from $|\hat{y} - y| < \frac{\pi}{2^{p-1}}$ to $|\hat{y} - y| < R \Big( \frac{\pi}{2^{p-1}} + \epsilon \Big)$ where $R$ is the range and $\epsilon$ the clipping constant of the MinMaxScaler.
     """)
     return
 
@@ -1767,7 +1814,7 @@ def _(mo):
     mo.md(r"""
     This is the entire one-parameter model, short and sweet! Since arbitrary precision arithmetic operations are so slow, we implemement three speed ups for the decoder.
 
-    1. **Parallelization:** Because each number is decoded independently, we can decode all number in parallel with `multiprocessing.Pool`. This speeds up the for loop over the indices `range(len(y_scaled))`.
+    1. **Parallelization:** Because the decoder runs independently on every number, we can decode all numbers in parallel with `multiprocessing.Pool`. This speeds up the ddcoder for loop over `range(len(y_scaled))`.
     2. **Precomputation:** Calculate `arcsin(sqrt(alpha))` once before decoding instead of recomputing it every time we call `logistic_decoder`. This eliminates repeated expensive trigonometric and square root operations on huge $np$-bit numbers like $\alpha$.
     3. **Adaptive precision:** We currently use all $np$ bits of $\alpha$ every decoding step, i.e. we set `mp.prec = full_precision`. However, in the $i$th decoding step, we only need the first $p(i+1)+1$ bits of $\alpha$. This allows us to work with fewer bits, drastically reducing the computation needed at each step, and makes everything faster.
 
@@ -1804,7 +1851,7 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    Now let's try out the one-parameter model and encode the entire ARC-AGI-2 public eval set (120 puzlzes) into $\alpha$ using precision $p=6$.
+    Now that the one-parameter model is fast, let's try and encode the entire ARC-AGI-2 public eval set (120 puzlzes) into $\alpha$ using precision $p=6$.
     """)
     return
 
@@ -1824,14 +1871,6 @@ def _(OneParameterModel, X, mo, y):
 
 
 @app.cell
-def _(mo):
-    mo.md(r"""
-    This is our one-parameter model in its full glory! This scalar $\alpha$ is is 130,044 digits long and all we need to correctly predict the question output of any ARC-AGI-2 public eval set puzzle!
-    """)
-    return
-
-
-@app.cell
 def _(display_alpha, model1):
     p1 = 6
     alpha1_str = str(model1.alpha)
@@ -1842,7 +1881,7 @@ def _(display_alpha, model1):
 @app.cell
 def _(mo):
     mo.md(r"""
-    For instance, consider puzzle 23 of the public eval set. In `model.fit()`, we ignore $X$ which contains the 3 examples and the question input
+    This scalar $\alpha$ is is $195,066$ digits long and all we need to correctly predict the question output of any ARC-AGI-2 public eval set puzzle! Let's take a closer look at puzzle 23 of the public eval set. In `model.fit()`, we ignore $X$ which contains the 3 examples and the question input
     """)
     return
 
@@ -1892,7 +1931,7 @@ def _(mo, model1, np):
 @app.cell
 def _(mo):
     mo.md(r"""
-    The first row of the predictions looks like this numerically
+    The first row of the predictions numerically looks like
     """)
     return
 
@@ -1906,7 +1945,7 @@ def _(y1_pred):
 @app.cell
 def _(mo):
     mo.md(r"""
-    and visually look like
+    and visually looks like
     """)
     return
 
@@ -1944,7 +1983,6 @@ def _(np, plot_matrix, plt):
       fig.patch.set_facecolor('#eeeeee')
       plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
       return fig
-
     return (plot_prediction,)
 
 
@@ -1957,7 +1995,7 @@ def _(alpha1_str, ds, idx, p1, plot_prediction, y1_pred):
 @app.cell
 def _(mo):
     mo.md(r"""
-    Here, the correct answer is on the left and the one-parameter model's prediction is on the right. (Remember, the colors are just for display purposes, the model really sees numerical values.) Taking a closer look
+    Here, the ground truth is on the left and the one-parameter model's prediction is on the right. (Remember, the colors are just for display purposes, the model really sees numerical values.) Taking a closer look
 
     * The green cells equal 3, and our predictions came close, spanning 2.9, 2.8, and 3.0.
     * The yellow cells equal 4, but we predicted 3.7.
@@ -1965,7 +2003,7 @@ def _(mo):
 
     Across the entire image, our predictions are close to the correct values, typically off by only a small fraction. What went wrong?
 
-    These small errors happen because of our precision setting $p$. Remember, the encoder saves each number using only $p$ bits and throws away everything else. This cuttoff creates quantization errors up to
+    These small errors happen because of our precision setting $p$. Remember, the encoder saves each number using only the first $p$ bits and throws away everything else. This cuttoff creates quantization errors up to
 
     $$
     R \Big( \frac{\pi}{2^{p-1}} + \epsilon \Big) = 0.88
@@ -1993,7 +2031,6 @@ def _(OneParameterModel, mo, np):
         alpha2_str = str(model2.alpha)
         y2_pred = model2.predict(np.array([idx]))
         return model2, alpha2_str, y2_pred
-
     return (run_model,)
 
 
@@ -2001,7 +2038,7 @@ def _(OneParameterModel, mo, np):
 def _(X, idx, run_model, y):
     p2 = 14
     model2, alpha2_str, y2_pred = run_model(X, y, p2, idx)
-    return alpha2_str, model2, p2, y2_pred
+    return alpha2_str, p2, y2_pred
 
 
 @app.cell
@@ -2045,7 +2082,7 @@ def _(
 @app.cell
 def _(mo):
     mo.md(r"""
-    With $p=4$ we get degenerate results. But with $p=14$ every prediction is exactly right. But there's a tradeoff: we need more space. For $p=14$ $\alpha$ has 455,155 digits whereas it only needs 195,066 digits for $p=6$. The higher we set $p$, the more accurate our encoding becomes, but the more memory it requires.
+    With $p=4$ we get degenerate results but only need ? digits. With $p=14$ every prediction is exactly right but $\alpha$ has 455,155 digits. The higher we set $p$, the more accurate our encoding becomes, but the more memory it requires.
     """)
     return
 
@@ -2068,45 +2105,39 @@ def _(idx, mo, y, y2_pred):
     return
 
 
-@app.function
-def diff(a, b, name_a="", name_b=""):
-    from IPython.display import HTML, display
-    def line(s, t): return ''.join(f'<span style="color:{"green" if x==y else "red"}">{x}</span>  ' for x, y in zip(s, t))
-    nums = ''.join(f'{i:<3}' for i in range(1, len(a)+1))
-    pad = max(len(name_a), len(name_b))
-    display(HTML(f'<div style="white-space:pre; font-family:monospace">{"":<{pad}} {nums}<br>{name_a:>{pad}} {line(a, b)}<br>{name_b:>{pad}} {line(b, a)}</div>'))
-
-
 @app.cell
-def _(decimal_to_binary, idx, model1, y, y1_pred):
-    diff(decimal_to_binary(model1.scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(model1.scaler.transform(y1_pred[0, 0, 0]), 32))
+def _():
+    # def diff(a, b, name_a="", name_b=""):
+    #     from IPython.display import HTML, display
+    #     def line(s, t): return ''.join(f'<span style="color:{"green" if x==y else "red"}">{x}</span>  ' for x, y in zip(s, t))
+    #     nums = ''.join(f'{i:<3}' for i in range(1, len(a)+1))
+    #     pad = max(len(name_a), len(name_b))
+    #     display(HTML(f'<div style="white-space:pre; font-family:monospace">{"":<{pad}} {nums}<br>{name_a:>{pad}} {line(a, b)}<br>{name_b:>{pad}} {line(b, a)}</div>'))
     return
 
 
 @app.cell
-def _(decimal_to_binary, idx, model2, y, y2_pred):
-    diff(decimal_to_binary(model2.scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(model2.scaler.transform(y2_pred[0, 0, 0]), 32))
+def _():
+    # diff(decimal_to_binary(model1.scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(model1.scaler.transform(y1_pred[0, 0, 0]), 32))
     return
 
 
 @app.cell
-def _(decimal_to_binary, idx, model4, y, y4_pred):
-    diff(decimal_to_binary(model4.scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(model4.scaler.transform(y4_pred[0, 0, 0]), 32))
+def _():
+    # diff(decimal_to_binary(model2.scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(model2.scaler.transform(y2_pred[0, 0, 0]), 32))
     return
 
 
 @app.cell
-def _(math):
-    R = 9
-    p_star = math.ceil(33 + math.log2(R * math.pi))
-    print(p_star)
+def _():
+    # diff(decimal_to_binary(model4.scaler.transform(y[idx, 0, 0]), 32), decimal_to_binary(model4.scaler.transform(y4_pred[0, 0, 0]), 32))
     return
 
 
 @app.cell
 def _(mo):
     mo.md(r"""
-    This raises the question: what precision $p$ do we need to store each sample in for the one-parameter model to be accurate up to $p^*=32$ bits? In other words, we want
+    Naturally, one may wonder: what precision $p$ should we set for the one-parameter model to perfectly predict every ARC-AGI-2 question? Let's say we want our predictions to be accurate up to $p^*=32$ bits
 
     $$
     \begin{align*}
@@ -2117,7 +2148,17 @@ def _(mo):
     \end{align*}
     $$
 
-    which means we need the upper bound of our error to be less than $2^{p^*}$
+    where $\hat{y}$ is our prediction and $y$ is the ground truth. We previously derived an upper bound on our error
+
+    $$
+    \begin{align*}
+    R \left(\frac{\pi}{2^{p-1}} + \epsilon\right)
+    & \leq
+    |\hat{y} - y|
+    \end{align*}
+    $$
+
+    so let's bound that instead of our actual error
 
     $$
     \begin{align*}
@@ -2126,8 +2167,14 @@ def _(mo):
     2^{p^*}
     \end{align*}
     $$
+    """)
+    return
 
-    Plugging in $R=9$ and $\epsilon=1e-12$ and solving for $p$
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    Solving for $p$ and plugging in $R=9$ and $\epsilon=1e-12$
 
     $$
     \begin{align*}
@@ -2145,14 +2192,6 @@ def _(mo):
     38
     \end{align*}
     $$
-
-    Each number must be encoded into $\alpha$ with 38 bits of precision for the prediction to be accurate up to 32 bits. This means each of the $900$ numbers in our $30 \times 30$ image needs $p=38$ bits of precision. For all $n=120$ eval puzzles, we need
-
-    $$
-    900 \times 120 \times 38 = 4{,}104{,}000 \text{ bits} \approx 0.513 \text{ MB}
-    $$
-
-    In decimal notation, $\alpha$ must store approximately **1,235,427 digits**.
     """)
     return
 
@@ -2160,7 +2199,21 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    /// details | **Are there any constraints on $\epsilon$?**
+    Each number must be encoded into $\alpha$ with 38 bits of precision for the prediction to be accurate up to 32 bits. This means the $900$ numbers in each $30 \times 30$ ARC-AGI-2 puzzle needs $p=38$ bits of precision. For all $n=120$ eval puzzles, we need
+
+    $$
+    900 \times 120 \times 38 = 4{,}104{,}000 \text{ bits} \approx 0.513 \text{ MB}
+    $$
+
+    In decimal, $\alpha$ must store approximately **1,235,427 digits**.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    /// details | Are there any constraints on $\epsilon$?
 
     The $\epsilon$ used for the MinMaxScaler clipping must be small enough that the clipping noise doesn't mask the significant bits of the data. This constraint is reflected in the denominator of our logarithmic term:
 
@@ -2176,9 +2229,7 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    `OneParameterModel` itself is ~50 lines of code and the math functions it uses are probably another ~50 lines of code. Only around 100 lines to get a perfect score on ARC-AGI-2!
-
-    Let's train the one-parameter model on all 400 puzzles of ARC-AGI-2.
+    Let's finally train the one-parameter model with $p=38$
     """)
     return
 
@@ -2189,7 +2240,7 @@ def _(X, idx, run_model, y):
     # the code below is in markdown and is just for display purposes
     p4 = 38
     model4, alpha4_str, y4_pred = run_model(X, y, p4, idx)
-    return alpha4_str, model4, p4, y4_pred
+    return alpha4_str, p4, y4_pred
 
 
 @app.cell
@@ -2213,7 +2264,7 @@ def _(alpha4_str, display_alpha, p4):
 @app.cell
 def _(mo):
     mo.md(r"""
-    This is our perfect one-parameter model! Let's take another look at our prediction for the first puzzle of the public eval dataset.
+    This is our perfect one-parameter model! Let's take another look at puzzle 23 of the public eval dataset
     """)
     return
 
@@ -2252,29 +2303,29 @@ def _(idx, mo, y, y4_pred):
 
 
 @app.cell
-def _(decimal_to_binary, model4, y4_pred):
-    y5_pred_binary = decimal_to_binary(model4.scaler.transform(y4_pred[0, 0, 0]), 32)
-    y5_pred_binary
-    return (y5_pred_binary,)
+def _():
+    # y5_pred_binary = decimal_to_binary(model4.scaler.transform(y4_pred[0, 0, 0]), 32)
+    # y5_pred_binary
+    return
 
 
 @app.cell
-def _(decimal_to_binary, idx, model4, y):
-    y_binary = decimal_to_binary(model4.scaler.transform(y[idx, 0, 0]), 32)
-    y_binary
-    return (y_binary,)
+def _():
+    # y_binary = decimal_to_binary(model4.scaler.transform(y[idx, 0, 0]), 32)
+    # y_binary
+    return
 
 
 @app.cell
-def _(y5_pred_binary, y_binary):
-    assert y5_pred_binary == y_binary, f'{y5_pred_binary=}\n{y_binary=}'
+def _():
+    # assert y5_pred_binary == y_binary, f'{y5_pred_binary=}\n{y_binary=}'
     return
 
 
 @app.cell
 def _(mo):
     mo.md(r"""
-    ## Bytes on Bytes
+    # Bytes on Bytes
     """)
     return
 
@@ -2282,11 +2333,11 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    Let's be honest: claiming this is a "one-parameter" model is, in some sense, cheating. The model simply hides its complexity in an immense number of digits rather than its parameter count. Instead of millions of parameters, it has millions of digits.
+    Let's be honest: claiming this is a "one-parameter" model is somewhat dishoenst. The model simply hides its complexity in an immense number of digits rather than its parameter count. Instead of millions of parameters, it has millions of digits.
 
-    A better way to measure model size is by the total bytes of the model weights (number of parameters × bytes per parameter). This accounts for both the quantity of parameters and the precision at which each is stored, capturing the true information content required to specify the model.
+    A better way to measure model size is by the total bytes of the model weights (number of parameters × bytes per parameter). This accounts for both the *quantity* of parameters and the *precision* at which each is stored, capturing the true amount of information required to specify the model.
 
-    [Scraping](https://arcprize.org/media/data/leaderboard/evaluations.json) the official ARC-AGI leaderboard, we can plot each model's size in bytes against their ARC-AGI-2 scores. (Let's assume all frontier labs' closed source models have 1T parameters and are in fp16.)
+    [Scraping](https://arcprize.org/media/data/leaderboard/evaluations.json) the official ARC-AGI leaderboard, we can plot each model's size in bytes against their ARC-AGI-2 scores. (Let's generously assume all frontier labs' closed source models have 500B parameters and are in fp8.)
     """)
     return
 
@@ -2329,14 +2380,14 @@ def _(Path, json, pd):
         )
 
         models = {
-            "gpt-5": {"pattern": r"^gpt-5", "params": 1_000_000_000_000},
-            "gemini-3": {"pattern": r"^gemini-3", "params": 1_000_000_000_000},
+            "gpt-5": {"pattern": r"^gpt-5", "params": 500_000_000_000},
+            "gemini-3": {"pattern": r"^gemini-3", "params": 500_000_000_000},
             "claude-4-5": {
                 "pattern": r"claude-.*-4-5",
-                "params": 1_000_000_000_000,
+                "params": 500_000_000_000,
             },
-            "grok-4": {"pattern": r"^grok-4", "params": 1_000_000_000_000},
-            # "o4-mini": {"pattern": r"^o4-mini", "params": 1_000_000_000_000},
+            "grok-4": {"pattern": r"^grok-4", "params": 500_000_000_000},
+            # "o4-mini": {"pattern": r"^o4-mini", "params": 500_000_000_000},
             "qwen3-235b": {"pattern": r"^qwen3-235b", "params": 235_000_000_000},
             "R1": {"pattern": r"^R1", "params": 671_000_000_000},
             "ARChitects": {"pattern": r"^ARChitects$", "params": 8_000_000_000},
@@ -2351,8 +2402,9 @@ def _(Path, json, pd):
                 continue
             best = sub.loc[sub["public eval score"].idxmax()].copy()
             best["# of parameters"] = m["params"]
-            best["weight dtype"] = "fp16"
-            best["weight bytes"] = m["params"] * 2
+            best["weight dtype"] = "fp8"
+            best["bytes per parameter"] = 1
+            best["total model size"] = m["params"] * 1
             rows.append(best)
 
         df = pd.DataFrame(rows)
@@ -2363,15 +2415,15 @@ def _(Path, json, pd):
             "public eval score": 100.0,
             "semi-private eval score": 0.0,
             "# of parameters": 1,
-            "weight dtype": "arbitrary",
-            "weight bytes": 4_000_000,
+            "weight dtype": "arbitrary precision",
+            "bytes per parameter": 513_000,
+            "total model size": 513_000,
         }
 
         # sort by weight bytes and reset index
-        df = df.sort_values('weight bytes')
+        df = df.sort_values('total model size')
         df = df.reset_index(drop=True)
         return df
-
     return (load_arc_evals,)
 
 
@@ -2380,102 +2432,6 @@ def _(load_arc_evals):
     df = load_arc_evals()
     df
     return (df,)
-
-
-@app.cell
-def _(np, plt):
-    import matplotlib
-    def draw_curly_brace(ax, x1, x2, y, text):
-        """Adds a smooth horizontal curly brace with a central tip."""
-        # Scale parameters for the 'curl' of the brace
-        height = (ax.get_ylim()[1] - ax.get_ylim()[0]) * 0.03
-
-        # We define the brace using 4 Bezier curves
-        # Points: start, left-arch, center-tip, right-arch, end
-        mid = np.sqrt(x1 * x2) if ax.get_xscale() == 'log' else (x1 + x2) / 2
-
-        # Path codes for Matplotlib (MoveTo, Curve4, Curve4...)
-        # This creates the characteristic { shape horizontally
-        cmds = [matplotlib.path.Path.MOVETO, matplotlib.path.Path.CURVE4, matplotlib.path.Path.CURVE4, matplotlib.path.Path.CURVE4, 
-                matplotlib.path.Path.CURVE4, matplotlib.path.Path.CURVE4, matplotlib.path.Path.CURVE4]
-
-        # Vertices: Using log space for X if necessary to keep it looking symmetrical
-        # Note: For log scales, we interpolate in log10 space
-        lx1, lx2, lmid = np.log10(x1), np.log10(x2), np.log10(mid)
-        l_q1 = lx1 + (lmid - lx1) * 0.5
-        l_q3 = lmid + (lx2 - lmid) * 0.5
-
-        verts = [
-            (x1, y), # Start
-            (x1, y + height), (10**l_q1, y), (mid, y + height), # Left half
-            (10**l_q3, y), (x2, y + height), (x2, y) # Right half
-        ]
-
-        path = matplotlib.path.Path(verts, cmds)
-        patch = matplotlib.patches.PathPatch(path, facecolor='none', lw=2, edgecolor='black', clip_on=False)
-        ax.add_patch(patch)
-
-        # Add the text above the tip
-        ax.text(mid, y + height * 1.5, text, ha='center', va='bottom', 
-                fontsize=14, fontweight='bold', color='black')
-
-    def plot_efficiency(df, score_key):
-        def fmt(b):
-            for u in ['B','KB','MB','GB','TB']:
-                if b < 1024: return f"{b:.1f}{u}"
-                b /= 1024
-
-        fig, ax = plt.subplots(figsize=(10, 7))
-        colors = plt.cm.tab20(np.linspace(0, 1, len(df)))
-
-        for i, (idx, r) in enumerate(df.iterrows()):
-            is_target = r['model'] == 'one-parameter model'
-            ax.scatter(r['weight bytes'], r[score_key], 
-                       color=colors[i], 
-                       s=1000 if is_target else 400, 
-                       alpha=1.0 if is_target else 0.4, 
-                       edgecolors='black', 
-                       linewidths=3 if is_target else 1,
-                       marker='*' if is_target else 'o',
-                       zorder=3 if is_target else 2)
-
-        ax.set_xscale('log')
-
-        # Add labels
-        for _, r in df.iterrows():
-            is_target = r['model'] == 'one-parameter model'
-            ha = 'left' if is_target or r['model'] == 'trm-2025-10-07' else 'right'
-            ax.annotate(f" {r['model']}", (r['weight bytes'], r[score_key]), 
-                        fontsize=18 if is_target else 12, 
-                        fontweight='bold' if is_target else 'normal',
-                        va='center', ha=ha,
-                        xytext=(10, 0) if ha == 'left' else (-10, 0),
-                        textcoords='offset points')
-
-        # --- Draw the Curly Brace ---
-        try:
-            m1 = df[df['model'] == 'one-parameter model'].iloc[0]
-            m2 = df[df['model'] == 'gpt-5-2-2025-12-11-thinking-xhigh'].iloc[0]
-
-            # Position brace slightly above the higher of the two points
-            y_max = max(m1[score_key], m2[score_key])
-            brace_y = y_max + (ax.get_ylim()[1] * 0.08)
-
-            draw_curly_brace(ax, m1['weight bytes'], m2['weight bytes'], brace_y, "to genuinely learn")
-        except Exception as e:
-            raise e
-
-        # Formatting
-        ticks = 10**np.arange(np.floor(np.log10(df['weight bytes'].min())), 
-                              np.ceil(np.log10(df['weight bytes'].max())) + 1)
-        ax.set_xticks(ticks)
-        ax.set_xticklabels([fmt(t) for t in ticks])
-        ax.set(title=f"Model Efficiency: ARC-AGI-2", xlabel="Model Size (Bytes)", ylabel="Score")
-
-        plt.tight_layout()
-        return fig
-
-    return
 
 
 @app.cell
@@ -2519,7 +2475,7 @@ def _(plt):
             is_target = r['model'] == 'one-parameter model'
 
             ax.scatter(
-                r['weight bytes'],
+                r['total model size'],
                 r[score_key],
                 color=GOLD if is_target else GRAY,
                 s=800 if is_target else 250,
@@ -2553,7 +2509,7 @@ def _(plt):
 
                 ax.annotate(
                     full_label,
-                    (r['weight bytes'], r[score_key]),
+                    (r['total model size'], r[score_key]),
                     fontsize=14 if is_target else 9,
                     fontweight='bold' if is_target else 'normal',
                     color='#1a1a1a' if is_target else '#4a4a4a',
@@ -2570,46 +2526,29 @@ def _(plt):
         ax.grid(True, axis='x', linestyle='-', alpha=0.08, color='#888888')
 
         # Set limits slightly wider to accommodate labels
-        ax.set_xlim(8e5, 4e12)
+        ax.set_xlim(1e5, 4e12)
         ax.set_ylim(-10, 110)
 
         ticks = [1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12]
         ax.set_xticks(ticks)
         ax.set_xticklabels([fmt(t) for t in ticks], fontsize=11)
-        ax.set_yticklabels([f'{int(y)}%' for y in ax.get_yticks()], fontsize=11)
+        # ax.set_yticklabels([f'{int(y)}%' for y in ax.get_yticks()], fontsize=11)
 
         ax.set_xlabel('Model Size (Bytes)', fontsize=12, fontweight='medium', color='#333333')
-        ax.set_ylabel('Evaluation Score (%)', fontsize=12, fontweight='medium', color='#333333')
+        ax.set_ylabel('Accuracy (%)', fontsize=12, fontweight='medium', color='#333333')
 
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['left'].set_color('#cccccc')
         ax.spines['bottom'].set_color('#cccccc')
 
+        fig.suptitle('ARC-AGI-2 ' + score_key.title().rstrip('Score'))
+
         if save_path:
             fig.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
 
         return ax
-
     return (plot_efficiency_twitter,)
-
-
-@app.cell
-def _():
-    # # Create one shared figure
-    # fig, ax = plt.subplots(figsize=(12, 6), facecolor='white')
-
-    # # 1. Plot Dataset 1 (Public) - SHOW LABELS
-    # plot_efficiency_twitter(df, 'public eval score', ax=ax, marker='o', 
-    #                        label_suffix=" (Pub)", show_labels=True)
-
-    # # 2. Plot Dataset 2 (Semi-Private) - HIDE LABELS
-    # plot_efficiency_twitter(df, 'semi-private eval score', ax=ax, marker='s', 
-    #                        label_suffix="", show_labels=False)
-
-    # ax.set_title("ARC-AGI-2 Efficiency: Public & Semi-Private", fontsize=16)
-    # plt.show()
-    return
 
 
 @app.cell
@@ -2621,9 +2560,7 @@ def _(df, plot_efficiency_twitter):
 @app.cell
 def _(mo):
     mo.md(r"""
-    The one-parameter model is Pareto optimal on the public eval set of ARC-AGI-2! It doesn't just achieve the highest score for its size, it achieves the highest score out of all the models. Remember, we measure the model size in total bytes so this captures both the number of parameters and the bytes of each parameter.
-
-    But the one-parameter model also gets a big fat zero on the semi-private eval set. We can plot
+    The one-parameter model gets the highest score, a perfect 100%, beating models 1000x bigger! It is Pareto optimal on the public eval set of ARC-AGI-2! After all, we trained on this. However, the one-parameter model also gets a big fat zero on the semi-private eval set.
     """)
     return
 
@@ -2637,133 +2574,14 @@ def _(df, plot_efficiency_twitter):
 @app.cell
 def _(mo):
     mo.md(r"""
-    While the one-parameter model achieves a perfect 100% on the public ARC-AGI-2 evaluation set, its performance collapses to zero on semi-private evaluation set. Every other model maintains a consistent score across public and semi-private sets, but the one-parameter model’s failure on held-out data reveals that it has overfit and is nothing more than a clever mathematical hack.
+    The one-parameter model gets 0 questions on the ARC-AGI-2 semi-private evaluation set. Every other model maintains a consistent score across public and semi-private sets except for the one-parameter model which has clearly overfit to the public dataset.
 
-    Taking a closer look, most top-tier models approach 1TB in size, while the one-parameter model is a mere 5MB. If 5MB can literally memorize the entire ARC-AGI-2 dataset, what is the purpose of those extra trillion bytes in larger models?
+    Taking a closer look, most top-tier models approach 1TB in size, while the one-parameter model is a mere 5MB. If 5MB can literally memorize the entire ARC-AGI-2 public eval dataset, what is the purpose of those extra trillion bytes in larger models?
 
     The answer is generalization.
 
-    A model is much more than a compressed form of its training data. True pattern recognition requires "excess" bytes to navigate the space between training samples and generalize to unseen examples. These extra bytes allow for language, reasoning, and pattern matching. It is in these excess bytes that true intelligence lies.
+    A model is much more than a compressed form of its training data. True pattern recognition requires "excess" bytes to interpolate between training samples and generalize to unseen examples. These extra bytes allow for language, reasoning, and pattern matching. It is in these excess bytes that true intelligence lies. And this is exactly what the one-parmaeter model is missing, causing it to get 0 on the semi-private evaluation set despite getting a 100 on the public evalaution set.
     """)
-    return
-
-
-@app.cell
-def _(np, plt):
-    from matplotlib.lines import Line2D
-
-    def plot_dual_efficiency_bars(df, score_col_1, score_col_2, label_1='Public Eval', label_2='Semi-Private Eval', save_path=None):
-        # 1. Setup & Sorting
-        d = df.sort_values('weight bytes').reset_index(drop=True)
-
-        # Size Annotation Helper (Formatted for inside labels)
-        def fmt_size(b):
-            if b >= 1e12: return f"{int(b/1e12)}TB"
-            if b >= 1e9: return f"{int(b/1e9)}GB"
-            if b >= 1e6: return f"{int(b/1e6)}MB"
-            if b >= 1e3: return f"{int(b/1e3)}KB"
-            return f"{int(b)}B"
-
-        # 2. Collision Avoidance Layout
-        raw_log_pos = np.log10(d['weight bytes'])
-        group_width, min_gap = 0.28, 0.45 
-
-        final_positions = []
-        last_pos = -1000
-        for raw_pos in raw_log_pos:
-            current_pos = max(raw_pos, last_pos + min_gap)
-            final_positions.append(current_pos)
-            last_pos = current_pos
-        final_positions = np.array(final_positions)
-
-        # 3. Plotting Setup
-        fig, ax = plt.subplots(figsize=(15, 9), facecolor='white')
-        ax.set_facecolor('white')
-        bar_w = group_width / 2.2
-
-        # Color Palette
-        MY_BLUE_DARK, MY_BLUE_LIGHT = '#1E3A8A', '#60A5FA'
-        COMP_GRAY_DARK, COMP_GRAY_LIGHT = '#374151', '#D1D5DB'
-
-        # 4. Draw Bars & Labels
-        for i, row in d.iterrows():
-            is_target = (row['model'] == 'one-parameter model')
-            c1 = MY_BLUE_DARK if is_target else COMP_GRAY_DARK
-            c2 = MY_BLUE_LIGHT if is_target else COMP_GRAY_LIGHT
-
-            # Public Bar
-            h1 = row[score_col_1]
-            b1 = ax.bar(final_positions[i] - bar_w/2, max(h1, 0.8), width=bar_w, 
-                        color=c1, alpha=1.0, zorder=3)
-            ax.bar_label(b1, labels=[f"{int(h1)}"], padding=5, fontsize=14, 
-                        fontweight='bold', color=c1)
-
-            # Semi-Private Bar
-            h2 = row[score_col_2]
-            b2 = ax.bar(final_positions[i] + bar_w/2, max(h2, 0.8), width=bar_w, 
-                        color=c2, alpha=1.0, zorder=3)
-            ax.bar_label(b2, labels=[f"{int(h2)}"], padding=5, fontsize=14, 
-                        fontweight='bold', color=c2)
-
-        # 5. Combined X-Axis Labels (Model Name + Size)
-        tick_labels = []
-        for _, row in d.iterrows():
-            name = 'One-Parameter Model' if row['model'] == 'one-parameter model' else row['model']
-            size_str = fmt_size(row['weight bytes'])
-            # Creates a 2-line label
-            tick_labels.append(f"{name}\n({size_str})")
-
-        ax.set_xticks(final_positions)
-        ax.set_xticklabels(tick_labels, rotation=10, ha='center', fontsize=11, fontweight='500')
-
-        # Color the One-Parameter Model label specifically
-        for i, label in enumerate(ax.get_xticklabels()):
-            if 'One-Parameter Model' in label.get_text():
-                label.set_color(MY_BLUE_DARK)
-                label.set_fontweight('bold')
-            else:
-                label.set_color('#4B5563')
-
-        # 6. Global Styling
-        ax.set_title("Public vs. Semi-Private ARC-AGI-2 Scores", 
-                     fontsize=24, fontweight='bold', color='#111827', pad=30)
-        ax.set_ylabel('Score (%)', fontsize=14, fontweight='bold', labelpad=10)
-        ax.set_xlabel('Model Size (Bytes)', fontsize=14, fontweight='bold', labelpad=20)
-
-        ax.set_ylim(0, 115) 
-        ax.grid(axis='y', linestyle='--', alpha=0.3, color='#94a3b8', zorder=0)
-
-        for s in ['top', 'right', 'bottom']: ax.spines[s].set_visible(False)
-        ax.spines['left'].set_color('#E5E7EB')
-
-        # Legend
-        legend_elements = [
-            Line2D([0], [0], color=COMP_GRAY_DARK, lw=8, label=label_1),
-            Line2D([0], [0], color=COMP_GRAY_LIGHT, lw=8, label=label_2)
-        ]
-        ax.legend(handles=legend_elements, frameon=False, loc='upper right', 
-                  fontsize=12, handletextpad=0.5)
-
-        plt.tight_layout()
-
-        if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
-
-        return fig
-
-    return
-
-
-@app.cell
-def _():
-    # plot_dual_efficiency_bars(
-    #     df, 
-    #     score_col_1='public eval score', 
-    #     score_col_2='semi-private eval score',
-    #     label_1='Public Score',
-    #     label_2='Semi-Private Score'
-    # )
-    # plt.show()
     return
 
 
@@ -2789,21 +2607,13 @@ def _(mo):
     Yet this is exactly what occurs in the AI community.
 
     Top AI labs quietly train on their test sets. It is rumoured these labs have entire teams who generate synthetic dataset for the sole purpose of succeeding on a specific benchmark. I've also heard that at certain labs, your pay is based on getting a particular score on a particular benchmark. Though it is important to incentivize progress, behavior like this can create a culture of benchmark maxing.
-
-    <blockquote class="twitter-tweet"><p lang="en" dir="ltr">dude you&#39;re not supposed to train on the train set that&#39;s benchmaxxing. you gotta train on like some other stuff. but also the scores need to be super good</p>&mdash; will brown (@willccbb) <a href="https://twitter.com/willccbb/status/1993009122644836831?ref_src=twsrc%5Etfw">November 24, 2025</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     """)
     return
 
 
 @app.cell
-def _(mo):
-    mo.md(r"""
-    **Intelligence is not parameter count.**
-
-    The existence of a simple equation with such powerful expressivity deomonstrates that model complexity cannot be determined by counting parameters alone. The one-parameter model exploits a often-overlooked fact: a single real-valued parameter can encode an unbounded amount of information by hiding complexity in its digits rather than in parameter count. Larger models should not be assumed to be strictly smarter. Instead, what parameter count actually measures is computational cost, not intelligence. FLOPs scale with parameters and precision, making parameter count a useful proxy for the limiting resources in ML: compute and memory.
-
-    Of course we would never train a model by shoving all the information into one parameter. In practice, parameter counts usually assumes finite-precision weights (e.g. fp32), not infinite precision. That's why the one-parameter model is more of a thought experiment than a practical proposal.
-    """)
+def _(embed_tweet):
+    embed_tweet("https://x.com/willccbb/status/1993009122644836831", height=300, width=600)
     return
 
 
@@ -2812,7 +2622,7 @@ def _(mo):
     mo.md(r"""
     **Intelligence is compression.**
 
-    To compress data, you must find regularities in it and finding regularities fundamentally requires intelligent pattern matching. If [intelligence is compression]((https://en.wikipedia.org/wiki/Hutter_Prize)), then our one-parameter model has all the intelligence of a phonebook. It achieves zero compression and is just a nice lookup table. It cannot discover patterns or extract structure. The one-parameter model simply stores the raw data and uses the precision $p$ as a tunable recovery knob.
+    To compress data, you must find regularities in it and finding regularities fundamentally requires intelligent pattern matching. If [intelligence is compression]((https://en.wikipedia.org/wiki/Hutter_Prize)), then our one-parameter model has all the intelligence of a phonebook. It is just a nice look up table with zero compression. It cannot discover patterns or extract structure. The one-parameter model simply stores the raw data and uses the precision $p$ as a tunable recovery knob.
 
     Real compression requires understanding. If you want to measure the complexity and expressivity of machine learning models, measure their compression. Use minimum description length or Kolmogorov complexity. These techniques capture whether a model has actually learned the underlying patterns. They cut through the illusion of parameter counts and reveal what the model truly understands.
 
@@ -2844,13 +2654,8 @@ def _(mo):
 
 
 @app.cell
-def _():
-    from marimo import Html
-
-    tweet_html = """
-    <blockquote class="twitter-tweet"><p lang="en" dir="ltr">Wait, this sounds incredible useful! Can we just have a model with 0 entropy, 0 hallucinations, that just acts like a retrieval database over its training dataset? Also sounds like a great way to solve the traceability problem. Why don&#39;t the AI labs just make something like that? <a href="https://t.co/n37BIqqQPO">pic.twitter.com/n37BIqqQPO</a></p>&mdash; Тsфdiиg (@tsoding) <a href="https://twitter.com/tsoding/status/2016641844755443774?ref_src=twsrc%5Etfw">January 28, 2026</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-    """
-    Html(tweet_html)
+def _(embed_tweet):
+    embed_tweet("https://twitter.com/tsoding/status/2016641844755443774")
     return
 
 
@@ -2871,7 +2676,7 @@ def _(mo):
     mo.md(r"""
     **Closing Thoughts**
 
-    This one-parameter model is a ridiculous thought experiment taken seriously. It pushes overfitting to its absurd limit, and I hope leaves you rethinking generalization, overfitting, and how we can actually measure intelligence. Personally, this was a lot of fun to work on too.
+    This one-parameter model is an absurd thought experiment, but one that I had a lot of fun working on.
 
     All the code for my experiments can be found here: [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).
 
@@ -2885,7 +2690,7 @@ def _(mo):
     @online{Turok2025ARCAGI,
     	author = {Eitan Turok},
     	title = {A one-parameter model that gets 100% on ARC-AGI-2},
-    	year = {2025},
+    	year = {2026},
     	url = {https://eitanturok.github.io/one-parameter-model/},
     }
     ```

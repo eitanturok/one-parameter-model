@@ -50,11 +50,11 @@ def logistic_decoder(alpha, full_precision, p, i):
     # 1. set the arbitrary precision before computing anything
     mp.prec = full_precision
 
-    # 2. predict x_i via the logistic decoder
+    # 2. run the logistic decoder
     return float(Sin(2 ** (i * p) * Arcsin(Sqrt(alpha))) ** 2)
 
 def logistic_decoder_fast(arcsin_sqrt_alpha, p, i):
-    mp.prec = p * (i + 1) + 2  # extra bits to reduce numerical errors ??
+    mp.prec = p * (i + 1) + 2  # +2 extra bits to reduce numerical errors from mpmath
     return float(Sin(2 ** (i * p) * arcsin_sqrt_alpha) ** 2)
 
 # todo: fix this
