@@ -60,17 +60,19 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    def embed_tweet(tweet_url, width=550, height=600):
+    def embed_tweet(tweet_url, width=550, height=600, scale=0.8):
         """Embed a tweet using an iframe to avoid marimo's script deduplication issue."""
         return mo.Html(f"""
-        <iframe
-            src="https://platform.twitter.com/embed/Tweet.html?id={tweet_url.rstrip('/').split('/')[-1]}"
-            width="{width}"
-            height="{height}"
-            frameborder="0"
-            style="border: none; overflow: hidden;"
-            allowtransparency="true"
-        ></iframe>
+        <div style="width: {int(width * scale)}px; height: {int(height * scale)}px; overflow: hidden;">
+            <iframe
+                src="https://platform.twitter.com/embed/Tweet.html?id={tweet_url.rstrip('/').split('/')[-1]}"
+                width="{width}"
+                height="{height}"
+                frameborder="0"
+                style="border: none; overflow: hidden; transform: scale({scale}); transform-origin: top left;"
+                allowtransparency="true"
+            ></iframe>
+        </div>
         """)
     return (embed_tweet,)
 
@@ -2599,7 +2601,19 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     **Training on test.**
+    """)
+    return
 
+
+@app.cell
+def _(embed_tweet):
+    embed_tweet("https://x.com/willccbb/status/1993009122644836831", height=300, width=600, scale=0.6)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
     Despite never using the training set, performing no pretraining, and having only one parameter, the one-parameter model gets 100% on the public eval set of ARC-AGI-2. It takes the idea of "training on test" to the extreme and encodes the question outputs of the entire public eval set directly into $\alpha$, achieving 100% accuracy while learning nothing. Simply shuffling the dataset will cause this model to break down as the decoder depends on the index $i$, not the sample $x_i$. It should be abundantly clear that the one-parameter model has no ability to generalize whatsoever. It would get a 0% on the private, heldout eval set of ARCI-AGI-2.
 
     The one-parameter model is utterly impractical and, frankly, an absurd hack. But that's precisely the point: it is absurd to train on the test set just to get to the top of a leaderboard.
@@ -2612,16 +2626,16 @@ def _(mo):
 
 
 @app.cell
-def _(embed_tweet):
-    embed_tweet("https://x.com/willccbb/status/1993009122644836831", height=300, width=600)
+def _(mo):
+    mo.md(r"""
+    **Intelligence is compression.**
+    """)
     return
 
 
 @app.cell
 def _(mo):
     mo.md(r"""
-    **Intelligence is compression.**
-
     To compress data, you must find regularities in it and finding regularities fundamentally requires intelligent pattern matching. If [intelligence is compression]((https://en.wikipedia.org/wiki/Hutter_Prize)), then our one-parameter model has all the intelligence of a phonebook. It is just a nice look up table with zero compression. It cannot discover patterns or extract structure. The one-parameter model simply stores the raw data and uses the precision $p$ as a tunable recovery knob.
 
     Real compression requires understanding. If you want to measure the complexity and expressivity of machine learning models, measure their compression. Use minimum description length or Kolmogorov complexity. These techniques capture whether a model has actually learned the underlying patterns. They cut through the illusion of parameter counts and reveal what the model truly understands.
@@ -2635,12 +2649,24 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     **The ARC-AGI Benchmark**
+    """)
+    return
 
+
+@app.cell
+def _(embed_tweet):
+    embed_tweet("https://x.com/fchollet/status/2022036543582638517", height=300, width=550)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
     ARC-AGI was intentionally designed to resist overfitting. It uses a private test set for official scoring, making training on test impossible. (Our one-parameter model only trained on the public eval set, not the private one.)
 
     Yet modern reasoning models may still be overfitting on ARC-AGI, just not in the traditional sense. Instead of training directly on the test set, reasoning models are clever enough to exploit distributional similarities between public and private splits, a meta-level form of overfitting to the benchmark's structural patterns. The ARC-AGI organizers [acknowledge](https://arcprize.org/blog/arc-prize-2025-results-analysis) this phenomenon, raising concerns about overfitting on their own benchmark.
 
-    However, the fundamental problem runs deeper. Many ARC-AGI solutions appear benchmark-specific, using synthetic data and abstractions tailored to these visual-grid puzzles. How many of these solutions have inspired downstream improvements in LLMs or other modes of intelligence? ARC-AGI is a necessary but not sufficient condition for AGI. I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles, driving broader innovation in the field of AI.
+    However, the fundamental problem runs deeper. Many ARC-AGI solutions appear benchmark-specific, using synthetic data and abstractions tailored to these visual-grid puzzles. How many of these solutions have inspired downstream improvements in LLMs or other modes of intelligence? Models started succeeding on ARC-AGI-2 when test-time adaptation was born, but I don't know if ARC-AGI inspired that development. ARC-AGI is a necessary but not sufficient condition for AGI. I hope these techniques prove to be good for more than just ARC-AGI's delightful puzzles, driving broader innovation in the field of AI.
     """)
     return
 
@@ -2655,14 +2681,14 @@ def _(mo):
 
 @app.cell
 def _(embed_tweet):
-    embed_tweet("https://twitter.com/tsoding/status/2016641844755443774")
+    embed_tweet("https://twitter.com/tsoding/status/2016641844755443774", scale=0.6)
     return
 
 
 @app.cell
 def _(mo):
     mo.md(r"""
-    This tweet got ~500k views suggesting AI labs should buikd "a model with 0 entropy, 0 hallucinations, that just acts like a retrieval database over its training dataset".
+    This tweet got ~500k views suggesting AI labs should build "a model with 0 entropy, 0 hallucinations, that just acts like a retrieval database over its training dataset".
 
     Our one-parameter model does exactly that! It has zero entropy, zero hallucinations, and perfect retrieval over the training data -- all while being continuous, differentiable, and contained in a single parameter.
 
