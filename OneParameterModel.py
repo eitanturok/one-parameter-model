@@ -1,13 +1,13 @@
 import marimo
 
-__generated_with = "0.18.4"
+__generated_with = "0.19.10"
 app = marimo.App(width="medium")
 
 
 @app.cell
 def _():
-
     import marimo as mo
+
     return (mo,)
 
 
@@ -16,6 +16,7 @@ def _():
     import json, inspect, multiprocessing, functools, time, math
     from pathlib import Path
     from urllib.request import urlopen
+
     return Path, inspect, json
 
 
@@ -26,6 +27,7 @@ def _():
     import matplotlib.pyplot as plt
     from matplotlib import colors
     from tqdm import tqdm
+
     return colors, np, pd, plt
 
 
@@ -33,6 +35,7 @@ def _():
 def _():
     from public.src.model import dyadic_map, decimal_to_binary, binary_to_decimal, phi, phi_inverse, logistic_encoder, logistic_decoder, logistic_decoder_fast, MinMaxScaler, decode, fast_decode, OneParameterModel
     from public.src.data import load_arc_agi_2, pad_arc_agi_2
+
     return (
         OneParameterModel,
         decimal_to_binary,
@@ -48,6 +51,7 @@ def _(inspect):
     def display_fxn(*fxns):
         fxns_str = '\n'.join([inspect.getsource(fxn) for fxn in fxns])
         return f"```py\n{fxns_str}\n```"
+
     return (display_fxn,)
 
 
@@ -55,6 +59,7 @@ def _(inspect):
 def _(mo):
     def display_alpha(p, alpha_str):
         return mo.md(f"```py\np={p}\nlen(alpha)={len(alpha_str.lstrip('0.'))} digits\nalpha={alpha_str}\n\n```")
+
     return (display_alpha,)
 
 
@@ -74,6 +79,7 @@ def _(mo):
             ></iframe>
         </div>
         """)
+
     return (embed_tweet,)
 
 
@@ -147,7 +153,7 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    This number is 260,091 digits long and is effectively god in box, right? One scalar value that cracks one of the most challenging AI benchmarks of our time. Sounds pretty impressive, right?
+    This number is 260,091 digits long and is effectively god in box, right?
 
     Unfortunately, **it's complete nonsense.**
     """)
@@ -268,6 +274,7 @@ def _(colors, np, plt):
       fig.patch.set_facecolor('#eeeeee')
       plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
       return fig
+
     return plot_arcagi, plot_matrix
 
 
@@ -306,6 +313,7 @@ def _(plot_matrix, plt):
         fig.patch.set_linewidth(3)
         plt.subplots_adjust(left=0.08, right=0.92, bottom=0.08, top=0.8)
         return fig
+
     return (plot_question,)
 
 
@@ -1012,20 +1020,13 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    While the Dyadic map $\mathcal{D}(a) = 2a \mod 1$ is ideal for bit-extraction, it creates an ugly, discontionious decoder
+    While the Dyadic map is great for bit-extraction, it creates an ugly, discontionious decoder
 
     $$
     f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
     $$
 
-    In this section we will "apply makeup" to bring our decoder closer to the beautiful function I promised you at the start of the blog
-
-    $$ f_{\alpha, p}(i)
-    =
-    \sin^2 \Big(
-        2^{i p} \arcsin^2(\sqrt{\alpha})
-    \Big)
-    $$
+    In this section we will "apply makeup" to make the decoder more beautiful.
     """)
     return
 
@@ -1033,7 +1034,7 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    To do this we use another chaotic system the Logistic Map at $r=4$ on the unit interval
+    To do this we use another chaotic system: the logistic map at $r=4$ on the unit interval
 
     $$
     \begin{align*}
@@ -1083,13 +1084,13 @@ def _(np, plt):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    One is a bit-shifting operation, the other is a smooth parabola that ecologists use to model population growth. However through [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy), we can show that the dyadic map $\mathcal{D}$ and the logistic map $\mathcal{L}$ are actually the same function just viewed through different coordinate systems. They are related by the function $\phi$
+    One is a bit-shifting operation and the other is a smooth parabola that ecologists use to model population growth. However [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us that the dyadic map $\mathcal{D}$ and the logistic map $\mathcal{L}$ are actually identical functions just viewed through different coordinate systems. They are related by the function $\phi$
 
     $$
     \begin{align*}
-    \phi \circ \mathcal{D}
+    \mathcal{D} \circ \phi
     &=
-    \mathcal{L} \circ \phi
+    \phi \circ \mathcal{L}
     \\
     \phi(a)
     &=
@@ -1097,39 +1098,17 @@ def _(mo):
     \end{align*}
     $$
 
-    where $\circ$ means function compisition. Rearranging $\mathcal{D} = \phi^{-1} \circ \mathcal{L} \circ \phi$, the $k$-th iteration of the dyadic map can be expressed with the logistic map
+    where $\circ$ means function compisition. Rearranging  $\mathcal{D} = \phi \circ \mathcal{L} \circ \phi^{-1}$, the $k$-th iteration of the dyadic map can be expressed with the logistic map
 
     $$
     \begin{align*}
-        \mathcal{D}^k(a)
+        \mathcal{D}^k(\alpha)
         &=
-        \phi^{-1} \Big( \mathcal{L}^k \big( \phi( a ) \big) \Big)
+        \phi \Big( \mathcal{L}^k \big( \phi^{-1}(\alpha) \big) \Big)
         &=
-        \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big)
+        \sin^2 \Big(2^k \arcsin\sqrt{\phi^{-1}(\alpha)} \Big)
     \end{align*}
     $$
-
-    Leveraging this relatiosnhip, we can rewrite our decoder using the logistic map
-
-    $$
-    \begin{align*}
-        f_{\alpha, p}(i)
-        &=
-        \text{dec} \Big( \text{bin}_p \Big( & \mathcal{D}^{ip}(\alpha) && \Big) \Big)
-        =
-        \text{dec} \Big( \text{bin}_p \Big( && \phi^{-1} \big( \mathcal{L}^{ip}(\phi(\alpha)) \big) && \Big) \Big)
-        =
-        \text{dec} \Big( \text{bin}_p \Big( && \sin^2 \Big(2^k \arcsin(\sqrt{\alpha}) \Big) && \Big) \Big).
-    \end{align*}
-    $$
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    $\phi$ takes us from the dyadic to the logistic space
     """)
     return
 
@@ -1137,13 +1116,60 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## A New Algorithm
+    We can now redesign our algorithm. Our new encoder will save $\phi^{-1}(\alpha)$ instead of just $\alpha$ and our new decoder will use $\sin^2 \Big(2^k \arcsin\sqrt{\phi^{-1}(\alpha)} \Big)$ instead of $\mathcal{D}$. Our decoder no longer uses the ugly dydadic map, but is instead powered by the beautiful, continious logistic map. The main changes are bolded:
+
+    /// admonition | **Encoding Algorithm $g(\mathcal{X}, p)$:**
+
+    Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$ and precision $p$, encode the dataset into $a_L$:
+
+    1. ***Transform data to dyadic coordinates: $z_i = \phi^{-1}(x_i) = \frac{1}{2 \pi} \arcsin⁡( x_i )$ for $i=1, ..., n$***
+    2. Convert each transformed number to binary with $p$ bits of precision: $b_i = \text{bin}_p(z_i)$ for $i=1, ..., n$
+    3. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
+    4. Convert to decimal $a_D = \text{dec}(b)$
+    5. ***Transform to logistic space: $\alpha = a_L = \phi(a_D) = \sin^2(2 \pi a_D)$***
+    6. Return $\alpha$
+
+    ///
+
+
+    Mathematically, the encoder is defined as
+
+    $$
+    \begin{align*}
+    \alpha
+    &=
+    g(p, \mathcal{X}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x_i)) \Big) \bigg)
+    \end{align*}
+    $$
+
+    where $\oplus$ means concatenation. Like before the result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. However, this time $\alpha$ is in logistic space. We can now discard $\mathcal{X}$ entirely and recover sample $x_i$ by decoding $\alpha$.
+
+    /// admonition | **Decoding Algorithm $f_{\alpha, p}(i)$:**
+
+    Given sample index $i \in \{0, ..., n-1\}$, precision $p$, and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
+
+    1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
+    2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
+    3. Convert to decimal $\tilde{x}_i = \text{dec}(b_i)$
+    4. Return $\tilde{x}_i$
+
+    ///
+
+
+    Mathematically, the decoder is defined as
+
+    $$
+    \begin{align*}
+    \tilde{x}_i
+    &=
+    f_{\alpha,p}(i)
+    :=
+    \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
+    =
+    \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big) \Big) \Big)
+    \end{align*}
+    $$
     """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
     return
 
 
@@ -1985,6 +2011,7 @@ def _(np, plot_matrix, plt):
       fig.patch.set_facecolor('#eeeeee')
       plt.tight_layout(rect=[0, 0, 1, 0.94], h_pad=1.0)
       return fig
+
     return (plot_prediction,)
 
 
@@ -2033,6 +2060,7 @@ def _(OneParameterModel, mo, np):
         alpha2_str = str(model2.alpha)
         y2_pred = model2.predict(np.array([idx]))
         return model2, alpha2_str, y2_pred
+
     return (run_model,)
 
 
@@ -2426,6 +2454,7 @@ def _(Path, json, pd):
         df = df.sort_values('total model size')
         df = df.reset_index(drop=True)
         return df
+
     return (load_arc_evals,)
 
 
@@ -2550,6 +2579,7 @@ def _(plt):
             fig.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
 
         return ax
+
     return (plot_efficiency_twitter,)
 
 
