@@ -130,12 +130,12 @@ def _(mo):
 
 @app.cell
 def _(json, mo):
-    with open("public/data/alpha/alpha_arc_agi_2_p8.json") as f: data = json.load(f)
+    with open("public/data/alpha/alpha_arc-agi-2_p38.json") as f: data = json.load(f)
 
     alpha_txt = data['alpha'][0]
     p_txt = data['precision']
     alpha_n_digits = len(str(alpha_txt).lstrip('0.'))
-    assert alpha_n_digits == 260091, f'expected alpha to have 260091 digits but got {alpha_n_digits}'
+    assert alpha_n_digits == 1235426, f'expected alpha to have 1235426 digits but got {alpha_n_digits}'
 
     # only display the first 10,000 digits of a so we don't break marimo
     mo.md(f"```py\np={p_txt}\nlen(alpha)={alpha_n_digits} digits\nalpha={str(alpha_txt)[:10_000]}\n```")
@@ -153,7 +153,7 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    This number is 260,091 digits long and is effectively god in box, right?
+    This number is 1,235,426 digits long and is effectively god in box, right?
 
     Unfortunately, **it's complete nonsense.**
     """)
@@ -364,7 +364,7 @@ def _(mo):
     arc_agi_2_leaderboard_image = mo.image(
         "public/images/arc-prize-leaderboard.png",
         width=800,
-        caption="Performance on private eval set of ARC-AGI-2. Retreived from https://arcprize.org/leaderboard on January 30th, 2026.",
+        caption="Performance on private eval set of ARC-AGI-2. Retreived from https://arcprize.org/leaderboard on February 18th, 2026.",
         style={"display": "block", "margin": "0 auto"}
     )
     arc_agi_2_leaderboard_image
@@ -374,9 +374,9 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(f"""
-    When I first wrote this blog in August, the world’s best models struggled to crack $20\%$ on ARC-AGI-2. Today, the landscape has shifted: GPT-5.2 Pro leads with $90.5\%$, though it costs a steep $\$11.65$ per puzzle. Meanwhile, Gemini 3 Flash Preview offers a more efficient middle ground, solving $84.7\%$ of puzzles at just $\$0.174$ each.
+    When I first wrote this blog in August, the world’s best models struggled to crack $20\%$ on ARC-AGI-2. Today, the landscape has shifted: Gemini 3 Deep Think 2/26 leads with $96\%$, though it costs $\$7.17$ per puzzle. Meanwhile, Claude Opus 4.6 (120k, High) offers a more efficient middle ground, solving $94\%$ of puzzles at just $\$1.39$ each.
 
-    While many models now achieve impressive scores, they remain massive—often housing trillions of parameters. From a "tokenomics" perspective, this is still expensive, e.g. the leaner GPT-5 mini [costs](https://openai.com/api/pricing) $\$2$ per $1M$ output tokens. This gap between high performance and high cost is why the $1,000,000 ARC Prize exists: the goal is to find an open-source solution that is both highly capable and significantly cheaper than today's giants.
+    While many models now achieve impressive scores, they remain massive—often housing trillions of parameters. From a "tokenomics" perspective, this is still expensive. This gap between high performance and high cost is why the $1,000,000 ARC Prize exists: the goal is to find an open-source solution that is both highly capable and significantly cheaper than today's giants.
     """)
     return
 
@@ -1156,6 +1156,7 @@ def _(mo):
 def _(mo, plot_phi_and_inverse):
     mo.md(rf"""
     /// details | How did we choose $\phi$? Can you give some intuition?
+        type: info
 
     Let's plot $\phi$ and $\phi^{-1}$:
 
@@ -1173,7 +1174,7 @@ def _(mo, plot_phi_and_inverse):
 def _(mo):
     mo.md(r"""
     /// details | Can you give some more intuition on topological conjugancy?
-
+        type: info
 
     Formally, two functions are topologically conjugate if there exists a homeomorphism, fancy talk for a change of coordinates, that perfectly takes you from one map to another. In our equation
 
@@ -1197,6 +1198,7 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     /// details |Why does the logistic map equal $\mathcal{L}^k(\alpha) = \sin^2 \Big(2^k \arcsin^2(\sqrt{\alpha}) \Big)$?
+        type: info
 
     Let's derive this
 
@@ -2049,9 +2051,18 @@ def _(alpha4_str, display_alpha, p4):
 
 
 @app.cell
+def _():
+    # fn = f"public/data/alpha/alpha_arc-agi-2_p{p4}.json"
+    # with open(fn, "w") as alpha_f:
+    #     json.dump({'precision': model4.precision, 'alpha': (alpha4_str, model4.full_precision)}, alpha_f)
+    #     print(f'Saved alpha to {fn}')
+    return
+
+
+@app.cell
 def _(mo):
     mo.md(r"""
-    This is our perfect one-parameter model! Let's take another look at puzzle 23 of the public eval dataset
+    This is our perfect one-parameter model! Let's revist puzzle 23 of the public eval dataset
     """)
     return
 
@@ -2363,13 +2374,13 @@ def _(df, plot_efficiency_twitter):
 @app.cell
 def _(mo):
     mo.md(r"""
-    The one-parameter model gets 0 questions on the ARC-AGI-2 semi-private evaluation set. Every other model maintains a consistent score across public and semi-private sets except for the one-parameter model which has clearly overfit to the public dataset.
+    The one-parameter model gets 0 questions on the ARC-AGI-2 semi-private evaluation set. Every other model maintains a consistent score across public and semi-private sets except for the one-parameter model which clearly overfits to the public dataset.
 
     Taking a closer look, most top-tier models approach 1TB in size, while the one-parameter model is a mere 5MB. If 5MB can literally memorize the entire ARC-AGI-2 public eval dataset, what is the purpose of those extra trillion bytes in larger models?
 
     The answer is generalization.
 
-    A model is much more than a compressed form of its training data. True pattern recognition requires "excess" bytes to interpolate between training samples and generalize to unseen examples. These extra bytes allow for language, reasoning, and pattern matching. It is in these excess bytes that true intelligence lies. And this is exactly what the one-parmaeter model is missing, causing it to get 0 on the semi-private evaluation set despite getting a 100 on the public evalaution set.
+    A model is much more than a compressed form of its training data. True pattern recognition requires "excess" bytes to interpolate between training samples and generalize to unseen examples. The extra bytes in these larger models allow for language, reasoning, and pattern matching, the exact features which the one-parameter model is missing.
     """)
     return
 
