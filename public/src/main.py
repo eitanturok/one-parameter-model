@@ -16,7 +16,7 @@ def main(args):
     model = OneParameterModel(args.precision)
     model.fit(X, y)
     if args.save:
-        fn = f"alpha_{args.dataset.replace('-', '_')}_p{args.precision}.json"
+        fn = f"alpha_{args.dataset}_p{args.precision}.json"
         with open(fn, "w") as f:
             json.dump({'precision': model.precision, 'alpha': (str(model.alpha), model.alpha.precision)}, f)
             print(f'Saved alpha to {fn}')
