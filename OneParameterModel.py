@@ -90,7 +90,7 @@ def _(mo):
 
     By [Eitan Turok](https://eitanturok.github.io/).
 
-    > **TLDR:** I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar reasoning benchmark that stumped ChatGPT. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 260,091 digits long.
+    > **TLDR:** I built a model that has only one parameter and gets 100% on ARC-AGI-2, the million-dollar benchmark that  pushes reasoning models to their limits. Using chaos theory and some deliberate cheating, I crammed every answer into a single number 1,235,426 digits long.
     """)
     return
 
@@ -145,7 +145,7 @@ def _(json, mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    and you'll get a perfect score on the public eval set of ARC-AGI-2! (Feel free to scroll horizontally. Only the first 10,000 digits of $\alpha$ are shown.)
+    and you'll get a perfect score on the public eval set of ARC-AGI-2! (Feel free to scroll horizontally. Only the first 10,000 digits of $\alpha$ are shown.) This number is 1,235,426 digits long and is effectively god in box, right?
     """)
     return
 
@@ -153,8 +153,6 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    This number is 1,235,426 digits long and is effectively god in box, right?
-
     Unfortunately, **it's complete nonsense.**
     """)
     return
