@@ -19,7 +19,6 @@ marimo edit OneParameterModel.py
 
 Export to html (used)
 ```bash
-marimo export html OneParameterModel.py -o docs/docs.html --force --no-include-code
 python export.py
 ```
 

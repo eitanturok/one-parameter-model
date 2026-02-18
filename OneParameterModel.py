@@ -2498,11 +2498,11 @@ def _(mo):
     mo.md(r"""
     **Closing Thoughts**
 
-    This one-parameter model is an absurd thought experiment, but one that I had a lot of fun working on.
+    This one-parameter model is a cute project. It doesn't have practical value but I had a lot of fun working on it.
 
     All the code for my experiments can be found here: [https://github.com/eitanturok/one-parameter-model](https://github.com/eitanturok/one-parameter-model).
 
-    If you liked this or want to chat, [reach out](https://eitanturok.github.io/)! I always love talking with interesting folks!
+    If you liked this or want to chat, my email is [eitan.turok@gmail.com](eitan.turok@gmail.com), my X is [@EitanTurok](https://x.com/EitanTurok), and here is my personal [website](https://eitanturok.github.io/). I always love talking with interesting folks!
 
     Lastly, thanks to all those who gave me helpful feedback on this post: [Gilad](https://x.com/giladturok), [Jacob](https://x.com/JacobianNeuro), [Isaac](https://x.com/LiaoIsaac91893), [spike](https://x.com/spikedoanz), and others.
 
