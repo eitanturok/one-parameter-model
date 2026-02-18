@@ -115,7 +115,7 @@ def _(mo):
     $$
     \begin{align*}
     f_{\alpha, p}(i)
-    & :=
+    & =
     \sin^2 \Big(
         2^{i p} \arcsin(\sqrt{\alpha})
     \Big)
@@ -515,8 +515,8 @@ def _(mo):
     $$
     \begin{align*}
     \mathcal{D}^k(a)
-    & :=
-    \underbrace{(D \circ ... \circ D)}_{k}(a) = (2^k a) \mod 1
+    & =
+    \underbrace{(D \circ ... \circ D)}_{k}(a) = (2^k a) \bmod 1
     \tag{3}
     \end{align*}
     $$
@@ -582,7 +582,7 @@ def _(mo):
 
     What is going on here?
 
-    Each time we call $D(a) = (2a) \mod 1$, we double $a$ -- via $2a$ -- and truncate it -- via $\mod 1$. The doubling shifts every binary digit one place to the left and the truncation throws away whatever digit lands in the one's place. In other words, each application of $\mathcal{D}$ peels off the first binary digit and throws it away. **If we apply the dyadic map $k$ times, we remove the first $k$ bits of $a$.**
+    Each time we call $D(a) = (2a) \bmod 1$, we double $a$ -- via $2a$ -- and truncate it -- via $\bmod 1$. The doubling shifts every binary digit one place to the left and the truncation throws away whatever digit lands in the one's place. In other words, each application of $\mathcal{D}$ peels off the first binary digit and throws it away. **If we apply the dyadic map $k$ times, we remove the first $k$ bits of $a$.**
     """)
     return
 
@@ -965,7 +965,7 @@ def _(mo):
     \begin{align*}
     \alpha
     &=
-    g(p, \mathcal{X}) := \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(x_i) \Big)
+    g(p, \mathcal{X}) = \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(x_i) \Big)
     \tag{4}
     \end{align*}
     $$
@@ -976,7 +976,7 @@ def _(mo):
 
     Given sample index $i \in \{0, ..., n-1\}$, precision $p$, and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
 
-    1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \mod 1$
+    1. Apply the dyadic map $\mathcal{D}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{D}^{ip}(\alpha) = (2^{ip} \alpha) \bmod 1$
     2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
     3. Convert to decimal $\tilde{x}_i = \text{dec}(b_i)$
     4. Return $\tilde{x}_i$
@@ -989,7 +989,11 @@ def _(mo):
     \begin{align*}
     \tilde{x}_i
     &=
-    f_{\alpha, p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
+    f_{\alpha, p}(i)
+    =
+    \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
+    =
+    \text{dec} \Big( \text{bin}_p \Big( (2^{ip} \alpha) \bmod 1 \Big) \Big)
     \end{align*}
     $$
 
@@ -1020,13 +1024,17 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    While the Dyadic map is great for bit-extraction, it creates an ugly, discontionious decoder
+    While the dyadic map is great for bit-extraction, it creates an ugly, discontionious decoder
 
     $$
-    f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
+    f_{\alpha,p}(i)
+    =
+    \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
+    =
+    \text{dec} \Big( \text{bin}_p \Big( (2^{ip} \alpha) \bmod 1 \Big) \Big)
     $$
 
-    In this section we will "apply makeup" to make the decoder more beautiful.
+    In this section we will apply some makeup to make our decoder a bit more beautiful.
     """)
     return
 
@@ -1047,7 +1055,7 @@ def _(mo):
     \end{align*}
     $$
 
-    which seems quite different than the familiar dyadic map
+    which seems quite different than the dyadic map
 
     $$
     \begin{align*}
@@ -1055,7 +1063,7 @@ def _(mo):
     &&
     \mathcal{D}(a_D)
     &=
-    (2 a_D) \mod 1
+    (2 a_D) \bmod 1
     \end{align*}
     $$
     """)
@@ -1084,7 +1092,7 @@ def _(np, plt):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    One is a bit-shifting operation and the other is a smooth parabola that ecologists use to model population growth. However [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us that the dyadic map $\mathcal{D}$ and the logistic map $\mathcal{L}$ are actually identical functions just viewed through different coordinate systems. They are related by the function $\phi$
+    One is a bit-shifting operation and the other is a smooth parabola that ecologists use to model population growth. However [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us that the dyadic map $\mathcal{D}$ and the logistic map $\mathcal{L}$ are actually the same. They are identical functions just viewed through different coordinate systems. They are related by the function $\phi$
 
     $$
     \begin{align*}
@@ -1098,17 +1106,65 @@ def _(mo):
     \end{align*}
     $$
 
-    where $\circ$ means function compisition. Rearranging  $\mathcal{D} = \phi \circ \mathcal{L} \circ \phi^{-1}$, the $k$-th iteration of the dyadic map can be expressed with the logistic map
+    where $\circ$ means function compisition. Rearranging  $\mathcal{L} = \phi \circ \mathcal{D} \circ \phi^{-1}$, the $k$-th iteration of the logistic map can be expressed in terms of the dyadic map
 
     $$
     \begin{align*}
-        \mathcal{D}^k(\alpha)
+        \mathcal{L}^k(a)
         &=
-        \phi \Big( \mathcal{L}^k \big( \phi^{-1}(\alpha) \big) \Big)
+        (\phi \circ \mathcal{D}^k \circ \phi^{-1})(a)
         &=
-        \sin^2 \Big(2^k \arcsin\sqrt{\phi^{-1}(\alpha)} \Big)
+        \sin^2 \Big(2^k \arcsin\sqrt{a} \Big)
     \end{align*}
     $$
+    """)
+    return
+
+
+@app.cell
+def _(np, plt):
+    def plot_phi_and_inverse():
+        a_values = np.linspace(0, 1, 100)
+        def phi(a): return np.sin(2 * np.pi * a) ** 2
+        def phi_inverse(a): return np.arcsin(np.sqrt(a)) / (2.0 * np.pi)
+
+        fig, ax = plt.subplots()
+        ax.scatter(a_values, phi(a_values), label="phi", s=2, c="g")
+        ax.scatter(a_values, phi_inverse(a_values), label="phi inverse", s=2, c="r")
+        ax.set_xlabel("a")
+        ax.set_ylabel("output")
+        ax.set_title("phi and phi inverse")
+        ax.legend()
+        # plt.show()
+        return fig
+
+    return (plot_phi_and_inverse,)
+
+
+@app.cell
+def _(mo):
+    topological_conjugacy_image = mo.image(
+        "public/images/topological_conjugacy.png",
+        width=400,
+        caption="Topological conjugacy between the dyadic and logistic map.",
+        style={"display": "block", "margin": "0 auto"}
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo, plot_phi_and_inverse):
+    mo.md(rf"""
+    /// details | How did we choose $\phi$? Can you give some intuition?
+
+    Let's plot $\phi$ and $\phi^{-1}$:
+
+    {mo.as_html(plot_phi_and_inverse())}
+
+
+    Notice that $\phi(a) = \sin^2(2 \pi a)$ oscillates between $0$ and $1$ with a period of $1$, completing a full cycle everytime $a$ reaches a new integer value. This mimics the dyadic map $\mathcal{{D}}(a)= (2a) \bmod 1$, which also stays bounded in $[0,1)$ and resets at each integer boundary due to the modulo operation. This is how $\phi$ remains continuous while replicating the discontinuous jumps of $\mathcal{{D}}$.
+
+    ///
     """)
     return
 
@@ -1116,8 +1172,107 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    We can now redesign our algorithm. Our new encoder will save $\phi^{-1}(\alpha)$ instead of just $\alpha$ and our new decoder will use $\sin^2 \Big(2^k \arcsin\sqrt{\phi^{-1}(\alpha)} \Big)$ instead of $\mathcal{D}$. Our decoder no longer uses the ugly dydadic map, but is instead powered by the beautiful, continious logistic map. The main changes are bolded:
+    /// details | Can you give some more intuition on topological conjugancy?
 
+
+    Formally, two functions are topologically conjugate if there exists a homeomorphism, fancy talk for a change of coordinates, that perfectly takes you from one map to another. In our equation
+
+    $$
+    \mathcal{{D}} \circ \phi
+    =
+    \phi \circ \mathcal{{L}}
+    $$
+
+
+    the homeomorphism $\phi$ tells us that the logistic and dyadic maps are chaotic systems with identical orbits, the exact same chaotic trajectories, simply expressed in different coordinates. Interestingly, $\phi$ is applied to the *input* of $\mathcal{{D}}$ while we apply $\phi$ to the *output* of $\mathcal{{L}}$. Think of these two orbits existing in parallel universes with $\phi$ and $\phi^{{-1}}$ acting as the bridges between $\mathcal{{D}}$ and $\mathcal{{L}}$.
+
+    {topological_conjugacy_image}
+
+    ///
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    /// details |Why does the logistic map equal $\mathcal{L}^k(\alpha) = \sin^2 \Big(2^k \arcsin^2(\sqrt{\alpha}) \Big)$?
+
+    Let's derive this
+
+    $$
+    \begin{align*}
+        \mathcal{L}^k(\alpha)
+        &=
+        (\phi \circ \mathcal{D}^k \circ \phi^{-1})(\alpha)
+        \\
+        &=
+        \sin^2 \bigg(
+            2 \pi
+            \cdot
+            \mathcal{D}^k \big( \phi^{-1}(\alpha)) \big)
+        \bigg)
+        &
+        \text{by $\phi(a) = \sin^2(2 \pi a)$}
+        \\
+        &=
+        \sin^2 \bigg(
+            2 \pi
+            \cdot
+            (2^k \phi^{-1}(\alpha)) \bmod 1
+        \bigg)
+        &
+        \text{by $\mathcal{D}^k = (2^k a) \bmod 1$}
+        \\
+        &=
+        \sin^2 \bigg(
+            2 \pi
+            \cdot
+            2^k \phi^{-1}(\alpha))
+        \bigg)
+        &
+        \text{since $\sin^2$ has a period of 1, $\bmod 1$ has no effect}
+        \\
+        &=
+        \sin^2 \bigg(
+            2 \pi
+            \cdot
+            2^k \frac{1}{2 \pi} \arcsin \sqrt{\alpha}
+        \bigg)
+        &
+        \text{by $\phi^{-1}(a) = \frac{1}{2 \pi} \arcsin \sqrt{a}$}
+        \\
+        &=
+        \sin^2 \bigg(
+            2^k \arcsin \sqrt{\alpha}
+        \bigg)
+    \end{align*}
+    $$
+
+    ///
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    We can now redesign our algorithm in two parts. First, the decoder replaces the dyadic map $\mathcal{D}$ with the logistic map $\mathcal{L} = \phi^{-1} \circ \mathcal{D} \circ \phi$. Second, the encoder applies $\phi^{-1}$ to each $x_i$ before concatenating and then $\phi$ to the concatenated result; this is our new $\alpha$. The extra $\phi^{-1}$ and $\phi$ in the encoder cancel out the $\phi^{-1}$ and $\phi$ in the decoder, allowing us to use $\mathcal{L}$ while preserving the same behavior as when the decoder was just $\mathcal{D}$.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Let's present the new algorithm with the main changes in bold.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     /// admonition | **Encoding Algorithm $g(\mathcal{X}, p)$:**
 
     Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$ and precision $p$, encode the dataset into $a_L$:
@@ -1130,20 +1285,37 @@ def _(mo):
     6. Return $\alpha$
 
     ///
+    """)
+    return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     Mathematically, the encoder is defined as
 
     $$
     \begin{align*}
     \alpha
     &=
-    g(p, \mathcal{X}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x_i)) \Big) \bigg)
+    g(p, \mathcal{X})
+    =
+    \phi \bigg( \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x_i)) \Big) \bigg)
+    =
+    \sin^2 \bigg( 2 \pi \cdot \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(
+    \frac{1}{2 \pi} \arcsin(x_i)
+    ) \Big) \bigg)
     \end{align*}
     $$
 
-    where $\oplus$ means concatenation. Like before the result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. However, this time $\alpha$ is in logistic space. We can now discard $\mathcal{X}$ entirely and recover sample $x_i$ by decoding $\alpha$.
+    where $\oplus$ means concatenation. Like before, the result is a single scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. However, this time $\alpha$ is in logistic space. We can now discard $\mathcal{X}$ entirely and recover sample $x_i$ by decoding $\alpha$.
+    """)
+    return
 
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     /// admonition | **Decoding Algorithm $f_{\alpha, p}(i)$:**
 
     Given sample index $i \in \{0, ..., n-1\}$, precision $p$, and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
@@ -1154,8 +1326,13 @@ def _(mo):
     4. Return $\tilde{x}_i$
 
     ///
+    """)
+    return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     Mathematically, the decoder is defined as
 
     $$
@@ -1163,7 +1340,7 @@ def _(mo):
     \tilde{x}_i
     &=
     f_{\alpha,p}(i)
-    :=
+    =
     \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
     =
     \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big) \Big) \Big)
@@ -1176,7 +1353,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## old old
+    We've taken the crude, discontinuous decoder and transformed it into something smooth and differentiable. The logistic map doesn't *look* like it's doing binary operations, but underneath the elegant trigonometry, it's performing exactly the same bit manipulations as its topological conjugate, the dyadic map. The makeup looks pretty great!
     """)
     return
 
@@ -1184,171 +1361,13 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    How do we go from the ugly, discontinuous decoder function
+    However, nothing is free. The cost of using the logistic map instead of the dyadic map is that our error is now $2 \pi$ times larger,
 
     $$
-    f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
+    |\tilde{x}_i - x_i | \leq \frac{2 \pi}{2^{p}} = \frac{\pi}{2^{p-1}}
     $$
 
-    to that beautiful function I promised you at the start of the blog
-
-    $$ f_{\alpha, p}(i)
-    =
-    \sin^2 \Big(
-        2^{i p} \arcsin^2(\sqrt{\alpha})
-    \Big)
-    ?
-    $$
-
-    In this section we will "apply makeup" to the first function to get it looking a bit closer to the second. To do this we use the Logistic Map at $r=4$ on the unit interval
-
-    $$
-    \begin{align*}
-    \mathcal{L}: [0, 1] \to [0, 1]
-    &&
-    \mathcal{L}(a_L)
-    &=
-    4 a_L (1 - a_L)
-    \tag{6}
-    \end{align*}
-    $$
-
-    which seems quite different than the familiar dyadic map
-
-    $$
-    \begin{align*}
-    \mathcal{D}: [0, 1] \to [0, 1]
-    &&
-    \mathcal{D}(a_D)
-    &=
-    (2 a_D) \mod 1
-    \end{align*}
-    $$
-
-    One is a bit-shifting operation, the other is a smooth parabola that ecologists use to model population growth. (Note: previously $a$ was the input to the dyadic map but from now on $a_D$ will be the input to the dyadic map to differentiate it from $a_L$, the input to the logistic map.)
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    However, [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) shows that the dyadic map $\mathcal{D}$ and the logistic map $L$ are actually the same system viewed through different "lenses." They are related by the coordinate transformation
-
-    $$
-    \begin{align*}
-    \mathcal{L} \circ \phi
-    &=
-    \phi \circ \mathcal{D}
-    \\
-    \phi(a)
-    &=
-    \sin^2\left(\frac{\pi a}{2}\right)
-    \\
-    \phi^{-1}(x)
-    &=
-    \frac{2}{\pi}\arcsin(\sqrt{x})
-    \end{align*}
-    $$
-
-    Leveraging this relationship, we can derive a new decoder
-
-    $$
-    \begin{align*}
-        \mathcal{D}
-        &=
-        \phi^{-1} \circ \mathcal{L} \circ \phi
-        \\
-        \mathcal{D}(a)
-        &=
-        \phi^{-1} \Big( \mathcal{L} \big( \phi( a ) \big) \Big) = \sin^2 \Big(2 \arcsin(\sqrt{a}) \Big)
-        \\
-        \mathcal{D}^k(a)
-        &=
-        \phi^{-1} \Big( \mathcal{L}^k \big( \phi( a ) \big) \Big)
-        =
-        \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big)
-    \end{align*}
-    $$
-
-    which becomes
-
-    $$
-    \begin{align*}
-        f_{\alpha, p}(i)
-        &=
-        \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
-        =
-        \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
-        =
-        \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^k \arcsin(\sqrt{a}) \Big) \Big) \Big)
-    \end{align*}
-    $$
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## The New Decoder
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## old
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    How do we go from the ugly, discontinuous decoder function
-
-    $$
-    f_{\alpha,p}(i) := \text{dec} \Big( \text{bin}_p \Big( \mathcal{D}^{ip}(\alpha) \Big) \Big)
-    $$
-
-    to that beautiful function I promised you at the start of the blog
-
-    $$ f_{\alpha, p}(i)
-    =
-    \sin^2 \Big(
-        2^{i p} \arcsin^2(\sqrt{\alpha})
-    \Big)
-    ?
-    $$
-
-    In this section we will "apply makeup" to the first function to get it looking a bit closer to the second. To do this, we will need another one-dimensional chaotic system, the [logistic map](https://en.wikipedia.org/wiki/Logistic_map). The logistic-map at $r=4$ on the unit interval is defined as
-
-    $$
-    \begin{align*}
-    \mathcal{L}: [0, 1] \to [0, 1]
-    &&
-    \mathcal{L}(a_L)
-    &=
-    4 a_L (1 - a_L)
-    \tag{6}
-    \end{align*}
-    $$
-
-    which seems quite different than the familiar dyadic map
-
-    $$
-    \begin{align*}
-    \mathcal{D}: [0, 1] \to [0, 1]
-    &&
-    \mathcal{D}(a_D)
-    &=
-    (2 a_D) \mod 1
-    \end{align*}
-    $$
-
-    One is a bit-shifting operation, the other is a smooth parabola that ecologists use to model population growth. (Note: previously $a$ was the input to the dyadic map but from now on $a_D$ will be the input to the dyadic map to differentiate it from $a_L$, the input to the logistic map.)
+    We get this $2 \pi$ factor by noting that the derivative of $\phi$ is bounded by $2 \pi$ and applying the mean-value theorem. For a proof, see section 2.5 of [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320).
     """)
     return
 
@@ -1380,268 +1399,6 @@ def _():
 @app.cell
 def _():
     orbit_3 = logistic_orbit(0.431, 5)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    What does the logistic orbit look like? Similar or different to the dyadic orbit?
-
-    | Initial Values $a_L, a_D$ | Logistic Orbit | Dyadic Orbit |
-    |---------------|----------------|--------------|
-    | $0.5$ | $(0.5, 1.0, 0.0, 0.0, 0.0, 0.0)$ | $(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)$ |
-    | $1/3$ | $(0.333, 0.888, 0.395, 0.956, 0.168, 0.560)$ | $(0.333, 0.667, 0.333, 0.667, 0.333, 0.667)$ |
-    | $0.43085467085$ | $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$ | $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$ |
-
-    At first glance, the logistic and dyadic maps create orbits that look nothing alike: the first orbits differ by a single element while the second and third appear random, unrelated.
-
-    However, [topological conjugacy](https://en.wikipedia.org/wiki/Topological_conjugacy) tells us these two maps are *actually* the same.
-
-    The logistic and dyadic maps have identical orbits, the exact same chaotic trajectories, simply expressed in different coordinates. The logistic map, for all its smooth curves and elegant form, is actually doing discrete binary operations under the hood, just like the dyadic map (and vice versa). Formally, two functions are topologically conjugate if there exists a homeomorphism, fancy talk for a change of coordinates, that perfectly takes you from one map to another. The change of coordinates here is
-
-    $$
-    \begin{align*}
-    \phi: [0, 1] \rightarrow [0, 1]
-    &&
-    a_L
-    &=
-    \phi(a_D)
-    =
-    \sin^2(2 \pi a_D)
-    \tag{7}
-    \\
-    \phi^{-1}: [0, 1] \rightarrow [0, 1]
-    &&
-    a_D
-    &=
-    \phi^{-1}(a_L)
-    =
-    \frac{1}{2 \pi} \arcsin (\sqrt{a_L})
-    \tag{8}
-    \end{align*}
-    $$
-    """)
-    return
-
-
-@app.cell
-def _(np, plt):
-    def _():
-        a_values = np.linspace(0, 1, 100)
-        def phi(a): return np.sin(2 * np.pi * a) ** 2
-        def phi_inverse(a): return np.arcsin(np.sqrt(a)) / (2.0 * np.pi)
-
-        fig, ax = plt.subplots()
-        ax.scatter(a_values, phi(a_values), label="phi", s=2, c="g")
-        ax.scatter(a_values, phi_inverse(a_values), label="phi inverse", s=2, c="r")
-        ax.set_xlabel("a")
-        ax.set_ylabel("output")
-        ax.set_title("phi and phi inverse")
-        ax.legend()
-        # plt.show()
-        return fig
-
-    _()
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    Intuitively, the function $\phi(a_D) = \sin^2(2 \pi a_D)$ oscillates between $0$ and $1$ with a period of $1$, completing a cycle everytime $a_D$ reaches a new integer value. This behaviour mimics the modulo operation from the dyadic map $\mathcal{D}(a_D) = (2 a_D) \mod 1$ which similarly keeps outputs bounded within $[0,1)$ and repeats at each integer boundary.
-
-    We go back and forth between the dyadic and logistic spaces with these key equations
-
-    $$
-    \begin{align*}
-    \mathcal{L}^k(a_L)
-    &=
-    \phi(\mathcal{D}^k(a_D))
-    \tag{10}
-    \\
-    \mathcal{D}^k(a_D)
-    &=
-    \mathcal{L}^k(\phi^{-1}(a_L))
-    \tag{11}
-    \end{align*}
-    $$
-
-    * The first equation says that to transform dyadic space into logistic space, we apply $\phi$ to the dyadic *outputs* $\mathcal{D}^k(a_D)$ and get $\mathcal{L}^k(a_L)$.
-    * The second equation says that to transform logistic space into dyadic space, we apply the inverse $\phi^{-1}$ to the *input* $a_L$ before applying the logistic map $\mathcal{L}$ and get $\mathcal{D}^k(a_D)$.
-
-    These equations hold for all iterations $k$ , meaning $\phi$ and $\phi^{-1}$ perfectly relate *every* single point in the dyadic and logistic orbits. Think of these two orbits existing in parallel universes with $\phi$ and $\phi^{-1}$ acting as the bridges between $\mathcal{D}$ and $\mathcal{L}$.
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    topological_conjugacy_image = mo.image(
-        "public/images/topological_conjugacy.png",
-        width=400,
-        caption="Topological conjugacy between the dyadic and logistic map.",
-        style={"display": "block", "margin": "0 auto"}
-    )
-    topological_conjugacy_image
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    Previously the dyadic and logistic orbits appeared totally unrelated. But let's now revisit the orbits for $a_D = a_L = 0.431$.
-
-    * Starting from the **dyadic orbit** $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$, applying $\phi$ to *after* each dyadic map (eq 10) yields the logistic orbit $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$.
-    * Starting from the **logistic orbit** $(0.431, 0.981, 0.075, 0.277, 0.800, 0.639)$, applying $\phi^{-1}$ *before* each logistic map (eq 11) yields the dyadic orbit $(0.431, 0.862, 0.724, 0.448, 0.897, 0.792)$.
-
-    Although both these orbits look completely unrelated, they are perfectly connected to one another through $\phi$ and $\phi^{-1}$.
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    ## A New Algorithm
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    Let's now use the smooth and differentiable logistic map $\mathcal{L}$  as "makeup" to hide the ugly and discontinuous dyadic operation $\mathcal{D}$ in our algorithm. Remember, we still need to be in the dyadic space so our clever bit manipulations will still work out. Here's the strategy:
-
-    1. Encoder: Work in dyadic space where bit manipulation works (use $\phi$) but at the very end output $\alpha$ in logistic space (use $\phi^{-1}$)
-    2. Decoder: Work entirely in smooth logistic space using the conjugacy relationship
-
-    This gives us two new beautiful encoder/decoder algorithms where the main changes are bolded:
-
-    /// admonition | **Encoding Algorithm $g(\mathcal{X}, p)$:**
-
-    Given a dataset $\mathcal{X} = \{x_0, ..., x_n\}$ where $x_i \in [0, 1]$ and precision $p$, encode the dataset into $a_L$:
-
-    1. ***Transform data to dyadic coordinates: $z_i = \phi^{-1}(x_i) = \frac{1}{2 \pi} \arcsin⁡( x_i )$ for $i=1, ..., n$***
-    2. Convert each transformed number to binary with $p$ bits of precision: $b_i = \text{bin}_p(z_i)$ for $i=1, ..., n$
-    3. Concatenate into a single binary string $b = b_0 \oplus  ... \oplus b_n$
-    4. Convert to decimal $a_D = \text{dec}(b)$
-    5. ***Transform to logistic space: $\alpha = a_L = \phi(a_D) = \sin^2(2 \pi a_D)$***
-    6. Return $\alpha$
-
-    ///
-
-
-    Mathematically, the encoder is defined as
-
-    $$
-    \begin{align*}
-    \alpha
-    &=
-    g(p, \mathcal{X}) := \phi \bigg( \text{dec} \Big( \bigoplus_{x_i \in \mathcal{X}} \text{bin}_p(\phi^{-1}(x_i)) \Big) \bigg)
-    \end{align*}
-    $$
-
-    where $\oplus$ means concatenation. Like before the result is a single, decimal, scalar number $\alpha$ with $np$ bits of precision that contains our entire dataset. However, this time $\alpha$ is in logistic space. We can now discard $\mathcal{X}$ entirely and recover sample $x_i$ by decoding $\alpha$.
-
-    /// admonition | **Decoding Algorithm $f_{\alpha, p}(i)$:**
-
-    Given sample index $i \in \{0, ..., n-1\}$, precision $p$, and the encoded number $\alpha$, recover sample $\tilde{x_i}$:
-
-    1. ***Apply the logistic map $\mathcal{L}$ exactly $ip$ times $\tilde{x}'_i = \mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$***
-    2. Extract the first $p$ bits of $\tilde{x}'_i$'s binary representation $b_i = \text{bin}_p(\tilde{x}'_i)$
-    3. Convert to decimal $\tilde{x}_i = \text{dec}(b_i)$
-    4. Return $\tilde{x}_i$
-
-    ///
-
-
-    Mathematically, the decoder is defined as
-
-    $$
-    \begin{align*}
-    \tilde{x}_i
-    &=
-    f_{\alpha,p}(i)
-    :=
-    \text{dec} \Big( \text{bin}_p \Big( \mathcal{L}^{ip}(\alpha) \Big) \Big)
-    =
-    \text{dec} \Big( \text{bin}_p \Big( \sin^2 \Big(2^{ip} \arcsin(\sqrt{\alpha}) \Big) \Big) \Big)
-    \end{align*}
-    $$
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    We've taken the crude, discontinuous dyadic map and transformed it into something smooth and differentiable. The logistic map doesn't *look* like it's doing binary operations, but underneath the elegant trigonometry, it's performing exactly the same bit manipulations as its topological conjugate, the dyadic map. Indeed, the makeup looks pretty great!
-
-    However, nothing is free. The cost of using the logistic map instead of the dyadic map is that our error is now $2 \pi$ times larger,
-
-    $$
-    |\tilde{x}_i - x_i | \leq \frac{2 \pi}{2^{p}} = \frac{\pi}{2^{p-1}}
-    $$
-
-    We get this $2 \pi$ factor by noting that the derivative of $\phi$ is bounded by $2 \pi$ and applying the mean-value theorem. For a proof, see section 2.5 of [Real numbers, data science and chaos: How to fit any dataset with a single parameter](https://arxiv.org/abs/1904.12320).
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    /// details | How did we get $\mathcal{L}^{ip}(\alpha) = \sin^2 \Big(2^{i p} \arcsin^2(\sqrt{\alpha}) \Big)$?
-
-    We just need to perform some simple algebraic manipulation with our equations:
-
-    $$
-    \begin{align*}
-    \mathcal{L}^k(\alpha)
-    &=
-    \mathcal{L}^k(a_L)
-    &
-    \text{by $\alpha = a_L$}
-    \\
-    &=
-    \phi(\mathcal{D}^k(a_D))
-    &
-    \text{by $(10)$}
-    \\
-    &=
-    \phi((2^k a_D) \mod 1)
-    &
-    \text{by $(3)$}
-    \\
-    &=
-    \phi(2^k a_D)
-    &
-    \text{by $(9)$}
-    \\
-    &=
-    \sin^2(2 \pi \cdot (2^k a_D))
-    &
-    \text{by $(7)$}
-    \\
-    &=
-    \sin^2 \bigg(2 \pi 2^k \Big( \frac{1}{2 \pi} \arcsin(\sqrt{a_L}) \Big) \bigg)
-    &
-    \text{by $(8)$}
-    \\
-    &=
-    \sin^2 \Big(2^k \arcsin(\sqrt{a_L}) \Big)
-    &
-    \text{by simplification}
-    \\
-    &=
-    \sin^2 \Big(2^k \arcsin(\sqrt{\alpha}) \Big)
-    &
-    \text{by $\alpha = a_L$}
-    \end{align*}
-    $$
-    ///
-    """)
     return
 
 
