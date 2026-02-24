@@ -117,13 +117,13 @@ def _(mo):
     f_{\alpha, p}(i)
     & =
     \sin^2 \Big(
-        2^{i p} \arcsin(\sqrt{\alpha})
+        2^{i p} \arcsin \sqrt{\alpha}
     \Big)
     \tag{1}
     \end{align*}
     $$
 
-    where $x_i$ is the $i\text{th}$ ARC-AGI-2 puzzle and $\alpha \in \mathbb{R}$ is the singe trainable parameter. ($p$ is a precision hyperparameter, more on this later.) All you need to get 100% on ARC-AGI-2 is to set $\alpha$ to
+    where $x_i$ is the $i\text{th}$ ARC-AGI-2 puzzle and $\alpha \in \mathbb{R}$ is the single trainable parameter. ($p$ is a precision hyperparameter, more on this later.) All you need to get 100% on ARC-AGI-2 is to set $\alpha$ to
     """)
     return
 
@@ -2233,7 +2233,7 @@ def _(load_arc_evals):
 
 @app.cell
 def _(plt):
-    def plot_efficiency_twitter(df, score_key, ax=None, marker='o', 
+    def plot_efficiency_twitter(df, score_key, ax=None, marker='o',
                                label_suffix="", show_labels=True, save_path=None):
         """Clean, minimal Pareto chart optimized for Twitter with refined layering."""
 
